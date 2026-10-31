@@ -61,7 +61,7 @@ Reglas de asignación y excepciones:
 - **HU-5.08 (validar garantía)** pasa a Release 3, junto con la garantía de la venta (HU-8.11).
 - **HU-10.06 (carga de cartera vigente)** va en Release 2 con la Épica 9. **Si al arrancar ya hay créditos vigentes**, la Épica 9 (sus historias Must) y HU-10.06 suben a Release 1, como indica la nota de la Épica 9.
 
-**Sprint 1 · corte transversal.** Antes del Release 1 se construyó una versión delgada de 30 historias de las épicas 1 a 7, para que una unidad recorra su ciclo completo con sus partidas desde el primer sprint. Cada historia se completa en su sprint del Release 1. El detalle está en [Planning.md](Old/Planning.md#5-sprint-backlog-del-sprint-1-las-3-tareas-prioritarias).
+**Sprint 1 · corte transversal.** Antes del Release 1 se construyó una versión delgada de 30 historias de las épicas 1 a 7, para que una unidad recorra su ciclo completo con sus partidas desde el primer sprint. Cada historia se completa en su sprint del Release 1. El detalle está en [Planning.md](Planning.md#5-sprint-backlog-del-sprint-1-las-3-tareas-prioritarias).
 
 ### Historias por release
 

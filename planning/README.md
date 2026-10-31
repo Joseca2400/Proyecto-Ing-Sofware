@@ -15,5 +15,5 @@ Documentos de planificación del sistema administrativo y financiero para la emp
 | — | [PlanSprints.md](PlanSprints.md) | Plan de sprints v3 y backlog completo con valor y SP |
 | — | [AjustePlaneacion.md](AjustePlaneacion.md) | Plan v4: MVP en 4 sprints, descartes y cómo se ajustó la planeación |
 | — | [RevisionSprint1.md](RevisionSprint1.md) | Revisión del prototipo técnico contra el Sprint 1 |
-| `Old/` | [Planning.md](Old/Planning.md) | Planning v2 (sustituido; se conserva como historial) |
+| — | [Planning.md](Planning.md) | Planning v2 (sustituido; se conserva como historial) |
 | `../Segunda%20entrega/proyecto-vehiculos/backend/` | [README.md](../Segunda%20entrega/proyecto-vehiculos/backend/README.md) | Prototipo técnico (primeras iteraciones de desarrollo) |

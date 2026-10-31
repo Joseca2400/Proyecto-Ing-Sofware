@@ -1,8 +1,8 @@
 # Planning
 
-Plan de implementación del sistema administrativo y financiero para la empresa de alquiler, venta y taller de vehículos. Se basa en las 10 épicas de [epicas.md](../contexto/epicas.md), las 130 historias de [user-stories/](../user-stories/README.md) y los releases del [UserStoryMapping.md](../UserStoryMapping.md).
+Plan de implementación del sistema administrativo y financiero para la empresa de alquiler, venta y taller de vehículos. Se basa en las 10 épicas de [epicas.md](contexto/epicas.md), las 130 historias de [user-stories/](user-stories/README.md) y los releases del [UserStoryMapping.md](UserStoryMapping.md).
 
-Versión 2 · 30 de octubre de 2026 · **Sustituido** por [Sprint1.md](../Sprint1.md), [PlanSprints.md](../PlanSprints.md) y [AjustePlaneacion.md](../AjustePlaneacion.md). Se conserva como historial de la planeación (ver la sección 6 de AjustePlaneacion.md).
+Versión 2 · 30 de octubre de 2026 · **Sustituido** por [Sprint1.md](Sprint1.md), [PlanSprints.md](PlanSprints.md) y [AjustePlaneacion.md](AjustePlaneacion.md). Se conserva como historial de la planeación (ver la sección 6 de AjustePlaneacion.md).
 
 ## Contenido
 
@@ -21,7 +21,7 @@ Versión 2 · 30 de octubre de 2026 · **Sustituido** por [Sprint1.md](../Sprint
 
 ### Corte transversal
 
-El orden de construcción sugerido en [user-stories/README.md](../user-stories/README.md) va épica por épica: primero la base contable, luego el costo de la unidad, el ingreso, el cierre, los reportes, la venta y el arranque. Seguido al pie de la letra, el sistema no podría mostrar una unidad de principio a fin hasta varios meses después, y las integraciones entre épicas (que la compra genere su partida, que el taller cargue costo a la unidad, que la factura alimente la cuenta por cobrar) se probarían al final, que es donde más riesgo hay.
+El orden de construcción sugerido en [user-stories/README.md](user-stories/README.md) va épica por épica: primero la base contable, luego el costo de la unidad, el ingreso, el cierre, los reportes, la venta y el arranque. Seguido al pie de la letra, el sistema no podría mostrar una unidad de principio a fin hasta varios meses después, y las integraciones entre épicas (que la compra genere su partida, que el taller cargue costo a la unidad, que la factura alimente la cuenta por cobrar) se probarían al final, que es donde más riesgo hay.
 
 Por eso el plan arranca con un **corte transversal**. El Sprint 1 toma una **versión delgada de las historias que forman el ciclo de vida de la unidad** en las épicas 1 a 7 y las hace funcionar juntas. A partir del Sprint 2 se completa cada historia siguiendo el orden de construcción del equipo.
 
@@ -470,7 +470,7 @@ Una API funcional en [`../backend`](../backend/README.md) donde una unidad recor
 
 ## 7. Definiciones de listo y terminado
 
-Se mantienen las del [README de historias](../user-stories/README.md), con dos agregados por el enfoque transversal:
+Se mantienen las del [README de historias](user-stories/README.md), con dos agregados por el enfoque transversal:
 
 **Definición de listo:** las del equipo, más:
 - Si la historia ya tiene versión del corte, el refinamiento identifica qué criterios faltan.
@@ -494,4 +494,4 @@ Se mantienen las del [README de historias](../user-stories/README.md), con dos a
 | 8 | Velocidad real del equipo | Medio | S3 | Recalibrar el plan al cierre de S2 y S3 |
 | 9 | La maqueta HTML/JS y la API pueden divergir | Medio | Demo | La maqueta usa los endpoints documentados en Swagger |
 
-La lista completa de pendientes con el cliente está en [user-stories/README.md](../user-stories/README.md#pendientes-con-el-cliente-que-afectan-historias).
+La lista completa de pendientes con el cliente está en [user-stories/README.md](user-stories/README.md#pendientes-con-el-cliente-que-afectan-historias).
