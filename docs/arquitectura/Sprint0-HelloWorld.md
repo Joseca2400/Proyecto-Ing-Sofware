@@ -44,7 +44,7 @@ Es la base técnica de **HT-01 Infraestructura** (tarea A1 del Sprint 1) y cumpl
 
 | Pieza | Qué hace |
 |---|---|
-| `docker-compose.yml` | Levanta `db` (PostgreSQL 16), `api` y `web` con un solo comando; la API espera a que la base esté lista |
+| `docker-compose.yml` | Levanta `db` (PostgreSQL 16), `api` y `web` con un solo comando; la API espera a que la base esté lista; puertos configurables |
 | `.github/workflows/ci.yml` | En cada push: pruebas del backend **contra PostgreSQL** y pruebas y build del front |
 | `.env.example`, `.gitignore`, `README.md` | Credenciales locales, archivos ignorados y cómo levantar todo |
 | `old/` | Las dos implementaciones descartadas, con un README de qué se puede rescatar |
@@ -53,17 +53,20 @@ Es la base técnica de **HT-01 Infraestructura** (tarea A1 del Sprint 1) y cumpl
 
 | Verificación | Resultado |
 |---|---|
-| `pytest` del backend (SQLite temporal) | 7 de 7 pasan |
+| `pytest` del backend contra PostgreSQL 16 (base `sistema_pruebas`, vaciada y migrada en cada corrida) | 7 de 7 pasan |
 | `alembic upgrade head` y `alembic check` | Aplica `0001`; modelos y migraciones sincronizados |
 | `ng test` del front | 6 de 6 pasan |
 | `ng build` de producción | Compila: 247 kB inicial (69 kB comprimido); el módulo de Inicio va en un chunk aparte |
-| Prueba de punta a punta en el navegador | La pantalla de Inicio muestra "Hola, mundo: la API responde" y "Conectada · revisión 0001" |
+| `docker compose up --build` | Levanta `db`, `api` y `web`; la API aplica la migración al arrancar |
+| Prueba de punta a punta en el navegador (Nginx → API → PostgreSQL) | La pantalla de Inicio muestra "Hola, mundo: la API responde" y "Conectada (postgresql) · revisión 0001" |
+
+**Solo PostgreSQL.** No hay respaldo con SQLite: la API se niega a arrancar si `DATABASE_URL` apunta a otro motor, y las pruebas usan una base PostgreSQL aparte (`TEST_DATABASE_URL`) para no tocar la de desarrollo.
 
 ## 4. Pendiente de verificar
 
-- **PostgreSQL y Docker no se probaron en local**: Docker no estaba arrancado y no hay PostgreSQL instalado en la máquina donde se construyó. La prueba de punta a punta usó SQLite. La primera ejecución de la CI (pruebas contra PostgreSQL) y un `docker compose up --build` son la verificación pendiente.
+- **CI en GitHub**: el flujo no se ha ejecutado todavía; corre en el primer push.
 - **Aviso de dependencias**: Starlette avisa que su cliente de pruebas pasará de `httpx` a `httpx2`. No afecta hoy; se cambia cuando la versión de FastAPI lo exija.
-- **Puerto 8000 ocupado**: en la máquina de desarrollo seguía corriendo el prototipo anterior en ese puerto. Hay que detenerlo antes de levantar la nueva API.
+- **Puertos ocupados**: si el 8000, 4200 o 5432 ya están en uso, se cambian con `API_PORT`, `WEB_PORT` o `DB_PORT` (por ejemplo `API_PORT=8001 docker compose up`).
 
 ## 5. Qué sigue (propuesta para el Sprint 1)
 

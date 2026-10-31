@@ -2,16 +2,18 @@
 
 ## Desarrollo
 
-Requiere Python 3.12 o superior.
+Requiere Python 3.12 o superior y PostgreSQL. La forma más simple de tener la base es la del compose.
 
 ```bash
+docker compose up -d db             # desde la raíz: PostgreSQL 16 en localhost:5432
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-export DATABASE_URL=postgresql+psycopg://sistema:sistema@localhost:5432/sistema   # o docker compose up db
-alembic upgrade head
+alembic upgrade head                # usa DATABASE_URL; por defecto la base "sistema" del compose
 uvicorn app.main:app --reload       # http://localhost:8000/docs
-pytest -q                           # sin DATABASE_URL usa SQLite temporal
+pytest -q                           # usa TEST_DATABASE_URL; por defecto crea "sistema_pruebas"
 ```
+
+Solo se admite PostgreSQL: la API no arranca si `DATABASE_URL` apunta a otro motor.
 
 ## Organización
 

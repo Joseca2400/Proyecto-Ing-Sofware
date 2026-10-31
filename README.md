@@ -16,6 +16,8 @@ docker compose up --build
 | API (Swagger) | http://localhost:8000/docs |
 | PostgreSQL | localhost:5432 (usuario, clave y base: `sistema`) |
 
+Si algún puerto está ocupado, cópialo de `.env.example` a `.env` y cámbialo (`API_PORT`, `WEB_PORT`, `DB_PORT`).
+
 Para trabajar sin Docker, ver [backend/README.md](backend/README.md) y [frontend/README.md](frontend/README.md).
 
 ## Estructura
