@@ -1,0 +1,174 @@
+/* Estilos propios del taller. Depende de home.css (variables, topbar, stats, tabs, etc.) */
+
+:root {
+  --alert: #c0392b;
+  --alert-bg: #fbe4e0;
+  --blue: #2c6e8f;
+  --blue-bg: #e1eff5;
+}
+
+.stat-alert { border-left-color: var(--alert); }
+.stat-alert .stat-value { color: var(--alert); }
+
+/* ---------- Paneles ---------- */
+.panel {
+  background: var(--white);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(15, 76, 92, 0.06);
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.panel-head h2 { font-size: 19px; font-weight: 800; color: var(--teal); }
+
+.panel .tabs { background: var(--bg); box-shadow: none; }
+.panel .tab { padding: 7px 12px; font-size: 12px; }
+
+.taller-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+
+.parts-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* ---------- Chips de estado ---------- */
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.chip.comenzado { background: var(--blue-bg); color: var(--blue); }
+.chip.reparando { background: var(--busy-bg); color: var(--busy); }
+.chip.listo     { background: var(--ok-bg);   color: var(--ok); }
+.chip.camino    { background: var(--busy-bg); color: var(--busy); }
+.chip.recibido  { background: var(--ok-bg);   color: var(--ok); }
+.chip.alta      { background: var(--alert-bg); color: var(--alert); }
+.chip.media     { background: var(--busy-bg);  color: var(--busy); }
+.chip.baja      { background: var(--blue-bg);  color: var(--blue); }
+
+/* ---------- Tarjetas de vehículos ---------- */
+.rgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.rcar {
+  border: 1.5px solid var(--gray-light);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rcar:hover { border-color: var(--amber); box-shadow: 0 6px 16px rgba(15, 76, 92, 0.1); }
+
+.rcar-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.rcar h3 { font-size: 16px; font-weight: 800; }
+.rcar .meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+.rcar .trabajo { font-size: 13px; color: var(--teal-dark); font-weight: 500; }
+
+.tag-origen {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg);
+  color: var(--teal);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.progress { height: 8px; background: var(--gray-light); border-radius: 5px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 5px; background: var(--amber); transition: width 0.6s ease; }
+.progress-fill.comenzado { background: var(--blue); }
+.progress-fill.listo { background: var(--ok); }
+
+.rcar-foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--gray); }
+.rcar-foot strong { color: var(--teal); }
+
+/* ---------- Lista de estados ---------- */
+.status-list { list-style: none; display: flex; flex-direction: column; }
+.status-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--gray-light);
+  font-size: 14px;
+}
+.status-list li:last-child { border-bottom: none; }
+.status-list .car-name { font-weight: 700; }
+.status-list .car-plate { display: block; font-size: 11px; color: var(--gray); font-weight: 500; }
+
+/* ---------- Listas de repuestos ---------- */
+.parts-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.part {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 12px;
+}
+.part-info strong { font-size: 14px; display: block; }
+.part-info span { font-size: 12px; color: var(--gray); }
+.part-side { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+.count-pill {
+  background: var(--alert-bg);
+  color: var(--alert);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 3px 12px;
+  border-radius: 20px;
+}
+
+.btn-sm {
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  background: var(--amber);
+  color: var(--teal);
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.btn-sm:hover { background: var(--amber-dark); }
+.btn-sm.outline { background: none; border: 1.5px solid var(--teal); color: var(--teal); }
+.btn-sm.outline:hover { background: var(--teal); color: var(--white); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .taller-layout,
+  .parts-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .part { flex-direction: column; align-items: flex-start; }
+  .part-side { justify-content: flex-start; }
+}
