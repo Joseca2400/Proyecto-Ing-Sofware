@@ -16,4 +16,4 @@ Documentos de planificación del sistema administrativo y financiero para la emp
 | — | [AjustePlaneacion.md](AjustePlaneacion.md) | Plan v4: MVP en 4 sprints, descartes y cómo se ajustó la planeación |
 | — | [RevisionSprint1.md](RevisionSprint1.md) | Revisión del prototipo técnico contra el Sprint 1 |
 | — | [Planning.md](Planning.md) | Planning v2 (sustituido; se conserva como historial) |
-| `../../backend/` | [README.md](../../backend/README.md) | Prototipo técnico (primeras iteraciones de desarrollo) |
+| `../../old/backend-fastapi/` | [README.md](../../old/backend-fastapi/README.md) | Prototipo técnico descartado (referencia) |

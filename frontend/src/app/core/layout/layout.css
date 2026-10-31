@@ -1,0 +1,97 @@
+.topbar {
+  background: var(--teal);
+  color: var(--white);
+  padding: 12px 24px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+}
+
+.milestone {
+  display: inline-flex;
+  flex-direction: column;
+  width: 34px;
+  border-radius: 17px 17px 0 0;
+  overflow: hidden;
+  text-align: center;
+  background: var(--white);
+  color: var(--teal);
+  font-weight: 800;
+}
+
+.milestone-top {
+  background: var(--amber);
+  font-size: 8px;
+  padding-top: 4px;
+}
+
+.milestone-body {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.cuerpo {
+  display: flex;
+  min-height: calc(100vh - 58px);
+}
+
+.menu {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--white);
+  border-right: 1px solid var(--gray-light);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu a,
+.menu span {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.menu a:hover {
+  background: var(--bg);
+}
+
+.menu a.activo {
+  background: var(--teal);
+  color: var(--white);
+}
+
+.menu .deshabilitado {
+  color: var(--gray);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contenido {
+  flex: 1;
+  padding: 32px;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .cuerpo {
+    flex-direction: column;
+  }
+
+  .menu {
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-light);
+  }
+
+  .contenido {
+    padding: 16px;
+  }
+}

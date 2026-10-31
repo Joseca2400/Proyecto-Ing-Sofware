@@ -1,0 +1,42 @@
+<section class="encabezado">
+  <h1>Hola, mundo</h1>
+  <p>Sistema administrativo y financiero · Sprint 0</p>
+</section>
+
+<section class="tarjetas" aria-live="polite">
+  <article class="tarjeta">
+    <span class="etiqueta">Front</span>
+    <strong class="ok">Angular en línea</strong>
+  </article>
+
+  <article class="tarjeta">
+    <span class="etiqueta">API</span>
+    @if (cargando()) {
+      <strong>Consultando…</strong>
+    } @else if (estado(); as e) {
+      <strong class="ok">{{ e.mensaje }}</strong>
+      <small>{{ e.aplicacion }} · v{{ e.version }}</small>
+    } @else {
+      <strong class="falla">Sin respuesta</strong>
+      <small>Revise que el backend esté levantado</small>
+    }
+  </article>
+
+  <article class="tarjeta">
+    <span class="etiqueta">Base de datos</span>
+    @if (estado(); as e) {
+      @if (e.base_datos.conectada) {
+        <strong class="ok">Conectada ({{ e.base_datos.motor }})</strong>
+        <small>Revisión del esquema: {{ e.base_datos.revision_esquema ?? 'sin migrar' }}</small>
+      } @else {
+        <strong class="falla">Sin conexión</strong>
+      }
+    } @else {
+      <strong>—</strong>
+    }
+  </article>
+</section>
+
+@if (error()) {
+  <button type="button" (click)="consultar()">Reintentar</button>
+}

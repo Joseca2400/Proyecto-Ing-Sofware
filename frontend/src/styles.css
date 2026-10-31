@@ -1,0 +1,33 @@
+/* Paleta tomada de la maqueta del Sprint 0 (old/Aplicacion-express). */
+:root {
+  --teal: #0f4c5c;
+  --teal-dark: #0a3642;
+  --amber: #f2a900;
+  --gray: #5f6b73;
+  --gray-light: #e3e8ea;
+  --bg: #f3f6f7;
+  --white: #ffffff;
+  --ok: #1e8e5a;
+  --ok-bg: #e2f5ec;
+  --error: #b42318;
+  --error-bg: #fdecea;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--teal-dark);
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

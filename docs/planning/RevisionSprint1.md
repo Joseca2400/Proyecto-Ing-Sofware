@@ -1,6 +1,6 @@
 # Revisión del prototipo contra el Sprint 1
 
-Versión 1 · 30 de octubre de 2026 · Compara el código de [`../../backend`](../../backend/README.md) con [Sprint1.md](Sprint1.md) (versión 3): alcance por historia (sección 5), definición de terminado (sección 9) y guion de la demo (sección 10).
+Versión 1 · 30 de octubre de 2026 · Compara el código de [`../../old/backend-fastapi`](../../old/backend-fastapi/README.md) con [Sprint1.md](Sprint1.md) (versión 3): alcance por historia (sección 5), definición de terminado (sección 9) y guion de la demo (sección 10).
 
 ## 1. Conclusión
 

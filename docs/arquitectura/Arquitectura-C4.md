@@ -1,6 +1,6 @@
 # Arquitectura en modelo C4
 
-Estado al 30/10/2026 (Sprint 1). Los diagramas usan la sintaxis C4 de Mermaid, que GitHub y VS Code (con la extensión de Mermaid) muestran directamente.
+**Histórico.** Estado al 30/10/2026, antes de la reestructura; ambas implementaciones están ahora en `old/`. La arquitectura vigente está en [Arquitectura-Propuesta.md](Arquitectura-Propuesta.md) y lo construido en [Sprint0-HelloWorld.md](Sprint0-HelloWorld.md).
 
 Hoy hay **dos implementaciones del backend** con el mismo contrato de API:
 

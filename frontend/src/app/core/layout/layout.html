@@ -1,0 +1,25 @@
+<header class="topbar">
+  <a routerLink="/inicio" class="brand">
+    <span class="milestone" aria-hidden="true">
+      <span class="milestone-top">KM</span>
+      <span class="milestone-body">0</span>
+    </span>
+    <strong>Kilómetro Cero</strong>
+  </a>
+</header>
+
+<div class="cuerpo">
+  <nav class="menu" aria-label="Módulos">
+    @for (entrada of menu; track entrada.etiqueta) {
+      @if (entrada.ruta) {
+        <a [routerLink]="entrada.ruta" routerLinkActive="activo">{{ entrada.etiqueta }}</a>
+      } @else {
+        <span class="deshabilitado" aria-disabled="true" title="Próximamente">{{ entrada.etiqueta }}</span>
+      }
+    }
+  </nav>
+
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>
