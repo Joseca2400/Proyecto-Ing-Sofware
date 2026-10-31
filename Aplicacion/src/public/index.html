@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión | Kilómetro Cero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/Login.css">
+</head>
+<body>
+  <main class="login-card">
+
+    <!-- Logo (reemplazable por <img src="img/logo.png" alt="Kilómetro Cero"> si tienes el archivo) -->
+    <header class="brand">
+      <div class="milestone" aria-hidden="true">
+        <div class="milestone-top">KM</div>
+        <div class="milestone-body">
+          <span>0</span>
+          <i></i>
+        </div>
+      </div>
+      <div class="brand-text">
+        <h1>Kilómetro Cero</h1>
+        <div class="brand-sub">
+          <span class="dashes"><i></i><i></i><i></i></span>
+          <span>EQUIPO DE DESARROLLO</span>
+        </div>
+      </div>
+    </header>
+
+    <hr class="divider">
+
+    <section class="form-area">
+      <h2>Bienvenido</h2>
+      <p class="subtitle">Ingresa tus credenciales para continuar</p>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="usuario">Usuario</label>
+          <input type="text" id="usuario" name="usuario" placeholder="tu.usuario" autocomplete="username">
+          <small class="error" id="errorUsuario"></small>
+        </div>
+
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pass" id="togglePass" aria-label="Mostrar contraseña">Mostrar</button>
+          </div>
+          <small class="error" id="errorPassword"></small>
+        </div>
+
+        <div class="options">
+          <label class="check">
+            <input type="checkbox" id="recordar">
+            <span>Recordarme</span>
+          </label>
+          <a href="#" class="link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="btn-login">Iniciar sesión</button>
+      </form>
+    </section>
+
+  </main>
+
+  <script src="js/Login.js"></script>
+</body>
+</html>

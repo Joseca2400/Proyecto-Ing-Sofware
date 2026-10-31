@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home | Kilómetro Cero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/Home.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="home.html" class="brand">
+        <div class="milestone" aria-hidden="true">
+          <div class="milestone-top">KM</div>
+          <div class="milestone-body">0</div>
+        </div>
+        <div class="brand-text">
+          <strong>Kilómetro Cero</strong>
+          <span>EQUIPO DE DESARROLLO</span>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <a href="home.html" class="active">Inicio</a>
+        <a href="#flota">Flota</a>
+        <a href="catalogo-ventas.html">Ventas</a>
+        <a href="taller-home.html">Taller</a>
+      </nav>
+
+      <a href="login.html" class="logout">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== Bienvenida ===== -->
+    <section class="welcome">
+      <div>
+        <h1>Panel principal</h1>
+        <p id="fechaHoy" class="date"></p>
+      </div>
+    </section>
+
+    <!-- ===== Resumen ===== -->
+    <section class="stats" aria-label="Resumen de la flota">
+      <article class="stat">
+        <span class="stat-label">Total de la flota</span>
+        <strong class="stat-value" id="statTotal">0</strong>
+      </article>
+      <article class="stat stat-ok">
+        <span class="stat-label">Disponibles</span>
+        <strong class="stat-value" id="statDisponibles">0</strong>
+      </article>
+      <article class="stat stat-busy">
+        <span class="stat-label">Alquilados</span>
+        <strong class="stat-value" id="statAlquilados">0</strong>
+      </article>
+      <article class="stat">
+        <span class="stat-label">Ocupación</span>
+        <strong class="stat-value" id="statOcupacion">0%</strong>
+        <div class="bar"><div class="bar-fill" id="barOcupacion"></div></div>
+      </article>
+    </section>
+
+    <!-- ===== Accesos rápidos ===== -->
+    <section class="shortcuts" aria-label="Accesos rápidos">
+      <a href="catalogo-ventas.html" class="shortcut">
+        <div class="shortcut-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+        </div>
+        <div>
+          <h3>Catálogo de ventas</h3>
+          <p>Vehículos en venta y opciones de financiamiento.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a href="taller-home.html" class="shortcut">
+        <div class="shortcut-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z"/></svg>
+        </div>
+        <div>
+          <h3>Home del taller</h3>
+          <p>Reparaciones, órdenes de trabajo y mantenimiento.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+    </section>
+
+    <!-- ===== Flota ===== -->
+    <section class="fleet" id="flota">
+      <div class="fleet-head">
+        <h2>Flota en alquiler</h2>
+
+        <div class="controls">
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-filtro="todos">Todos</button>
+            <button class="tab" data-filtro="disponible">Disponibles</button>
+            <button class="tab" data-filtro="alquilado">Alquilados</button>
+          </div>
+          <input type="search" id="buscador" placeholder="Buscar marca, modelo o placa…">
+        </div>
+      </div>
+
+      <div class="grid" id="gridFlota"></div>
+      <p class="empty" id="sinResultados" hidden>No se encontraron vehículos con ese filtro.</p>
+    </section>
+
+  </main>
+
+  <footer class="footer">© Kilómetro Cero · Sistema de gestión vehicular</footer>
+
+  <script src="home.js"></script>
+</body>
+</html>
