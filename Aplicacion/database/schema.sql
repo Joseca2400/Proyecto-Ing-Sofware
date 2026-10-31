@@ -1,5 +1,5 @@
 -- Esquema PostgreSQL del Sprint 0 / Sprint 1 (corte transversal: de la compra al alta en flota).
--- Equivale a los modelos de proyecto-vehiculos/backend/app/models.py (épicas 1 a 5).
+-- Equivale a los modelos de backend/app/models.py (épicas 1 a 5).
 -- Es idempotente: se puede ejecutar varias veces (npm run db:init).
 -- Montos: NUMERIC(18,6), nunca FLOAT (acuerdo 2 de K1).
 

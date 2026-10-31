@@ -203,7 +203,7 @@ frontend/src/app/
 │   ├── Dockerfile
 │   └── package.json
 ├── docs/
-│   ├── planning/                  lo que hoy está en planning/
+│   ├── planning/                  épicas, historias, mapping y sprints
 │   ├── arquitectura/              este documento, C4 y decisiones (ADR)
 │   └── adr/
 ├── .github/workflows/ci.yml       pruebas del backend y build + pruebas del front en cada push

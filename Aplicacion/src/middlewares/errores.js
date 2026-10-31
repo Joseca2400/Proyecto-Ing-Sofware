@@ -1,5 +1,5 @@
 // Los errores de regla de negocio responden { detail } con un mensaje en español listo para
-// mostrar, igual que la API de referencia (proyecto-vehiculos/backend).
+// mostrar, igual que la API de referencia (backend).
 class ErrorNegocio extends Error {
   constructor(mensaje, status = 400) {
     super(mensaje);

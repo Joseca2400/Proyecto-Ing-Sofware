@@ -1,7 +1,7 @@
 # Aplicación · Kilómetro Cero (Sprint 0)
 
 Maqueta HTML5/CSS integrada con el esqueleto del backend: **Node.js (Express) + PostgreSQL**.
-El contrato de la API (rutas, roles y mensajes) sigue a `../proyecto-vehiculos/backend/README.md`.
+El contrato de la API (rutas, roles y mensajes) sigue a `../backend/README.md`.
 
 ## Cómo ejecutarlo
 

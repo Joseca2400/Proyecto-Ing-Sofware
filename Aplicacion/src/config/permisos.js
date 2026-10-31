@@ -1,6 +1,6 @@
 // Matriz de permisos por rol, en un solo lugar y aplicada en el servidor (acuerdo 4 de K1).
 // Ocultar opciones en la interfaz no sustituye esta autorización.
-// Mismos grupos que proyecto-vehiculos/backend/app/deps.py.
+// Mismos grupos que backend/app/deps.py.
 const ROLES = {
   AUXILIAR: 'AUXILIAR', // registra
   CONTADOR: 'CONTADOR', // revisa, contabiliza y cierra

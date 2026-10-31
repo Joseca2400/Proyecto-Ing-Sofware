@@ -1,4 +1,4 @@
-// Esqueleto del Sprint 1: endpoints del contrato (proyecto-vehiculos/backend/README.md) que aún
+// Esqueleto del Sprint 1: endpoints del contrato (backend/README.md) que aún
 // no tienen lógica. Ya aplican la matriz de permisos y responden 501 con la historia que los
 // implementa. Al construir uno, se mueve a su router propio y se elimina de esta lista.
 const { Router } = require('express');

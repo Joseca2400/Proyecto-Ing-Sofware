@@ -1,12 +1,12 @@
 # Backend · prototipo técnico del Sprint 1
 
-API del corte transversal del Sprint 1 según [`Sprint1.md`](../../../planning/Sprint1.md): **de la compra al alta en flota**. Cada paso genera su partida contable ligada al VIN y queda en la bitácora:
+API del corte transversal del Sprint 1 según [`Sprint1.md`](../docs/planning/Sprint1.md): **de la compra al alta en flota**. Cada paso genera su partida contable ligada al VIN y queda en la bitácora:
 
 ```
 Compra en EE. UU. (USD) → gastos de importación → taller → hoja de costo → alta en flota
 ```
 
-Es un **prototipo técnico**: valida el stack candidato y las reglas del corte. No se cuenta como avance aceptado del Sprint 1 (ver la revisión en [`RevisionSprint1.md`](../../../planning/RevisionSprint1.md)).
+Es un **prototipo técnico**: valida el stack candidato y las reglas del corte. No se cuenta como avance aceptado del Sprint 1 (ver la revisión en [`RevisionSprint1.md`](../docs/planning/RevisionSprint1.md)).
 
 ## Cómo ejecutarlo
 

@@ -1,0 +1,19 @@
+# Sistema operativo y editores
+.DS_Store
+.vscode/
+.idea/
+
+# Variables de entorno (se versiona solo .env.example)
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+
+# Node y Angular
+node_modules/
+dist/
+.angular/
