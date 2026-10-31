@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taller | Kilómetro Cero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <!-- home.css aporta la base (barra superior, tarjetas de resumen, tabs). taller.css agrega lo propio del taller -->
+  <link rel="stylesheet" href="css/Home.css">
+  <link rel="stylesheet" href="css/HomeTaller.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="home.html" class="brand">
+        <div class="milestone" aria-hidden="true">
+          <div class="milestone-top">KM</div>
+          <div class="milestone-body">0</div>
+        </div>
+        <div class="brand-text">
+          <strong>Kilómetro Cero</strong>
+          <span>EQUIPO DE DESARROLLO</span>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <a href="home.html">Inicio</a>
+        <a href="home.html#flota">Flota</a>
+        <a href="catalogo-ventas.html">Ventas</a>
+        <a href="HomeTaller.html" class="active">Taller</a>
+      </nav>
+
+      <a href="login.html" class="logout">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== Encabezado ===== -->
+    <section class="welcome">
+      <h1>Taller</h1>
+      <p id="fechaHoy" class="date"></p>
+    </section>
+
+    <!-- ===== Resumen ===== -->
+    <section class="stats" aria-label="Resumen del taller">
+      <article class="stat">
+        <span class="stat-label">Vehículos en taller</span>
+        <strong class="stat-value" id="statTotal">0</strong>
+      </article>
+      <article class="stat stat-busy">
+        <span class="stat-label">En reparación</span>
+        <strong class="stat-value" id="statReparando">0</strong>
+      </article>
+      <article class="stat stat-ok">
+        <span class="stat-label">Listos para entregar</span>
+        <strong class="stat-value" id="statListos">0</strong>
+      </article>
+      <article class="stat stat-alert">
+        <span class="stat-label">Repuestos faltantes</span>
+        <strong class="stat-value" id="statFaltantes">0</strong>
+      </article>
+    </section>
+
+    <!-- ===== Vehículos + estado ===== -->
+    <section class="taller-layout">
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Vehículos en el taller</h2>
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-filtro="todos">Todos</button>
+            <button class="tab" data-filtro="comenzado">Comenzado</button>
+            <button class="tab" data-filtro="reparando">Reparando</button>
+            <button class="tab" data-filtro="listo">Listos</button>
+          </div>
+        </div>
+        <div class="rgrid" id="gridVehiculos"></div>
+        <p class="empty" id="sinVehiculos" hidden>No hay vehículos con ese estado.</p>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <h2>Estado de reparaciones</h2>
+        </div>
+        <ul class="status-list" id="listaEstados"></ul>
+      </aside>
+
+    </section>
+
+    <!-- ===== Repuestos ===== -->
+    <section class="parts-layout">
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Repuestos faltantes</h2>
+          <span class="count-pill" id="pillFaltantes">0</span>
+        </div>
+        <ul class="parts-list" id="listaFaltantes"></ul>
+        <p class="empty" id="sinFaltantes" hidden>No hay repuestos pendientes por comprar.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Repuestos comprados</h2>
+          <div class="tabs" role="tablist">
+            <button class="tab tab-compras active" data-filtro="todos">Todos</button>
+            <button class="tab tab-compras" data-filtro="camino">En camino</button>
+            <button class="tab tab-compras" data-filtro="recibido">Recibidos</button>
+          </div>
+        </div>
+        <ul class="parts-list" id="listaCompras"></ul>
+        <p class="empty" id="sinCompras" hidden>No hay compras con ese estado.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="footer">© Kilómetro Cero · Sistema de gestión vehicular</footer>
+
+  <script src="taller.js"></script>
+</body>
+</html>
