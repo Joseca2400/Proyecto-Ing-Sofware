@@ -1,23 +1,22 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
+const { noEncontrada, manejarErrores } = require('./middlewares/errores');
+
 const app = express();
 
-// Middleware para leer JSON en las peticiones
+app.use(cors());
 app.use(express.json());
 
-// Servir la carpeta 'public' como archivos estáticos
+// Front estático: login (index.html), home, taller...
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ruta de ejemplo para el login (Backend)
-app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-    // Aquí después conectarás con PostgreSQL para validar el usuario
-    if (email === "admin@admin.com" && password === "1234") {
-        res.json({ success: true, message: "Autenticación exitosa" });
-    } else {
-        res.status(401).json({ success: false, message: "Credenciales inválidas" });
-    }
-});
+// API versionada, mismo prefijo que la API de referencia.
+app.use('/api/v1', require('./routes'));
+app.use('/api', noEncontrada);
+
+app.use(manejarErrores);
 
 module.exports = app;

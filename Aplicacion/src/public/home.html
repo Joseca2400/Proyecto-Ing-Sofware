@@ -28,11 +28,14 @@
       <nav class="nav">
         <a href="home.html" class="active">Inicio</a>
         <a href="#flota">Flota</a>
-        <a href="catalogo-ventas.html">Ventas</a>
+        <a class="disabled" aria-disabled="true" title="Release 2 · aún no disponible">Ventas</a>
         <a href="HomeTaller.html">Taller</a>
       </nav>
 
-      <a href="login.html" class="logout">Cerrar sesión</a>
+      <div class="topbar-user">
+        <span class="usuario-chip" id="usuarioActual" hidden></span>
+        <button type="button" class="logout" id="btnSalir">Cerrar sesión</button>
+      </div>
     </div>
   </header>
 
@@ -47,40 +50,39 @@
     </section>
 
     <!-- ===== Resumen ===== -->
-    <section class="stats" aria-label="Resumen de la flota">
+    <section class="stats" aria-label="Resumen de unidades">
       <article class="stat">
-        <span class="stat-label">Total de la flota</span>
+        <span class="stat-label">Total de unidades</span>
         <strong class="stat-value" id="statTotal">0</strong>
       </article>
       <article class="stat stat-ok">
-        <span class="stat-label">Disponibles</span>
-        <strong class="stat-value" id="statDisponibles">0</strong>
+        <span class="stat-label">En flota</span>
+        <strong class="stat-value" id="statEnFlota">0</strong>
       </article>
       <article class="stat stat-busy">
-        <span class="stat-label">Alquilados</span>
-        <strong class="stat-value" id="statAlquilados">0</strong>
+        <span class="stat-label">En proceso</span>
+        <strong class="stat-value" id="statEnProceso">0</strong>
       </article>
       <article class="stat">
-        <span class="stat-label">Ocupación</span>
-        <strong class="stat-value" id="statOcupacion">0%</strong>
-        <div class="bar"><div class="bar-fill" id="barOcupacion"></div></div>
+        <span class="stat-label">Avance a flota</span>
+        <strong class="stat-value" id="statAvance">0%</strong>
+        <div class="bar"><div class="bar-fill" id="barAvance"></div></div>
       </article>
     </section>
 
     <!-- ===== Accesos rápidos ===== -->
     <section class="shortcuts" aria-label="Accesos rápidos">
-      <a href="catalogo-ventas.html" class="shortcut">
+      <a class="shortcut disabled" aria-disabled="true">
         <div class="shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
         </div>
         <div>
           <h3>Catálogo de ventas</h3>
-          <p>Vehículos en venta y opciones de financiamiento.</p>
+          <p>Vehículos en venta y financiamiento · Release 2.</p>
         </div>
-        <span class="arrow">→</span>
       </a>
 
-      <a href="taller-home.html" class="shortcut">
+      <a href="HomeTaller.html" class="shortcut">
         <div class="shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z"/></svg>
         </div>
@@ -92,18 +94,18 @@
       </a>
     </section>
 
-    <!-- ===== Flota ===== -->
+    <!-- ===== Unidades ===== -->
     <section class="fleet" id="flota">
       <div class="fleet-head">
-        <h2>Flota en alquiler</h2>
+        <h2>Unidades de la flota</h2>
 
         <div class="controls">
           <div class="tabs" role="tablist">
-            <button class="tab active" data-filtro="todos">Todos</button>
-            <button class="tab" data-filtro="disponible">Disponibles</button>
-            <button class="tab" data-filtro="alquilado">Alquilados</button>
+            <button class="tab active" data-filtro="todos">Todas</button>
+            <button class="tab" data-filtro="flota">En flota</button>
+            <button class="tab" data-filtro="proceso">En proceso</button>
           </div>
-          <input type="search" id="buscador" placeholder="Buscar marca, modelo o placa…">
+          <input type="search" id="buscador" placeholder="Buscar marca, modelo, placa o VIN…">
         </div>
       </div>
 
@@ -115,6 +117,7 @@
 
   <footer class="footer">© Kilómetro Cero · Sistema de gestión vehicular</footer>
 
-  <script src="home.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/Home.js"></script>
 </body>
 </html>

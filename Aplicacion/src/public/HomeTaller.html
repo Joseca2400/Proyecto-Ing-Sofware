@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
-  <!-- home.css aporta la base (barra superior, tarjetas de resumen, tabs). taller.css agrega lo propio del taller -->
+  <!-- Home.css aporta la base (barra superior, tarjetas de resumen, tabs). HomeTaller.css agrega lo propio del taller -->
   <link rel="stylesheet" href="css/Home.css">
   <link rel="stylesheet" href="css/HomeTaller.css">
 </head>
@@ -30,11 +30,14 @@
       <nav class="nav">
         <a href="home.html">Inicio</a>
         <a href="home.html#flota">Flota</a>
-        <a href="catalogo-ventas.html">Ventas</a>
+        <a class="disabled" aria-disabled="true" title="Release 2 · aún no disponible">Ventas</a>
         <a href="HomeTaller.html" class="active">Taller</a>
       </nav>
 
-      <a href="login.html" class="logout">Cerrar sesión</a>
+      <div class="topbar-user">
+        <span class="usuario-chip" id="usuarioActual" hidden></span>
+        <button type="button" class="logout" id="btnSalir">Cerrar sesión</button>
+      </div>
     </div>
   </header>
 
@@ -49,7 +52,7 @@
     <!-- ===== Resumen ===== -->
     <section class="stats" aria-label="Resumen del taller">
       <article class="stat">
-        <span class="stat-label">Vehículos en taller</span>
+        <span class="stat-label">Órdenes de trabajo</span>
         <strong class="stat-value" id="statTotal">0</strong>
       </article>
       <article class="stat stat-busy">
@@ -92,7 +95,7 @@
 
     </section>
 
-    <!-- ===== Repuestos ===== -->
+    <!-- ===== Repuestos (maqueta: aún sin base de datos) ===== -->
     <section class="parts-layout">
 
       <div class="panel">
@@ -100,6 +103,7 @@
           <h2>Repuestos faltantes</h2>
           <span class="count-pill" id="pillFaltantes">0</span>
         </div>
+        <p class="nota">Maqueta · los repuestos se conectan con HU-5.04 a 5.06 y por ahora no se guardan.</p>
         <ul class="parts-list" id="listaFaltantes"></ul>
         <p class="empty" id="sinFaltantes" hidden>No hay repuestos pendientes por comprar.</p>
       </div>
@@ -113,6 +117,7 @@
             <button class="tab tab-compras" data-filtro="recibido">Recibidos</button>
           </div>
         </div>
+        <p class="nota">Maqueta · una compra real generará cuenta por pagar y partida (HU-4.09).</p>
         <ul class="parts-list" id="listaCompras"></ul>
         <p class="empty" id="sinCompras" hidden>No hay compras con ese estado.</p>
       </div>
@@ -123,6 +128,7 @@
 
   <footer class="footer">© Kilómetro Cero · Sistema de gestión vehicular</footer>
 
-  <script src="taller.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/HomeTaller.js"></script>
 </body>
 </html>
