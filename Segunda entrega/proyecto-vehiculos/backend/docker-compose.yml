@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    container_name: sistema-vehiculos-api
+    ports:
+      - "8000:8000"
+    environment:
+      SISTEMA_DB_URL: sqlite:////data/sistema.db
+    volumes:
+      - datos:/data   # la base de datos se conserva aunque se borre el contenedor
+    restart: unless-stopped
+
+volumes:
+  datos:
