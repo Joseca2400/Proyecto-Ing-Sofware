@@ -1,10 +1,12 @@
 # Plan de sprints (corte transversal)
 
+> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../Sprint1.md). Se conserva como historial.
+
 Planeación de desarrollo del sistema administrativo y financiero para la empresa de alquiler, venta y taller de vehículos. Organiza las 130 historias de [user-stories/](user-stories/README.md) en sprints que cierran un flujo de negocio demostrable.
 
 Versión 3 · 30 de octubre de 2026 · Borrador para validar con el equipo y el cliente. **Se parte de cero: no existe código.**
 
-Fuentes: [UserStoryMapping.md](UserStoryMapping.md) (releases), las dependencias de `user-stories/` y [Sprint1.md](Sprint1.md) (Sprint 1 detallado). Los puntos de historia y el valor de negocio se toman de la propuesta de un compañero (`Planning.md`) como estimación inicial, que se recalibra con el ritmo real.
+Fuentes: [UserStoryMapping.md](UserStoryMapping.md) (releases), las dependencias de `user-stories/` y [Sprint1.md](Sprint1-v3.md) (Sprint 1 detallado). Los puntos de historia y el valor de negocio se toman de la propuesta de un compañero (`Planning.md`) como estimación inicial, que se recalibra con el ritmo real.
 
 ## Contenido
 
@@ -27,7 +29,7 @@ Fuentes: [UserStoryMapping.md](UserStoryMapping.md) (releases), las dependencias
 | Aspecto | Versión 1 | Versión 2 |
 |---|---|---|
 | Equipo | 4 a 5 desarrolladores | **3 desarrolladores** con asistencia de IA |
-| Sprint 1 | 6 historias completas de E1 | **Corte transversal de la compra al alta en flota** (ver [Sprint1.md](Sprint1.md), versión 3) |
+| Sprint 1 | 6 historias completas de E1 | **Corte transversal de la compra al alta en flota** (ver [Sprint1.md](Sprint1-v3.md), versión 3) |
 | Estimación | Historias por sprint | **Puntos de historia (SP)** y valor de negocio por historia |
 | Duración | 3 semanas | Sprint 1 de 4 semanas; **2 semanas desde el Sprint 2** |
 | Fechas | Semanas relativas | **Fechas reales** y receso de fin de año |
@@ -53,7 +55,7 @@ Fuentes: [UserStoryMapping.md](UserStoryMapping.md) (releases), las dependencias
 | Velocidad para planificar | **hasta 40 SP por sprint de 2 semanas** | Hipótesis, no medida; se reemplaza con el esfuerzo real del Sprint 1 y se recalibra al cierre de los sprints 2 y 3 |
 | Conversión de SP a días | No se usa un factor fijo | El esfuerzo real por tarea se registra desde el Sprint 1 |
 | Créditos vigentes al arrancar | No | Si los hay, la Épica 9 y HU-10.06 suben a Release 1 |
-| Stack | Por definirse | Criterios mínimos en [Sprint1.md](Sprint1.md), sección 4 |
+| Stack | Por definirse | Criterios mínimos en [Sprint1.md](Sprint1-v3.md), sección 4 |
 
 **Cómo se eligió 40 SP.** En 2 semanas, 3 personas tienen 27 días-persona. No hay datos medidos, así que se plantean tres hipótesis de ritmo (33, 40 y 55 SP por sprint) y se planifica con **40 SP como techo**, dejando margen para defectos, refinamientos y validaciones. Los sprints de estabilización (10, 11 y 16) llevan menos carga a propósito. Es una hipótesis de trabajo, no un factor de conversión.
 
@@ -475,7 +477,7 @@ Se revisaron las dependencias de las 130 historias contra la secuencia. Quedan s
 |---|---|---|
 | La velocidad de 40 SP es una hipótesis | Corre las fechas (sección 5) | Medir el esfuerzo real desde el Sprint 1; recalibrar al cierre de los sprints 2 y 3; comunicar siempre un rango de fechas |
 | Estimación inicial de SP sin contrastar con este equipo | Mismo efecto | Revisar los SP en cada refinamiento; medir el factor real de días por SP en el Sprint 1 |
-| Se acumula deuda técnica del corte delgado | Retrabajo en el Sprint 2 | La tabla de deuda deliberada de [Sprint1.md](Sprint1.md) tiene sprint de resolución para cada atajo |
+| Se acumula deuda técnica del corte delgado | Retrabajo en el Sprint 2 | La tabla de deuda deliberada de [Sprint1.md](Sprint1-v3.md) tiene sprint de resolución para cada atajo |
 | Certificador FEL con retraso | Bloquea los sprints 5 y 6 | Elegirlo antes del 18/01; plan B: registrar documentos emitidos fuera del sistema (HU-6.06, adelantable) |
 | Reglas contables sin validar | Retrabajo de partidas en varios módulos | Refinamiento semanal con el contador; reglas aisladas en un módulo hasta el Sprint 2 |
 | Datos de migración de mala calidad | Retrasa el Sprint 9 y el arranque | Limpiar y validar datos reales desde el Sprint 6; cargas de prueba desde el Sprint 7 |

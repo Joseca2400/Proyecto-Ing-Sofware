@@ -70,7 +70,7 @@ Es la base técnica de **HT-01 Infraestructura** (tarea A1 del Sprint 1) y cumpl
 
 ## 5. Qué sigue (propuesta para el Sprint 1)
 
-El hello world deja lista la base; **no implementa ninguna historia de negocio todavía**. Este es el orden sugerido, siguiendo las dependencias del [Sprint 1](../planning/Sprint1.md#5-alcance-por-historia-versión-delgada):
+El hello world deja lista la base; **no implementa ninguna historia de negocio todavía**. Este es el orden sugerido, siguiendo las dependencias del Sprint 1 v3 (el reparto vigente por sprint y equipo está en el [plan v5](../planning/PlanMVP.md)):
 
 | Orden | Qué | Historias | Módulos | Por qué en este orden |
 |---|---|---|---|---|

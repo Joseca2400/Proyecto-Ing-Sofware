@@ -1,6 +1,8 @@
 # Ajuste de la planeación: MVP en 4 sprints
 
-Versión 4 · 30 de octubre de 2026 · Ajusta el [Plan de sprints](PlanSprints.md) (versión 3) para llegar a un MVP en 4 sprints después del Sprint 1. El Sprint 1 no cambia: sigue siendo el de [Sprint1.md](Sprint1.md).
+> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../Sprint1.md). Se conserva como historial.
+
+Versión 4 · 30 de octubre de 2026 · Ajusta el [Plan de sprints](PlanSprints.md) (versión 3) para llegar a un MVP en 4 sprints después del Sprint 1. El Sprint 1 no cambia: sigue siendo el de [Sprint1.md](Sprint1-v3.md).
 
 Este documento registra **qué se recorta, qué se descarta y por qué**, y cómo se fue ajustando la planeación desde la primera versión.
 
