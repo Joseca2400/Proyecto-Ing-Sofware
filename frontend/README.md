@@ -7,6 +7,8 @@ npm install
 npm start          # http://localhost:4200, reenvía /api al backend en :8000 (proxy.conf.json)
 npm test -- --watch=false
 npm run build
+npm run lint       # angular-eslint
+npm run format     # prettier (en CI: npm run format:check)
 ```
 
 ## Organización

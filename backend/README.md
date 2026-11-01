@@ -11,6 +11,7 @@ pip install -r requirements-dev.txt
 alembic upgrade head                # usa DATABASE_URL; por defecto la base "sistema" del compose
 uvicorn app.main:app --reload       # http://localhost:8000/docs
 pytest -q                           # usa TEST_DATABASE_URL; por defecto crea "sistema_pruebas"
+ruff check . && ruff format .      # estilo (config en pyproject.toml)
 ```
 
 Solo se admite PostgreSQL: la API no arranca si `DATABASE_URL` apunta a otro motor.

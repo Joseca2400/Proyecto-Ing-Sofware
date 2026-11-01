@@ -1,6 +1,6 @@
 # Plan del MVP · Kilómetro Cero
 
-31 de octubre de 2026 · Plan de trabajo del sistema administrativo y financiero hasta el MVP (11/12/2026), el arranque en operación (15/01/2027) y el sistema completo (26/03/2027). El detalle operativo del sprint en curso está en [Sprint1.md](Sprint1.md). Las versiones anteriores del plan se conservan en [Old/](Old/).
+31 de octubre de 2026 · Plan de trabajo del sistema administrativo y financiero hasta el MVP (11/12/2026), el arranque en operación (15/01/2027) y el sistema completo (26/03/2027). El detalle operativo del sprint en curso está en [sprints/sprint-01.md](sprints/sprint-01.md). Las versiones anteriores del plan se conservan en [Old/](Old/).
 
 ## Contenido
 
@@ -42,7 +42,7 @@
 
 ## 2. Organización del trabajo
 
-El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punta a punta** (pantalla en `frontend/src/app/features/`, API en `backend/app/modulos/`, migraciones y pruebas), como pide la [arquitectura](../arquitectura/Arquitectura-Propuesta.md).
+El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punta a punta** (pantalla en `frontend/src/app/features/`, API en `backend/app/modulos/`, migraciones y pruebas), como pide la [arquitectura](../arquitectura/Arquitectura.md).
 
 | Equipo | Nombre | Módulos que posee | Épicas |
 |---|---|---|---|
@@ -93,8 +93,9 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 
 ## 5. Sprints
 
-En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; las marcadas como *resto* completan esos criterios en el Sprint 5.
+Las tablas de esta sección se generan desde [sprints.json](sprints.json) con `python3 docs/herramientas/generar_plan.py`; no se editan a mano. En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; las marcadas como *resto* completan esos criterios en el Sprint 5.
 
+<!-- inicio:sprints -->
 ### Sprint 0 · Base técnica de la arquitectura (26/10 – 30/10/2026) · 2 SP · ✅ Terminado
 
 | Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
@@ -203,7 +204,7 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 
 **Demo:** Se cargan los saldos iniciales, la flota existente con su valor en libros, clientes, proveedores y contratos vigentes; la conciliación del arranque da cero diferencias; se emiten los libros legales, se concilia el banco, el contador sigue la lista de verificación del cierre y se capacita a cada rol.
 
-### Sprint 5 · Completar el recorrido de la unidad e importación detallada (18/01 – 29/01/2027) · 69 SP
+### Sprint 5 · Completar el recorrido e importación detallada (18/01 – 29/01/2027) · 69 SP
 
 | Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
 |---|---|---|---|---|---|---|
@@ -236,8 +237,6 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 | **HU-3.04** | Controlar seguros, marchamo y documentos de cada unidad | E3 | Must · depende de HU-1.05 | 9 | 5 | C |
 | | **27 historias** | | | | **69** | |
 
-Las historias marcadas como resto completan los criterios que su versión delgada dejó pendientes en el MVP.
-
 **Demo:** Un contenedor con dos unidades se registra en un expediente y sus gastos se prorratean; las historias del recorrido de la unidad cumplen todos sus criterios; los estados financieros salen por línea de negocio y se exportan a PDF y Excel; se aplica un anticipo de cliente y se consulta la ocupación de la flota con sus seguros y marchamos.
 
 ### Sprint 6 · Retenciones, taller completo y cierres avanzados (01/02 – 12/02/2027) · 47 SP
@@ -253,7 +252,7 @@ Las historias marcadas como resto completan los criterios que su versión delgad
 | **HU-5.04** | Mantener el catálogo e inventario de repuestos | E5 | Must | 8 | 5 | B |
 | **HU-5.05** | Consumir repuestos en una orden | E5 | Must · depende de HU-5.04 | 8 | 3 | B |
 | **HU-5.06** | Registrar trabajos subcontratados | E5 | Must | 8 | 3 | B |
-| **HU-10.07** | Cargar el inventario de repuestos | E10 | Must | 7 | 2 | B |
+| **HU-10.07** | Cargar el inventario de repuestos | E10 | Must · depende de HU-5.04 | 7 | 2 | B |
 | **HU-3.15** | Dar de baja una unidad de la flota y pasarla a venta | E3 | Must | 9 | 5 | B |
 | **HU-7.03** | Consultar la ocupación y rentabilidad de la flota | E7 | Must | 7 | 5 | C |
 | | **12 historias** | | | | **47** | |
@@ -279,7 +278,7 @@ Las historias marcadas como resto completan los criterios que su versión delgad
 | **HU-9.01** | Definir planes de crédito | E9 | Must | 6 | 3 | C |
 | **HU-9.02** | Registrar y aprobar un crédito | E9 | Must · depende de HU-9.01, HU-8.05 | 6 | 5 | C |
 | **HU-9.03** | Generar la tabla de amortización | E9 | Must · depende de HU-9.02 | 6 | 5 | C |
-| **HU-8.05** | Registrar una venta financiada | E8 | Must · depende de HU-8.04, HU-9.02 | 6 | 5 | C |
+| **HU-8.05** | Registrar una venta financiada | E8 | Must · depende de HU-8.04, HU-9.01 | 6 | 5 | C |
 | | **16 historias** | | | | **58** | |
 
 **Demo:** Una unidad dada de baja se publica con precio de lista y mínimo, se vende de contado con su tratamiento fiscal y su comisión, y se ve su margen; se define un plan de crédito, se aprueba un crédito y la venta financiada genera su tabla de amortización.
@@ -325,6 +324,7 @@ Las historias marcadas como resto completan los criterios que su versión delgad
 | | **13 historias** | | | | **42** | |
 
 **Demo:** La gerencia consulta el tablero gerencial; una unidad se reserva con anticipo, se controla su traspaso y su garantía; se recupera una unidad por impago; se emiten notas de débito, se identifican depósitos no aplicados y se hace el conteo físico de repuestos.
+<!-- fin:sprints -->
 
 ## 6. Dependencias
 

@@ -1,0 +1,24 @@
+# https://editorconfig.org · aplica a todo el repositorio
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_size = 4
+
+[*.ts]
+quote_type = single
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+
+# Las historias, el contexto y su índice se escribieron con saltos de línea CRLF; se respetan.
+[docs/planning/{user-stories,contexto}/*.md]
+end_of_line = crlf

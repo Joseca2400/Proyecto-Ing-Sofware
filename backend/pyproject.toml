@@ -1,0 +1,18 @@
+# Configuración de herramientas del backend (no es un paquete instalable).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/W estilo, F errores, I orden de imports, B errores probables, UP sintaxis moderna, S seguridad básica
+select = ["E", "W", "F", "I", "B", "UP", "S"]
+ignore = ["B008"]  # FastAPI usa Depends() como valor por defecto
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert en pruebas
+"tests/conftest.py" = ["S101", "E402"]  # DATABASE_URL se fija antes de importar la app
+"migrations/**" = ["E501"]

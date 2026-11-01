@@ -1,6 +1,6 @@
 # Sprint 1 · Corte transversal: de la compra al alta en flota
 
-> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../Sprint1.md). Se conserva como historial.
+> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../sprints/sprint-01.md). Se conserva como historial.
 
 Versión 3 · 30 de octubre de 2026 · Sustituye a la versión 2. Se parte de cero: **no existe código**, solo esta planeación.
 

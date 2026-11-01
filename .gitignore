@@ -17,3 +17,6 @@ __pycache__/
 node_modules/
 dist/
 .angular/
+
+# Salidas intermedias del generador del plan
+docs/herramientas/build/

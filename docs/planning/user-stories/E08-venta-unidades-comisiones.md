@@ -68,7 +68,7 @@ Prioridad: Must · Depende de: HU-8.02, HU-6.02
 
 **Como** auxiliar contable, **quiero** registrar una venta con financiamiento propio, **para** facturarla y crear el crédito del comprador.
 
-Prioridad: Must · Depende de: HU-8.04, HU-9.02
+Prioridad: Must · Depende de: HU-8.04, HU-9.01
 
 **Criterios de aceptación**
 1. Además de los datos de la venta de contado, registro el enganche y el plan de crédito propuesto.

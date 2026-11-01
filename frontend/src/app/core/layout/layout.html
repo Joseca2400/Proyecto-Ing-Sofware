@@ -14,7 +14,9 @@
       @if (entrada.ruta) {
         <a [routerLink]="entrada.ruta" routerLinkActive="activo">{{ entrada.etiqueta }}</a>
       } @else {
-        <span class="deshabilitado" aria-disabled="true" title="Próximamente">{{ entrada.etiqueta }}</span>
+        <span class="deshabilitado" aria-disabled="true" title="Próximamente">{{
+          entrada.etiqueta
+        }}</span>
       }
     }
   </nav>

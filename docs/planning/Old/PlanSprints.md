@@ -1,12 +1,12 @@
 # Plan de sprints (corte transversal)
 
-> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../Sprint1.md). Se conserva como historial.
+> **Histórico.** Sustituido por el plan v5 ([../PlanMVP.md](../PlanMVP.md)) y el nuevo [Sprint 1](../sprints/sprint-01.md). Se conserva como historial.
 
-Planeación de desarrollo del sistema administrativo y financiero para la empresa de alquiler, venta y taller de vehículos. Organiza las 130 historias de [user-stories/](user-stories/README.md) en sprints que cierran un flujo de negocio demostrable.
+Planeación de desarrollo del sistema administrativo y financiero para la empresa de alquiler, venta y taller de vehículos. Organiza las 130 historias de [user-stories/](../user-stories/README.md) en sprints que cierran un flujo de negocio demostrable.
 
 Versión 3 · 30 de octubre de 2026 · Borrador para validar con el equipo y el cliente. **Se parte de cero: no existe código.**
 
-Fuentes: [UserStoryMapping.md](UserStoryMapping.md) (releases), las dependencias de `user-stories/` y [Sprint1.md](Sprint1-v3.md) (Sprint 1 detallado). Los puntos de historia y el valor de negocio se toman de la propuesta de un compañero (`Planning.md`) como estimación inicial, que se recalibra con el ritmo real.
+Fuentes: [UserStoryMapping.md](../UserStoryMapping.md) (releases), las dependencias de `user-stories/` y [Sprint1.md](Sprint1-v3.md) (Sprint 1 detallado). Los puntos de historia y el valor de negocio se toman de la propuesta de un compañero (`Planning.md`) como estimación inicial, que se recalibra con el ritmo real.
 
 ## Contenido
 

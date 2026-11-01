@@ -1,0 +1,40 @@
+# Dueños de cada módulo: GitHub pide su revisión en los pull requests que los tocan.
+# La última regla que coincide gana.
+#
+# PENDIENTE: reemplazar cada @usuario-equipo-x por los usuarios de GitHub de ese equipo
+# (o por equipos de una organización, @organizacion/equipo-a) y quitar el "#" de cada regla.
+# Mientras las reglas estén comentadas, CODEOWNERS no tiene efecto.
+
+# Equipo A · Plataforma y contabilidad
+# /backend/app/comun/                        @usuario-equipo-a
+# /backend/app/modulos/seguridad/            @usuario-equipo-a
+# /backend/app/modulos/contabilidad/         @usuario-equipo-a
+# /backend/app/modulos/configuracion/        @usuario-equipo-a @usuario-equipo-b @usuario-equipo-c
+# /backend/migrations/                       @usuario-equipo-a
+# /frontend/src/app/features/seguridad/      @usuario-equipo-a
+# /frontend/src/app/features/contabilidad/   @usuario-equipo-a
+
+# Equipo B · Ciclo de la unidad
+# /backend/app/modulos/unidades/             @usuario-equipo-b
+# /backend/app/modulos/compras/              @usuario-equipo-b
+# /backend/app/modulos/taller/               @usuario-equipo-b
+# /backend/app/modulos/ventas/               @usuario-equipo-b
+# /backend/app/modulos/reportes/             @usuario-equipo-b
+# /frontend/src/app/features/unidades/       @usuario-equipo-b
+# /frontend/src/app/features/compras/        @usuario-equipo-b
+# /frontend/src/app/features/taller/         @usuario-equipo-b
+# /frontend/src/app/features/ventas/         @usuario-equipo-b
+# /frontend/src/app/features/reportes/       @usuario-equipo-b
+
+# Equipo C · Ingreso
+# /frontend/src/app/core/                    @usuario-equipo-c
+# /frontend/src/app/shared/                  @usuario-equipo-c
+# /backend/app/modulos/alquileres/           @usuario-equipo-c
+# /backend/app/modulos/facturacion/          @usuario-equipo-c
+# /backend/app/modulos/financiamiento/       @usuario-equipo-c
+# /frontend/src/app/features/alquileres/     @usuario-equipo-c
+# /frontend/src/app/features/facturacion/    @usuario-equipo-c
+# /frontend/src/app/features/financiamiento/ @usuario-equipo-c
+
+# Planeación: el plan lo revisa un representante de cada equipo
+# /docs/planning/sprints.json                @usuario-equipo-a @usuario-equipo-b @usuario-equipo-c

@@ -1,0 +1,1419 @@
+{
+ "_leeme": "Fuente única del reparto de historias por sprint y equipo. Título, MoSCoW y dependencias se leen de user-stories/. Después de editar, ejecutar: python3 docs/herramientas/generar_plan.py",
+ "equipos": {
+  "A": "Plataforma y contabilidad",
+  "B": "Ciclo de la unidad",
+  "C": "Ingreso"
+ },
+ "sprints": [
+  {
+   "n": 0,
+   "titulo": "Base técnica de la arquitectura",
+   "fechas": "26/10 – 30/10/2026",
+   "release": "Base",
+   "estado": "Terminado",
+   "intro": "Antes de construir historias de negocio dejamos lista la base técnica sobre la que trabajan todos los equipos.",
+   "historias": [
+    {
+     "id": "HT-01",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "base técnica"
+    }
+   ],
+   "demo": "La pantalla de Inicio en Angular consulta la API, que confirma la conexión con PostgreSQL 16 y la migración aplicada. Todo se levanta con un solo comando y la integración continua corre las pruebas en cada cambio."
+  },
+  {
+   "n": 1,
+   "titulo": "Base contable, compra en USD y preparación del ingreso",
+   "fechas": "02/11 – 13/11/2026",
+   "release": "MVP",
+   "intro": "El primer sprint pone a funcionar la sesión, los permisos y el motor contable; la unidad entra al sistema con su compra en dólares y sus gastos de importación; y la línea de ingreso queda lista para contratar.",
+   "historias": [
+    {
+     "id": "HT-01",
+     "sp": 1,
+     "equipo": "A",
+     "etiqueta": "ambiente de pruebas"
+    },
+    {
+     "id": "HU-1.09",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.11",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.10",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-2.01",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-2.02",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.02",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.04",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.05",
+     "sp": 3,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.06",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-1.07",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-4.01",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-4.02",
+     "sp": 4,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-4.04",
+     "sp": 3,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-4.07",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-4.09",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-1.01",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.01",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.05",
+     "sp": 3,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Inicio de sesión con roles; compra en USD de una unidad con su partida y sus gastos de importación, todo auditado; una factura local de proveedor con su cuenta por pagar; el contador no puede aprobar su propia partida manual; se registran el perfil fiscal, un cliente y una tarifa.",
+   "nota": "El equipo C construye además la base del front (login, menú por rol, tablas y formularios), la prueba automatizada del recorrido y el adaptador de facturación FEL con su simulador."
+  },
+  {
+   "n": 2,
+   "titulo": "La unidad hasta la flota y el contrato de alquiler",
+   "fechas": "16/11 – 27/11/2026",
+   "release": "MVP",
+   "intro": "La unidad completa su recorrido hasta la flota con el costo conciliado contra la contabilidad, y empieza a generar ingreso con su primer contrato de alquiler.",
+   "historias": [
+    {
+     "id": "HU-2.03",
+     "sp": 8,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.16",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-2.05",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-1.08",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.09",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-5.01",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-5.02",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-5.03",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-5.07",
+     "sp": 3,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-4.08",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-3.01",
+     "sp": 3,
+     "equipo": "B",
+     "etiqueta": "delgada"
+    },
+    {
+     "id": "HU-3.02",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-7.04",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-3.14",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-3.06",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.07",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.08",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.02",
+     "sp": 8,
+     "equipo": "C",
+     "etiqueta": "parte 1 · simulador"
+    }
+   ],
+   "demo": "Recorrido completo de la unidad: compra, importación, taller, hoja de costo conciliada con el mayor y alta en flota con sus parámetros de depreciación y la alerta de fin de vida útil. La unidad se alquila con depósito, el contrato se cierra al devolverla y se emite una factura contra el simulador FEL."
+  },
+  {
+   "n": 3,
+   "titulo": "Facturar, cobrar, pagar, cerrar el mes y ver la rentabilidad",
+   "fechas": "30/11 – 11/12/2026",
+   "release": "MVP",
+   "hito": "MVP",
+   "intro": "Con este sprint la línea de alquiler opera de punta a punta: se factura con FEL, se cobra, se paga a los proveedores, se cierra el mes y la gerencia ve cuánto deja cada unidad.",
+   "historias": [
+    {
+     "id": "HU-2.07",
+     "sp": 8,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.08",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.12",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-1.09",
+     "sp": 3,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.13",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-4.14",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-3.13",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-7.02",
+     "sp": 5,
+     "equipo": "B",
+     "etiqueta": "hasta la flota"
+    },
+    {
+     "id": "HU-6.12",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-6.02",
+     "sp": 5,
+     "equipo": "C",
+     "etiqueta": "parte 2 · certificador"
+    },
+    {
+     "id": "HU-6.05",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.07",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.11",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.09",
+     "sp": 5,
+     "equipo": "C"
+    }
+   ],
+   "demo": "El contrato cerrado, con un cargo por combustible, se factura con el certificador en ambiente de pruebas y se anula una factura; se cobra en USD con diferencial cambiario; se paga la compra al proveedor; el contador deprecia, revalúa y cierra noviembre; la gerencia ve la rentabilidad de la unidad."
+  },
+  {
+   "n": 4,
+   "titulo": "Puesta en marcha",
+   "fechas": "04/01 – 15/01/2027",
+   "release": "Arranque",
+   "intro": "Antes del arranque del 15/01/2027 se cargan los datos con los que la empresa ya opera, se emiten los libros legales y se entregan las funciones que completan el primer mes real.",
+   "historias": [
+    {
+     "id": "HU-2.15",
+     "sp": 8,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.10",
+     "sp": 8,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.11",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-10.02",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-1.12",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.01",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.03",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.09",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.11",
+     "sp": 2,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.12",
+     "sp": 2,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-6.03",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.10",
+     "sp": 8,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-10.05",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-10.08",
+     "sp": 3,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Se cargan los saldos iniciales, la flota existente con su valor en libros, clientes, proveedores y contratos vigentes; la conciliación del arranque da cero diferencias; se emiten los libros legales, se concilia el banco, el contador sigue la lista de verificación del cierre y se capacita a cada rol."
+  },
+  {
+   "n": 5,
+   "titulo": "Completar el recorrido e importación detallada",
+   "fechas": "18/01 – 29/01/2027",
+   "release": "Release 1.1",
+   "historias": [
+    {
+     "id": "HU-1.02",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-1.04",
+     "sp": 1,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-1.10",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-1.11",
+     "sp": 1,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-2.01",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-2.02",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-2.16",
+     "sp": 2,
+     "equipo": "A",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-7.01",
+     "sp": 8,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-7.09",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-1.05",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-1.06",
+     "sp": 3,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.01",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.02",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.04",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.07",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.08",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-5.01",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-5.02",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-5.03",
+     "sp": 1,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-3.01",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-5.07",
+     "sp": 2,
+     "equipo": "B",
+     "etiqueta": "resto"
+    },
+    {
+     "id": "HU-4.03",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-4.05",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-6.08",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.09",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.12",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.04",
+     "sp": 5,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Un contenedor con dos unidades se registra en un expediente y sus gastos se prorratean; las historias del recorrido de la unidad cumplen todos sus criterios; los estados financieros salen por línea de negocio y se exportan a PDF y Excel; se aplica un anticipo de cliente y se consulta la ocupación de la flota con sus seguros y marchamos."
+  },
+  {
+   "n": 6,
+   "titulo": "Retenciones, taller completo y cierres avanzados",
+   "fechas": "01/02 – 12/02/2027",
+   "release": "Release 1.1",
+   "intro": "Con este sprint la operación queda completa: retenciones a proveedores, taller con repuestos y subcontratos, reapertura de períodos, cierre anual y baja de unidades de la flota.",
+   "historias": [
+    {
+     "id": "HU-2.13",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.14",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-7.07",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-4.11",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-4.16",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-4.06",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.04",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.05",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.06",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-10.07",
+     "sp": 2,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-3.15",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-7.03",
+     "sp": 5,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Se retiene IVA e ISR a un proveedor local; la DUCA queda ligada a sus unidades; una orden de taller consume repuestos y un subcontrato; se reabre un período con aprobación y se ejecuta un cierre anual de prueba; una unidad se da de baja y pasa a venta; la gerencia ve la ocupación y rentabilidad de la flota."
+  },
+  {
+   "n": 7,
+   "titulo": "Venta de contado, comisiones y crédito",
+   "fechas": "15/02 – 26/02/2027",
+   "release": "Release 2",
+   "intro": "La empresa empieza a vender las unidades que salen de la flota: de contado, con su comisión y su margen, o financiadas con un crédito propio.",
+   "historias": [
+    {
+     "id": "HU-2.04",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-2.06",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-8.07",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-8.10",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-7.06",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-8.01",
+     "sp": 2,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.02",
+     "sp": 2,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.04",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.08",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.09",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.12",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.09",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-9.01",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.02",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.03",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-8.05",
+     "sp": 5,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Una unidad dada de baja se publica con precio de lista y mínimo, se vende de contado con su tratamiento fiscal y su comisión, y se ve su margen; se define un plan de crédito, se aprueba un crédito y la venta financiada genera su tabla de amortización."
+  },
+  {
+   "n": 8,
+   "titulo": "Cuotas, mora y cartera",
+   "fechas": "01/03 – 12/03/2027",
+   "release": "Release 2",
+   "intro": "El financiamiento propio se opera de punta a punta: intereses, cuotas, abonos, mora, provisión y conciliación de la cartera con la contabilidad.",
+   "historias": [
+    {
+     "id": "HU-9.04",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-9.09",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-9.10",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-9.14",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-3.03",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-7.05",
+     "sp": 5,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-9.13",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-9.05",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.06",
+     "sp": 5,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.07",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.08",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.06",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-3.11",
+     "sp": 3,
+     "equipo": "C"
+    }
+   ],
+   "demo": "Se devengan y facturan los intereses del mes; se cobra una cuota, un abono extraordinario y una cancelación anticipada; se calcula la mora con su interés moratorio y la provisión por incobrables; la cartera concilia con la contabilidad y el cliente recibe el estado de cuenta de su crédito."
+  },
+  {
+   "n": 9,
+   "titulo": "Controles restantes, tablero y casos de borde",
+   "fechas": "15/03 – 26/03/2027",
+   "release": "Release 3",
+   "intro": "El último sprint cierra los controles restantes, el tablero gerencial y los casos de borde de la venta y el crédito.",
+   "historias": [
+    {
+     "id": "HU-4.12",
+     "sp": 3,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-7.10",
+     "sp": 5,
+     "equipo": "A"
+    },
+    {
+     "id": "HU-4.15",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.10",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-7.08",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.03",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.06",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-8.11",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-5.08",
+     "sp": 3,
+     "equipo": "B"
+    },
+    {
+     "id": "HU-6.04",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-6.10",
+     "sp": 3,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.11",
+     "sp": 2,
+     "equipo": "C"
+    },
+    {
+     "id": "HU-9.12",
+     "sp": 5,
+     "equipo": "C"
+    }
+   ],
+   "demo": "La gerencia consulta el tablero gerencial; una unidad se reserva con anticipo, se controla su traspaso y su garantía; se recupera una unidad por impago; se emiten notas de débito, se identifican depósitos no aplicados y se hace el conteo físico de repuestos."
+  }
+ ],
+ "catalogo": {
+  "HT-01": {
+   "titulo": "Infraestructura y ambientes",
+   "valor": null,
+   "sp": 3
+  },
+  "HU-1.01": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-1.02": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-1.03": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-1.04": {
+   "valor": 10,
+   "sp": 3
+  },
+  "HU-1.05": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-1.06": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-1.07": {
+   "valor": 10,
+   "sp": 3
+  },
+  "HU-1.08": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-1.09": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-1.10": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-1.11": {
+   "valor": 10,
+   "sp": 3
+  },
+  "HU-1.12": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-2.01": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-2.02": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-2.03": {
+   "valor": 10,
+   "sp": 8
+  },
+  "HU-2.04": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-2.05": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-2.06": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-2.07": {
+   "valor": 9,
+   "sp": 8
+  },
+  "HU-2.08": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-2.09": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-2.10": {
+   "valor": 9,
+   "sp": 8
+  },
+  "HU-2.11": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-2.12": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-2.13": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-2.14": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-2.15": {
+   "valor": 9,
+   "sp": 8
+  },
+  "HU-2.16": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-3.01": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-3.02": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.03": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-3.04": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.05": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-3.06": {
+   "valor": 10,
+   "sp": 5
+  },
+  "HU-3.07": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.08": {
+   "valor": 10,
+   "sp": 3
+  },
+  "HU-3.09": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.10": {
+   "valor": 9,
+   "sp": 8
+  },
+  "HU-3.11": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-3.12": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.13": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-3.14": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-3.15": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-4.01": {
+   "valor": 9,
+   "sp": 2
+  },
+  "HU-4.02": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-4.03": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-4.04": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-4.05": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-4.06": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-4.07": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-4.08": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-4.09": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-4.10": {
+   "valor": 3,
+   "sp": 3
+  },
+  "HU-4.11": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-4.12": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-4.13": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-4.14": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-4.15": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-4.16": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-5.01": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-5.02": {
+   "valor": 9,
+   "sp": 2
+  },
+  "HU-5.03": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-5.04": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-5.05": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-5.06": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-5.07": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-5.08": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-5.09": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-5.10": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-6.01": {
+   "valor": 9,
+   "sp": 3
+  },
+  "HU-6.02": {
+   "valor": 9,
+   "sp": 13
+  },
+  "HU-6.03": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-6.04": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-6.05": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-6.06": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-6.07": {
+   "valor": 9,
+   "sp": 5
+  },
+  "HU-6.08": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-6.09": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-6.10": {
+   "valor": 5,
+   "sp": 3
+  },
+  "HU-6.11": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-6.12": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-7.01": {
+   "valor": 7,
+   "sp": 8
+  },
+  "HU-7.02": {
+   "valor": 8,
+   "sp": 5
+  },
+  "HU-7.03": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-7.04": {
+   "valor": 8,
+   "sp": 3
+  },
+  "HU-7.05": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-7.06": {
+   "valor": 7,
+   "sp": 3
+  },
+  "HU-7.07": {
+   "valor": 7,
+   "sp": 3
+  },
+  "HU-7.08": {
+   "valor": 4,
+   "sp": 3
+  },
+  "HU-7.09": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-7.10": {
+   "valor": 4,
+   "sp": 5
+  },
+  "HU-8.01": {
+   "valor": 6,
+   "sp": 2
+  },
+  "HU-8.02": {
+   "valor": 6,
+   "sp": 2
+  },
+  "HU-8.03": {
+   "valor": 3,
+   "sp": 3
+  },
+  "HU-8.04": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-8.05": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-8.06": {
+   "valor": 3,
+   "sp": 3
+  },
+  "HU-8.07": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-8.08": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-8.09": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-8.10": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-8.11": {
+   "valor": 3,
+   "sp": 3
+  },
+  "HU-8.12": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.01": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.02": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.03": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.04": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.05": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.06": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.07": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.08": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.09": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.10": {
+   "valor": 6,
+   "sp": 5
+  },
+  "HU-9.11": {
+   "valor": 3,
+   "sp": 2
+  },
+  "HU-9.12": {
+   "valor": 3,
+   "sp": 5
+  },
+  "HU-9.13": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.14": {
+   "valor": 6,
+   "sp": 3
+  },
+  "HU-9.15": {
+   "valor": 1,
+   "sp": 5
+  },
+  "HU-10.01": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-10.02": {
+   "valor": 7,
+   "sp": 3
+  },
+  "HU-10.03": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-10.04": {
+   "valor": 7,
+   "sp": 3
+  },
+  "HU-10.05": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-10.06": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-10.07": {
+   "valor": 7,
+   "sp": 2
+  },
+  "HU-10.08": {
+   "valor": 7,
+   "sp": 3
+  },
+  "HU-10.09": {
+   "valor": 7,
+   "sp": 5
+  },
+  "HU-10.10": {
+   "valor": 4,
+   "sp": 3
+  },
+  "HU-10.11": {
+   "valor": 7,
+   "sp": 2
+  },
+  "HU-10.12": {
+   "valor": 7,
+   "sp": 2
+  }
+ }
+}
