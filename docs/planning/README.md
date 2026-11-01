@@ -6,7 +6,8 @@ Documentos de planificación del sistema administrativo y financiero para la emp
 
 | Carpeta | Documento | Qué contiene |
 |---|---|---|
-| — | [PlanMVP.md](PlanMVP.md) | **Plan v5**: 6 desarrolladores en 3 equipos, MVP al cierre del Sprint 3 (11/12/2026), arranque el 15/01/2027 y releases siguientes |
+| — | [PlanMVP.md](PlanMVP.md) | **Plan del MVP**: equipos A, B y C, historias por sprint (0 a 4), MVP el 11/12/2026, arranque el 15/01/2027 y releases siguientes |
+| — | [KilometroCero-Plan.pdf](KilometroCero-Plan.pdf) | Plan de trabajo en PDF para el equipo: resumen, identidad, la aplicación, línea de tiempo y cada sprint con sus historias |
 | — | [Sprint1.md](Sprint1.md) | **Sprint 1 (v4)**: 02/11 – 13/11/2026, historias, tareas por equipo, K1, demo y definición de terminado |
 | `contexto/` | [descripcion-empresa.md](contexto/descripcion-empresa.md) | Perfil de la empresa, contexto fiscal y descripción de la aplicación |
 | `contexto/` | [epicas.md](contexto/epicas.md) | Las 10 épicas priorizadas (versión 3) |

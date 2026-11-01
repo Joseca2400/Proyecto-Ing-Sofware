@@ -76,7 +76,7 @@ Para agregar un módulo: crear la carpeta, registrar el router en `main.py`, imp
 
 ## Planeación
 
-`docs/planning/` es la fuente de requisitos: épicas en `contexto/epicas.md`, historias (`HU-x.yy`) con criterios de aceptación en `user-stories/E01…E10`, plan vigente en `PlanMVP.md` (v5: 3 equipos dueños de módulos, MVP al cierre del Sprint 3) y sprint actual en `Sprint1.md`. `docs/planning/Old/` es historial. Al implementar una historia, citar su identificador, respetar lo que el sprint marca como incluido o diferido y no tocar módulos de otro equipo sin acordarlo (dueños en `PlanMVP.md`, sección 3).
+`docs/planning/` es la fuente de requisitos: épicas en `contexto/epicas.md`, historias (`HU-x.yy`) con criterios de aceptación en `user-stories/E01…E10`, plan vigente en `PlanMVP.md` (3 equipos dueños de módulos, MVP al cierre del Sprint 3) y sprint actual en `Sprint1.md`. `docs/planning/Old/` es historial. Al implementar una historia, citar su identificador, respetar lo que el sprint marca como incluido o diferido y no tocar módulos de otro equipo sin acordarlo (dueños en `PlanMVP.md`, sección 2).
 
 ## `old/`
 
