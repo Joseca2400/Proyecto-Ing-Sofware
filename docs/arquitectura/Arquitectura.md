@@ -101,8 +101,10 @@ Cada módulo corresponde a una o más épicas y tiene las mismas cuatro capas.
 | `taller` | E5 | Órdenes de trabajo, repuestos y mano de obra |
 | `facturacion` | E6 | Clientes, FEL, cuentas por cobrar |
 | `alquileres` | E3 | Contratos y cobros de alquiler |
-| `ventas` | E8, E9 | Venta de unidades, comisiones, financiamiento y cartera (Release 2) |
-| `reportes` | E7 | Rentabilidad por unidad y por línea, tableros de gerencia (solo lectura) |
+| `ventas` | E8 | Venta de unidades, precios, comisiones y margen (Release 2) |
+| `financiamiento` | E9 | Créditos propios, amortización, intereses, cuotas, mora y cartera (Release 2) |
+| `arranque` | E10 | Plantillas y carga inicial de saldos, flota, terceros y contratos; conciliación del arranque |
+| `reportes` | E7 | Rentabilidad por unidad y por línea, tableros de gerencia (solo lectura); compartido entre equipos |
 | `comun` | — | Dinero y redondeo, auditoría, errores, conexión a la base, adaptadores externos |
 
 ```mermaid

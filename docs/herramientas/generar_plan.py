@@ -60,7 +60,10 @@ def actualizar_plan_md(sprints, historias):
     avisos = 0
     for sp in sprints:
         m = re.search(rf"^\| \*{{0,2}}{sp['n']}\*{{0,2}}[^|]*\|[^|]*\|[^|]*\| (\d+) \|", antes, re.M)
-        if m and int(m[1]) != total(sp):
+        if not m:
+            print(f"Aviso: no se encontró la fila del Sprint {sp['n']} en la línea de tiempo de PlanMVP.md")
+            avisos += 1
+        elif int(m[1]) != total(sp):
             print(f"Aviso: la línea de tiempo dice {m[1]} SP para el Sprint {sp['n']}, pero sprints.json suma {total(sp)}")
             avisos += 1
     return avisos

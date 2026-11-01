@@ -8,11 +8,13 @@ Cada equipo es dueño de sus módulos de punta a punta: pantalla en `frontend/sr
 
 | Equipo | Módulos |
 |---|---|
-| A · Plataforma y contabilidad | `seguridad`, `comun` (auditoría), `contabilidad`, `configuracion` (catálogo, dimensiones, bancos) |
-| B · Ciclo de la unidad | `unidades`, `compras`, `taller`, `ventas`, `configuracion` (tipo de cambio), `reportes` (rentabilidad) |
+| A · Plataforma y contabilidad | `seguridad`, `comun` (auditoría, respaldos), `contabilidad`, `configuracion` (catálogo, dimensiones, bancos) |
+| B · Ciclo de la unidad | `unidades`, `compras`, `taller`, `ventas`, `arranque` (carga inicial), `configuracion` (tipo de cambio) |
 | C · Ingreso | `core/` y `shared/` del front, `alquileres`, `facturacion`, `financiamiento`, `configuracion` (perfil fiscal) |
 
-Para cambiar un módulo de otro equipo, se acuerda con ese equipo antes de abrir el pull request. `.github/CODEOWNERS` le pide la revisión automáticamente.
+`reportes` es compartido: cada equipo construye los reportes de su dominio. Algunas historias se asignan a un equipo distinto del dueño del módulo (la lista está en la sección 2 de PlanMVP.md); se construyen dentro de ese módulo, con revisión de su equipo.
+
+Para cambiar un módulo de otro equipo, se acuerda con ese equipo antes de abrir el pull request. Cuando `.github/CODEOWNERS` tenga los usuarios de cada equipo, GitHub pedirá esa revisión automáticamente; mientras tanto, se pide a mano.
 
 ## Flujo de trabajo
 

@@ -41,7 +41,7 @@ Equipo C:  base del front (login, menú por rol, componentes) → perfil fiscal 
 
 | Decisión | Opciones | Bloquea |
 |---|---|---|
-| Auditoría | Eventos de SQLAlchemy (como el prototipo descartado) o triggers de PostgreSQL (como `schema.sql`) | HU-1.11 (A) |
+| Auditoría | Eventos de SQLAlchemy (como el prototipo descartado) o triggers de PostgreSQL (como el `schema.sql` del prototipo Express, en la etiqueta `legacy-prototipos`) | HU-1.11 (A) |
 | Librería de componentes de Angular | Angular Material u otra con tabla, formulario y árbol | Base del front (C) |
 | Ambiente de pruebas desplegado | Proveedor y forma de despliegue desde `main` | HT-01 (A) |
 | Prueba de punta a punta | Playwright u otra, integrada en CI | Prueba del recorrido (C) |
@@ -67,7 +67,7 @@ Versión delgada de cada historia; los criterios completos están en `user-stori
 | Historia | SP | Equipo | Incluye en el Sprint 1 | Queda pendiente |
 |---|---|---|---|---|
 | HT-01 Infraestructura (resto) | 1 | A | Ambiente de pruebas desplegado desde `main`; tipos de TypeScript generados desde el OpenAPI | Operación productiva y observabilidad |
-| HU-1.09 Usuarios y roles | 2 | A | Login real con hash, sesión, cierre de sesión, cuatro roles, permisos en el servidor y cuentas iniciales | Administración visual, bloqueo por intentos e inactividad (Sprint 2) |
+| HU-1.09 Usuarios y roles | 2 | A | Login real con hash, sesión, cierre de sesión, cuatro roles, permisos en el servidor y cuentas iniciales | Administración visual, bloqueo por intentos e inactividad (Sprint 3) |
 | HU-1.11 Bitácora | 2 | A | Automática para las entidades del alcance, sin edición ni borrado por la API; valores anteriores y nuevos; filtros por usuario, VIN y entidad | Exportación |
 | HU-1.10 Separación de funciones | 3 | A | Quien registra una partida manual no la contabiliza; rechazo con motivo | Límites monetarios de aprobación |
 | HU-2.01 Partida manual | 3 | A | Captura desde pantalla, en quetzales y USD, con dimensiones y validación de cuadre | Adjuntos |

@@ -8,6 +8,8 @@ from plan_datos import cargar, dependencias_mismo_sprint, total
 e = html.escape
 CSS = (Path(__file__).parent / "estilos.css").read_text(encoding="utf-8")
 SPRINTS, H, EQUIPOS = cargar()
+EN_PLAN = {h[0] for sp in SPRINTS for h in sp["historias"]}
+DESCARTADAS = [k for k in H if k.startswith("HU-") and k not in EN_PLAN]
 
 COL = {"Release 1.1":"#2F7F8F","Release 2":"#7FA9B3","Release 3":"#B7CDD2"}
 FUERA = [sp for sp in SPRINTS if sp["release"].startswith("Release")]
@@ -39,7 +41,7 @@ p1 = f'''<div class="kicker">TrimBreakDown · Plan de trabajo</div><h1>Lo que qu
 <div class="legend" style="margin-top:6px">''' + "".join(f'<span><i style="background:{COL[r]}"></i>{r}</span>' for r in COL) + '''</div>
 <div class="cols" style="margin-top:6px">
 <div class="box" style="margin:0"><h3>Por qué queda fuera</h3><b>Release 1.1:</b> mejora la exactitud o el control, pero tiene una alternativa manual temporal (gastos por VIN en lugar de prorrateo, retenciones fuera del sistema).<br><b>Release 2:</b> la venta y el financiamiento empiezan cuando las unidades salen de la flota.<br><b>Release 3:</b> funciones deseables (Should).</div>
-<div class="box" style="margin:0"><h3>Ajustes al plan</h3><b>HU-2.11</b> Lista de verificación del cierre: del Release 2 al <b>Sprint 4</b>.<br><b>HU-3.14</b> Alerta de fin de vida útil en flota: del Release 2 al <b>Sprint 2</b>.<br>En el Sprint 4 también se entregan HU-1.12, HU-6.03, HU-3.10 y HU-2.10 (26 SP), antes del arranque.<br><b>Descartadas:</b> 6 historias (24 SP).</div></div>'''
+<div class="box" style="margin:0"><h3>Ajustes al plan</h3><b>HU-2.11</b> Lista de verificación del cierre: del Release 2 al <b>Sprint 4</b>.<br><b>HU-3.14</b> Alerta de fin de vida útil en flota: del Release 2 al <b>Sprint 2</b>.<br>En el Sprint 4 también se entregan HU-1.12, HU-6.03, HU-3.10 y HU-2.10 (26 SP), antes del arranque.<br><b>Descartadas:</b> {len(DESCARTADAS)} historias ({sum(H[k]['sp'] for k in DESCARTADAS)} SP).</div></div>'''
 pages.append(p1)
 
 def bloque(sp):

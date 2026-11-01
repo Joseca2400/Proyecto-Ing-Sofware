@@ -19,12 +19,12 @@
 # /backend/app/modulos/compras/              @usuario-equipo-b
 # /backend/app/modulos/taller/               @usuario-equipo-b
 # /backend/app/modulos/ventas/               @usuario-equipo-b
-# /backend/app/modulos/reportes/             @usuario-equipo-b
+# /backend/app/modulos/arranque/             @usuario-equipo-b
 # /frontend/src/app/features/unidades/       @usuario-equipo-b
 # /frontend/src/app/features/compras/        @usuario-equipo-b
 # /frontend/src/app/features/taller/         @usuario-equipo-b
 # /frontend/src/app/features/ventas/         @usuario-equipo-b
-# /frontend/src/app/features/reportes/       @usuario-equipo-b
+# /frontend/src/app/features/arranque/       @usuario-equipo-b
 
 # Equipo C · Ingreso
 # /frontend/src/app/core/                    @usuario-equipo-c
@@ -35,6 +35,10 @@
 # /frontend/src/app/features/alquileres/     @usuario-equipo-c
 # /frontend/src/app/features/facturacion/    @usuario-equipo-c
 # /frontend/src/app/features/financiamiento/ @usuario-equipo-c
+
+# Reportes: compartido, cada equipo los de su dominio
+# /backend/app/modulos/reportes/             @usuario-equipo-a @usuario-equipo-b @usuario-equipo-c
+# /frontend/src/app/features/reportes/       @usuario-equipo-a @usuario-equipo-b @usuario-equipo-c
 
 # Planeación: el plan lo revisa un representante de cada equipo
 # /docs/planning/sprints.json                @usuario-equipo-a @usuario-equipo-b @usuario-equipo-c

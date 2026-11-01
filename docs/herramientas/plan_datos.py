@@ -32,7 +32,7 @@ def cargar():
     """Devuelve (sprints, historias, equipos).
 
     Cada sprint trae sus historias como tuplas (id, sp, equipo, etiqueta).
-    historias[id] = {titulo, epica, moscow, valor, depende}.
+    historias[id] = {titulo, epica, moscow, valor, depende, sp (estimación completa del catálogo)}.
     """
     datos = json.loads((PLANNING / "sprints.json").read_text(encoding="utf-8"))
     leidas = _leer_historias()
@@ -45,6 +45,7 @@ def cargar():
             "moscow": h.get("moscow", "Must"),
             "valor": str(cat["valor"]) if cat.get("valor") is not None else "—",
             "depende": h.get("depende", []),
+            "sp": cat.get("sp", 0),
         }
     faltan = sorted(set(leidas) - set(historias))
     if faltan:

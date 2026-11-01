@@ -186,7 +186,7 @@ def sprint_page(sp, kicker, intro=None, extra=""):
         ej = next(d for d in deps.values() if d)[0]
         partes.append(f'En <b>MoSCoW</b>, los números en ámbar son historias del mismo sprint de las que depende (por ejemplo, <span class="dep">· {ej.replace("HU-","")}</span> = {ej}).')
     if any(h[3] == "delgada" for h in sp["historias"]):
-        partes.append('<span class="chip">delgada</span> entrega los criterios del recorrido de la unidad; el resto se completa en el Sprint 5.')
+        partes.append('<span class="chip">delgada</span> entrega los criterios del recorrido de la unidad; el resto se completa en un sprint posterior.')
     if any(h[3] == "resto" for h in sp["historias"]):
         partes.append('<span class="chip">resto</span> completa los criterios que la versión delgada dejó pendientes en el MVP.')
     leyenda = f'<p class="legend2">{" ".join(partes)}</p>' if partes else ""
@@ -233,7 +233,7 @@ page(f'''<div class="kicker">{5 + len(SPRINTS):02d} · Resumen</div><h1>Releases
 <tr class="tot"><td>Total</td><td>S0–S{SPRINTS[-1]["n"]}</td><td>26/10/2026 – 26/03/2027</td><td></td><td class="num">{sum(total(sp) for sp in SPRINTS)}</td></tr></table>
 <div class="cols" style="margin-top:18px">
 <div class="box" style="margin:0"><h3>Movidas al plan principal</h3><b>HU-2.11</b> Lista de verificación del cierre pasa del Release 2 al <b>Sprint 4</b>, para que el primer cierre real sea completo y reproducible.<br><br><b>HU-3.14</b> Alerta de fin de vida útil en flota pasa del Release 2 al <b>Sprint 2</b>, junto al alta en flota.</div>
-<div class="box" style="margin:0"><h3>Historias descartadas (6 · 24 SP)</h3>Operar en paralelo (HU-10.10), cargar la cartera financiada (HU-10.06), importar el catálogo existente (HU-1.03), cargar unidades en proceso (HU-10.04), compras a particulares (HU-4.10) y reestructurar créditos (HU-9.15). No aplican a una empresa sin sistema previo ni créditos vigentes; vuelven al backlog si eso cambia.</div></div>
+<div class="box" style="margin:0"><h3>Historias descartadas ({len(DESCARTADAS)} · {sum(H[k]["sp"] for k in DESCARTADAS)} SP)</h3>Operar en paralelo (HU-10.10), cargar la cartera financiada (HU-10.06), importar el catálogo existente (HU-1.03), cargar unidades en proceso (HU-10.04), compras a particulares (HU-4.10) y reestructurar créditos (HU-9.15). No aplican a una empresa sin sistema previo ni créditos vigentes; vuelven al backlog si eso cambia.</div></div>
 <p class="note" style="margin-top:14px">El total de SP cuenta las versiones delgadas y sus restos por separado; el desglose de lo que queda fuera del MVP está en TrimBreakDown.pdf.</p>''')
 
 N = len(pages)

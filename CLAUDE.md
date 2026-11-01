@@ -45,7 +45,7 @@ Plan y PDF: después de cambiar `docs/planning/sprints.json` o `user-stories/`, 
 
 Monolito modular: **Angular → (Nginx, proxy `/api`) → FastAPI → PostgreSQL 16**. Diseño completo, diagramas C4 y decisiones (ADR, sección 8) en `docs/arquitectura/Arquitectura.md`; lo construido en el Sprint 0 en `docs/arquitectura/Sprint0-HelloWorld.md`.
 
-El backend y el front se organizan por **los mismos módulos de negocio** (uno o más por épica: `seguridad`, `configuracion`, `contabilidad`, `unidades`, `compras`, `taller`, `facturacion`, `alquileres`, `ventas`, `financiamiento`, `reportes`), para que cada equipo trabaje sus módulos de punta a punta. Hoy solo existe el módulo `sistema` (hello world: `GET /api/v1/sistema/estado`).
+El backend y el front se organizan por **los mismos módulos de negocio** (uno o más por épica: `seguridad`, `configuracion`, `contabilidad`, `unidades`, `compras`, `taller`, `facturacion`, `alquileres`, `ventas`, `financiamiento`, `arranque`, `reportes`), para que cada equipo trabaje sus módulos de punta a punta. Hoy solo existe el módulo `sistema` (hello world: `GET /api/v1/sistema/estado`).
 
 ### Backend (`backend/app/`)
 

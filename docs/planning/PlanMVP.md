@@ -46,9 +46,25 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 
 | Equipo | Nombre | Módulos que posee | Épicas |
 |---|---|---|---|
-| **A** | Plataforma y contabilidad | `seguridad`, `comun` (auditoría), `contabilidad`, `configuracion` (catálogo, dimensiones, bancos) | E1, E2 |
-| **B** | Ciclo de la unidad | `unidades`, `compras`, `taller`, `ventas`, `configuracion` (tipo de cambio), rentabilidad por unidad en `reportes` | E1, E3 (flota), E4, E5, E7, E8 |
+| **A** | Plataforma y contabilidad | `seguridad`, `comun` (auditoría, respaldos), `contabilidad`, `configuracion` (catálogo, dimensiones, bancos) | E1, E2 |
+| **B** | Ciclo de la unidad | `unidades`, `compras`, `taller`, `ventas`, `arranque` (carga inicial), `configuracion` (tipo de cambio) | E1, E3 (flota), E4, E5, E8, E10 |
 | **C** | Ingreso | Base del front (`core/`, `shared/`), `alquileres`, `facturacion` (clientes, FEL, cobros), `financiamiento` (créditos y cartera), `configuracion` (perfil fiscal, emisor de la FEL) | E1, E3 (alquiler), E6, E9 |
+
+`reportes` (E7) es compartido: cada equipo construye los reportes de su dominio y los revisan los tres.
+
+**Historias fuera del módulo propio.** Algunas historias se asignan a otro equipo para equilibrar la carga o porque su núcleo es contable. Se construyen dentro del módulo dueño, con pull request revisado por su equipo:
+
+| Equipo que la construye | Historias | Módulo dueño |
+|---|---|---|
+| A | HU-4.11, HU-4.16, HU-4.12 (retenciones y saldos de proveedores) | `compras` (B) |
+| A | HU-8.07, HU-8.10 (tratamiento fiscal de la venta y liquidación de comisiones) | `ventas` (B) |
+| A | HU-9.04, HU-9.09, HU-9.10, HU-9.14 (intereses, mora, provisión y conciliación de cartera) | `financiamiento` (C) |
+| A | HU-10.02 (saldos contables iniciales) | `arranque` (B) |
+| B | HU-1.12 (respaldos) | `comun` (A) |
+| B | HU-6.12 (antigüedad de saldos de clientes) | `facturacion` (C) |
+| B | HU-9.13 (estado de cuenta del crédito) | `financiamiento` (C) |
+| C | HU-8.05 (venta financiada) | `ventas` (B) |
+| C | HU-10.05, HU-10.08 (carga de clientes, proveedores y contratos) | `arranque` (B) |
 
 **Reglas de convivencia entre equipos:**
 - `contabilidad` es de A. B y C generan sus partidas llamando a su servicio; nunca escriben en sus tablas.
@@ -70,7 +86,7 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 | *Receso* | 14/12/2026 – 01/01/2027 | | | |
 | **4** | 04/01 – 15/01/2027 | Puesta en marcha | 69 | Arranque |
 | 🚀 | **15/01/2027** | **Arranque en operación** | | |
-| 5 | 18/01 – 29/01/2027 | Completar el recorrido de la unidad e importación detallada | 69 | Release 1.1 |
+| 5 | 18/01 – 29/01/2027 | Completar el recorrido e importación detallada | 69 | Release 1.1 |
 | 6 | 01/02 – 12/02/2027 | Retenciones, taller completo y cierres avanzados | 47 | Release 1.1 |
 | 7 | 15/02 – 26/02/2027 | Venta de contado, comisiones y crédito | 58 | Release 2 |
 | 8 | 01/03 – 12/03/2027 | Cuotas, mora y cartera | 51 | Release 2 |
@@ -80,10 +96,10 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 
 | Bloque | Historias | SP |
 |---|---|---|
-| Recorrido de la unidad, de la compra al alta en flota (versión delgada) y resto de la infraestructura | 22 historias y HT-01 | 58 |
+| Recorrido de la unidad, de la compra al alta en flota (versión delgada) y resto de la infraestructura | 21 historias y HT-01 | 53 |
 | Alquiler: tarifario, contrato, depósitos, cargos y clientes | HU-3.05, 3.06, 3.07, 3.08, 3.09, 6.01 | 24 |
 | Base: perfil fiscal, depreciación, reversión y administración de usuarios | HU-1.01, 3.02, 2.05, 1.09 (resto) | 14 |
-| Facturación FEL | HU-6.02, 6.05, 2.03 (resto) | 21 |
+| Facturación FEL y partidas automáticas | HU-6.02, 6.05, 2.03 | 26 |
 | Cobrar y pagar | HU-1.08, 6.07, 2.09, 6.11, 6.12, 4.09, 4.13, 4.14 | 36 |
 | Cerrar el mes y ver la rentabilidad | HU-2.07, 2.08, 2.12, 3.13, 7.02, 7.04 | 31 |
 | Alerta de fin de vida útil en flota | HU-3.14 | 3 |
@@ -93,7 +109,7 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 
 ## 5. Sprints
 
-Las tablas de esta sección se generan desde [sprints.json](sprints.json) con `python3 docs/herramientas/generar_plan.py`; no se editan a mano. En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; las marcadas como *resto* completan esos criterios en el Sprint 5.
+Las tablas de esta sección se generan desde [sprints.json](sprints.json) con `python3 docs/herramientas/generar_plan.py`; no se editan a mano. En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; las marcadas como *resto* completan esos criterios en un sprint posterior (el Sprint 5, salvo HU-1.09, que se completa en el Sprint 3).
 
 <!-- inicio:sprints -->
 ### Sprint 0 · Base técnica de la arquitectura (26/10 – 30/10/2026) · 2 SP · ✅ Terminado
@@ -335,7 +351,8 @@ El reparto respeta el campo "Depende de" de cada historia en `user-stories/`. De
 | HU-6.07 Cobros, HU-4.14 Pago | HU-2.09 Diferencial cambiario | El diferencial se construye en el Sprint 2, antes que cobros y pagos |
 | HU-6.01 Clientes, HU-4.01 Proveedores, HU-1.02 Catálogo | HU-1.01 Perfil fiscal | El perfil fiscal es lo primero del equipo C en el Sprint 1 |
 | HU-6.02 Factura FEL | HU-2.03 Partidas automáticas | La parte 1 de la FEL usa el contrato del motor contable publicado en el Sprint 1 |
-| HU-5.07 Cierre de orden, HU-4.08 Hoja de costo | HU-5.05, HU-5.06, HU-4.05 (Release 1.1) | Versión delgada: el MVP capitaliza solo mano de obra y carga los gastos por VIN; repuestos, subcontratos y prorrateo llegan en el Release 1.1 |
+| HU-5.07 Cierre de orden, HU-4.08 Hoja de costo, HU-4.04 Gastos de importación | HU-5.05, HU-5.06, HU-4.05, HU-4.03 (Release 1.1) | Versión delgada: el MVP capitaliza solo mano de obra y carga los gastos por VIN, sin expediente; repuestos, subcontratos, expediente y prorrateo llegan en el Release 1.1 |
+| HU-5.07 Cierre de orden *(resto, Sprint 5)* | HU-5.05, HU-5.06 (Sprint 6) | El resto del Sprint 5 cubre los destinos de mantenimiento, mejora y garantía; el consumo de repuestos y subcontratos se conecta al cierre de la orden en el Sprint 6, junto con esas historias |
 | HU-3.13 Rentabilidad por contrato | HU-3.10 Facturación recurrente (Sprint 4) | Los ingresos salen de las facturas individuales de HU-6.02; la dependencia con HU-3.10 es de comodidad, no de datos |
 | HU-7.02 Rentabilidad en todo el ciclo | HU-8.12 Resultado de la venta (Release 2) | En el MVP cubre el ciclo hasta la flota; se completa con la venta en el Release 2 |
 

@@ -11,6 +11,7 @@ let W: CGFloat = 816, Hh: CGFloat = 1056
 
 class Del: NSObject, WKNavigationDelegate {
   var web: WKWebView!
+  var fallas = 0
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
     webView.evaluateJavaScript("document.fonts.ready.then(()=>document.querySelectorAll('section').length)") { _, _ in
       DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -23,13 +24,13 @@ class Del: NSObject, WKNavigationDelegate {
     }
   }
   func render(n: Int, i: Int, doc: PDFDocument) {
-    if i == n { doc.write(to: outURL); print("PDF de \(n) páginas: \(outURL.lastPathComponent)"); exit(0) }
+    if i == n { doc.write(to: outURL); print("PDF de \(n) páginas: \(outURL.lastPathComponent)"); exit(fallas == 0 ? 0 : 1) }
     let cfg = WKPDFConfiguration()
     cfg.rect = CGRect(x: 0, y: CGFloat(i) * Hh, width: W, height: Hh)
     web.createPDF(configuration: cfg) { res in
       if case .success(let data) = res, let p = PDFDocument(data: data)?.page(at: 0) {
         doc.insert(p, at: doc.pageCount)
-      } else { print("error pagina", i) }
+      } else { print("Error al generar la página", i + 1); self.fallas += 1 }
       self.render(n: n, i: i + 1, doc: doc)
     }
   }
