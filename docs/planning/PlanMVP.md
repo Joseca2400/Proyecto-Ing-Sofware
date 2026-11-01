@@ -36,7 +36,7 @@
 |---|---|
 | Sprints | De 2 semanas; receso del 14/12/2026 al 01/01/2027 |
 | Ritmo | 60 SP en el Sprint 1 y 70 SP por sprint desde el Sprint 2; se mide al cierre de cada sprint |
-| MVP | 184 SP en los Sprints 1 a 3, frente a 200 SP de capacidad |
+| MVP | 187 SP en los Sprints 1 a 3, frente a 200 SP de capacidad |
 | Contador | Una sesión semanal para validar reglas y casos |
 | Créditos vigentes | No hay; si aparecen, la Épica 9 sube al MVP |
 
@@ -47,8 +47,8 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 | Equipo | Nombre | Módulos que posee | Épicas |
 |---|---|---|---|
 | **A** | Plataforma y contabilidad | `seguridad`, `comun` (auditoría), `contabilidad`, `configuracion` (catálogo, dimensiones, bancos) | E1, E2 |
-| **B** | Ciclo de la unidad | `unidades`, `compras`, `taller`, `configuracion` (tipo de cambio), rentabilidad por unidad en `reportes` | E1, E3 (flota), E4, E5, E7 |
-| **C** | Ingreso | Base del front (`core/`, `shared/`), `alquileres`, `facturacion` (clientes, FEL, cobros), `configuracion` (perfil fiscal, emisor de la FEL) | E1, E3 (alquiler), E6 |
+| **B** | Ciclo de la unidad | `unidades`, `compras`, `taller`, `ventas`, `configuracion` (tipo de cambio), rentabilidad por unidad en `reportes` | E1, E3 (flota), E4, E5, E7, E8 |
+| **C** | Ingreso | Base del front (`core/`, `shared/`), `alquileres`, `facturacion` (clientes, FEL, cobros), `financiamiento` (créditos y cartera), `configuracion` (perfil fiscal, emisor de la FEL) | E1, E3 (alquiler), E6, E9 |
 
 **Reglas de convivencia entre equipos:**
 - `contabilidad` es de A. B y C generan sus partidas llamando a su servicio; nunca escriben en sus tablas.
@@ -64,14 +64,16 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 |---|---|---|---|---|
 | **0** ✅ | 26/10 – 30/10/2026 | Base técnica de la arquitectura | 2 | Base |
 | **1** | 02/11 – 13/11/2026 | Base contable, compra en USD y preparación del ingreso | 51 | MVP |
-| **2** | 16/11 – 27/11/2026 | La unidad hasta la flota y el contrato de alquiler | 64 | MVP |
+| **2** | 16/11 – 27/11/2026 | La unidad hasta la flota y el contrato de alquiler | 67 | MVP |
 | **3** | 30/11 – 11/12/2026 | Facturar, cobrar, pagar, cerrar el mes y ver la rentabilidad | 69 | MVP |
 | 🚀 | **11/12/2026** | **MVP** | | |
 | *Receso* | 14/12/2026 – 01/01/2027 | | | |
-| **4** | 04/01 – 15/01/2027 | Puesta en marcha | 64 | Arranque |
+| **4** | 04/01 – 15/01/2027 | Puesta en marcha | 69 | Arranque |
 | 🚀 | **15/01/2027** | **Arranque en operación** | | |
-| 5–6 | 18/01 – 12/02/2027 | Corte completo, importación detallada, retenciones, taller completo, cierres avanzados y reportes | 116 | Release 1.1 |
-| 7–8 | 15/02 – 12/03/2027 | Venta de contado, comisiones, financiamiento y cartera | 117 | Release 2 |
+| 5 | 18/01 – 29/01/2027 | Completar el recorrido de la unidad e importación detallada | 69 | Release 1.1 |
+| 6 | 01/02 – 12/02/2027 | Retenciones, taller completo y cierres avanzados | 47 | Release 1.1 |
+| 7 | 15/02 – 26/02/2027 | Venta de contado, comisiones y crédito | 58 | Release 2 |
+| 8 | 01/03 – 12/03/2027 | Cuotas, mora y cartera | 51 | Release 2 |
 | 9 | 15/03 – 26/03/2027 | Controles restantes, tablero y casos de borde | 42 | Release 3 |
 
 ## 4. Alcance del MVP
@@ -84,13 +86,14 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 | Facturación FEL | HU-6.02, 6.05, 2.03 (resto) | 21 |
 | Cobrar y pagar | HU-1.08, 6.07, 2.09, 6.11, 6.12, 4.09, 4.13, 4.14 | 36 |
 | Cerrar el mes y ver la rentabilidad | HU-2.07, 2.08, 2.12, 3.13, 7.02, 7.04 | 31 |
-| **Total** | | **184** |
+| Alerta de fin de vida útil en flota | HU-3.14 | 3 |
+| **Total** | | **187** |
 
 **Historias descartadas (6, 24 SP):** HU-10.10 Operar en paralelo, HU-10.06 Cargar la cartera financiada, HU-1.03 Importar el catálogo existente, HU-10.04 Cargar unidades en proceso, HU-4.10 Compras a particulares y HU-9.15 Reestructurar un crédito. No aplican a una empresa sin sistema previo ni créditos vigentes; cada una tiene su condición para volver en [Old/AjustePlaneacion.md](Old/AjustePlaneacion.md#51-historias-descartadas-6-historias-24-sp).
 
 ## 5. Sprints
 
-En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; el resto de sus criterios se completa en el Release 1.1.
+En la columna **MoSCoW** se indica cuándo una historia depende de otra **del mismo sprint**; las dependencias con sprints anteriores ya están cubiertas. Las historias marcadas como *versión delgada* entregan los criterios del recorrido de la unidad; las marcadas como *resto* completan esos criterios en el Sprint 5.
 
 ### Sprint 0 · Base técnica de la arquitectura (26/10 – 30/10/2026) · 2 SP · ✅ Terminado
 
@@ -130,7 +133,7 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 
 **Demo:** Inicio de sesión con roles; compra en USD de una unidad con su partida y sus gastos de importación, todo auditado; una factura local de proveedor con su cuenta por pagar; el contador no puede aprobar su propia partida manual; se registran el perfil fiscal, un cliente y una tarifa.
 
-### Sprint 2 · La unidad hasta la flota y el contrato de alquiler (16/11 – 27/11/2026) · 64 SP
+### Sprint 2 · La unidad hasta la flota y el contrato de alquiler (16/11 – 27/11/2026) · 67 SP
 
 | Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
 |---|---|---|---|---|---|---|
@@ -147,13 +150,14 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 | **HU-3.01** | Dar de alta una unidad como activo fijo de la flota *(versión delgada)* | E3 | Must · depende de HU-4.08, HU-5.07 | 10 | 3 | B |
 | **HU-3.02** | Definir los parámetros de depreciación de cada unidad | E3 | Must · depende de HU-3.01 | 9 | 5 | B |
 | **HU-7.04** | Consultar las unidades por etapa del ciclo | E7 | Must | 8 | 3 | B |
+| **HU-3.14** | Alertar sobre el fin de la vida útil en flota | E3 | Should · depende de HU-3.08 | 6 | 3 | B |
 | **HU-3.06** | Registrar un contrato de alquiler | E3 | Must | 10 | 5 | C |
 | **HU-3.07** | Recibir, aplicar y devolver depósitos en garantía | E3 | Must · depende de HU-3.06 | 9 | 5 | C |
 | **HU-3.08** | Cerrar un contrato al devolver la unidad | E3 | Must · depende de HU-3.06 | 10 | 3 | C |
 | **HU-6.02** | Emitir una factura FEL *(parte 1 · simulador)* | E6 | Must · depende de HU-2.03 | 9 | 8 | C |
-| | **17 historias** | | | | **64** | |
+| | **18 historias** | | | | **67** | |
 
-**Demo:** Recorrido completo de la unidad: compra, importación, taller, hoja de costo conciliada con el mayor y alta en flota con sus parámetros de depreciación. La unidad se alquila con depósito, el contrato se cierra al devolverla y se emite una factura contra el simulador FEL.
+**Demo:** Recorrido completo de la unidad: compra, importación, taller, hoja de costo conciliada con el mayor y alta en flota con sus parámetros de depreciación y la alerta de fin de vida útil. La unidad se alquila con depósito, el contrato se cierra al devolverla y se emite una factura contra el simulador FEL.
 
 ### Sprint 3 · Facturar, cobrar, pagar, cerrar el mes y ver la rentabilidad (30/11 – 11/12/2026) · 69 SP
 
@@ -177,14 +181,15 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 
 **Demo:** El contrato cerrado, con un cargo por combustible, se factura con el certificador en ambiente de pruebas y se anula una factura; se cobra en USD con diferencial cambiario; se paga la compra al proveedor; el contador deprecia, revalúa y cierra noviembre; la gerencia ve la rentabilidad de la unidad.
 
-### Sprint 4 · Puesta en marcha (04/01 – 15/01/2027) · 64 SP
+### Sprint 4 · Puesta en marcha (04/01 – 15/01/2027) · 69 SP
 
 | Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
 |---|---|---|---|---|---|---|
 | **HU-2.15** | Emitir los libros legales | E2 | Must | 9 | 8 | A |
 | **HU-2.10** | Conciliar las cuentas bancarias | E2 | Must | 9 | 8 | A |
-| **HU-1.12** | Respaldar y restaurar la información | E1 | Must | 9 | 5 | A |
+| **HU-2.11** | Seguir una lista de verificación de cierre | E2 | Should · depende de HU-2.10 | 6 | 5 | A |
 | **HU-10.02** | Cargar los saldos contables iniciales | E10 | Must · depende de HU-10.01 | 7 | 3 | A |
+| **HU-1.12** | Respaldar y restaurar la información | E1 | Must | 9 | 5 | B |
 | **HU-10.01** | Descargar plantillas de carga y validar archivos | E10 | Must | 7 | 5 | B |
 | **HU-10.03** | Cargar la flota con su valor en libros | E10 | Must · depende de HU-10.01 | 7 | 5 | B |
 | **HU-10.09** | Conciliar el arranque y aceptar los saldos | E10 | Must · depende de HU-10.02, HU-10.08 | 7 | 5 | B |
@@ -194,9 +199,132 @@ El equipo C construye además la base del front (login, menú por rol, tablas y 
 | **HU-3.10** | Facturar contratos de forma recurrente | E3 | Must | 9 | 8 | C |
 | **HU-10.05** | Cargar clientes, proveedores y sus saldos abiertos | E10 | Must · depende de HU-10.01 | 7 | 5 | C |
 | **HU-10.08** | Cargar los contratos de alquiler activos | E10 | Must · depende de HU-10.01 | 7 | 3 | C |
-| | **13 historias** | | | | **64** | |
+| | **14 historias** | | | | **69** | |
 
-**Demo:** Se cargan los saldos iniciales, la flota existente con su valor en libros, clientes, proveedores y contratos vigentes; la conciliación del arranque da cero diferencias; se emiten los libros legales, se concilia el banco y se capacita a cada rol.
+**Demo:** Se cargan los saldos iniciales, la flota existente con su valor en libros, clientes, proveedores y contratos vigentes; la conciliación del arranque da cero diferencias; se emiten los libros legales, se concilia el banco, el contador sigue la lista de verificación del cierre y se capacita a cada rol.
+
+### Sprint 5 · Completar el recorrido de la unidad e importación detallada (18/01 – 29/01/2027) · 69 SP
+
+| Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
+|---|---|---|---|---|---|---|
+| **HU-1.02** | Mantener el catálogo de cuentas *(resto)* | E1 | Must | 10 | 2 | A |
+| **HU-1.04** | Configurar las dimensiones analíticas *(resto)* | E1 | Must · depende de HU-1.02 | 10 | 1 | A |
+| **HU-1.10** | Separar funciones de registro y aprobación *(resto)* | E1 | Must | 10 | 2 | A |
+| **HU-1.11** | Consultar la bitácora de cambios *(resto)* | E1 | Must | 10 | 1 | A |
+| **HU-2.01** | Registrar una partida manual *(resto)* | E2 | Must · depende de HU-1.02, HU-1.04 | 10 | 2 | A |
+| **HU-2.02** | Revisar y contabilizar partidas *(resto)* | E2 | Must · depende de HU-2.01, HU-1.10 | 10 | 2 | A |
+| **HU-2.16** | Consultar el balance de comprobación y el mayor *(resto)* | E2 | Must · depende de HU-2.02 | 10 | 2 | A |
+| **HU-7.01** | Consultar estados financieros por línea de negocio | E7 | Must · depende de HU-2.16 | 7 | 8 | A |
+| **HU-7.09** | Exportar reportes a PDF y Excel | E7 | Must | 7 | 5 | A |
+| **HU-1.05** | Registrar y validar unidades por VIN *(resto)* | E1 | Must · depende de HU-1.04 | 10 | 2 | B |
+| **HU-1.06** | Cargar el tipo de cambio de referencia del Banguat *(resto)* | E1 | Must | 10 | 3 | B |
+| **HU-4.01** | Registrar proveedores locales y del exterior *(resto)* | E4 | Must | 9 | 1 | B |
+| **HU-4.02** | Registrar la compra de una unidad en EE. UU. *(resto)* | E4 | Must · depende de HU-4.01, HU-1.05 | 9 | 1 | B |
+| **HU-4.04** | Registrar los gastos de importación *(resto)* | E4 | Must · depende de HU-4.03 | 9 | 2 | B |
+| **HU-4.07** | Seguir el estado de la unidad durante la importación *(resto)* | E4 | Must · depende de HU-1.05, HU-4.02 | 9 | 1 | B |
+| **HU-4.08** | Consultar la hoja de costo de una unidad *(resto)* | E4 | Must · depende de HU-4.02, HU-4.05 | 9 | 1 | B |
+| **HU-5.01** | Abrir una orden de trabajo ligada a un VIN *(resto)* | E5 | Must · depende de HU-1.05 | 9 | 1 | B |
+| **HU-5.02** | Configurar las tarifas de mano de obra *(resto)* | E5 | Must | 9 | 1 | B |
+| **HU-5.03** | Registrar mano de obra en la orden *(resto)* | E5 | Must · depende de HU-5.01, HU-5.02 | 9 | 1 | B |
+| **HU-3.01** | Dar de alta una unidad como activo fijo de la flota *(resto)* | E3 | Must · depende de HU-4.08, HU-5.07 | 10 | 2 | B |
+| **HU-5.07** | Cerrar la orden y generar su destino contable *(resto)* | E5 | Must · depende de HU-5.03 | 9 | 2 | B |
+| **HU-4.03** | Agrupar unidades en un expediente de importación | E4 | Must · depende de HU-4.02 | 8 | 3 | B |
+| **HU-4.05** | Prorratear los gastos compartidos | E4 | Must · depende de HU-4.04 | 8 | 5 | B |
+| **HU-6.08** | Registrar retenciones que nos hacen los clientes | E6 | Must | 8 | 3 | C |
+| **HU-6.09** | Registrar y aplicar anticipos de clientes | E6 | Must | 8 | 5 | C |
+| **HU-3.12** | Consultar la ocupación de la flota | E3 | Must · depende de HU-5.01 | 9 | 5 | C |
+| **HU-3.04** | Controlar seguros, marchamo y documentos de cada unidad | E3 | Must · depende de HU-1.05 | 9 | 5 | C |
+| | **27 historias** | | | | **69** | |
+
+Las historias marcadas como resto completan los criterios que su versión delgada dejó pendientes en el MVP.
+
+**Demo:** Un contenedor con dos unidades se registra en un expediente y sus gastos se prorratean; las historias del recorrido de la unidad cumplen todos sus criterios; los estados financieros salen por línea de negocio y se exportan a PDF y Excel; se aplica un anticipo de cliente y se consulta la ocupación de la flota con sus seguros y marchamos.
+
+### Sprint 6 · Retenciones, taller completo y cierres avanzados (01/02 – 12/02/2027) · 47 SP
+
+| Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
+|---|---|---|---|---|---|---|
+| **HU-2.13** | Reabrir un período cerrado | E2 | Must | 9 | 3 | A |
+| **HU-2.14** | Ejecutar el cierre anual | E2 | Must | 9 | 5 | A |
+| **HU-7.07** | Consultar la antigüedad de saldos de clientes y proveedores | E7 | Must · depende de HU-4.16 | 7 | 3 | A |
+| **HU-4.11** | Retener IVA e ISR a proveedores locales | E4 | Must | 8 | 5 | A |
+| **HU-4.16** | Consultar antigüedad de saldos y estado de cuenta de proveedores | E4 | Must | 8 | 5 | A |
+| **HU-4.06** | Registrar la DUCA y vincularla a las unidades | E4 | Must | 8 | 3 | B |
+| **HU-5.04** | Mantener el catálogo e inventario de repuestos | E5 | Must | 8 | 5 | B |
+| **HU-5.05** | Consumir repuestos en una orden | E5 | Must · depende de HU-5.04 | 8 | 3 | B |
+| **HU-5.06** | Registrar trabajos subcontratados | E5 | Must | 8 | 3 | B |
+| **HU-10.07** | Cargar el inventario de repuestos | E10 | Must | 7 | 2 | B |
+| **HU-3.15** | Dar de baja una unidad de la flota y pasarla a venta | E3 | Must | 9 | 5 | B |
+| **HU-7.03** | Consultar la ocupación y rentabilidad de la flota | E7 | Must | 7 | 5 | C |
+| | **12 historias** | | | | **47** | |
+
+**Demo:** Se retiene IVA e ISR a un proveedor local; la DUCA queda ligada a sus unidades; una orden de taller consume repuestos y un subcontrato; se reabre un período con aprobación y se ejecuta un cierre anual de prueba; una unidad se da de baja y pasa a venta; la gerencia ve la ocupación y rentabilidad de la flota.
+
+### Sprint 7 · Venta de contado, comisiones y crédito (15/02 – 26/02/2027) · 58 SP
+
+| Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
+|---|---|---|---|---|---|---|
+| **HU-2.04** | Programar partidas recurrentes | E2 | Should | 6 | 3 | A |
+| **HU-2.06** | Registrar provisiones con reversión automática | E2 | Should | 6 | 3 | A |
+| **HU-8.07** | Configurar el tratamiento fiscal de la venta de unidades | E8 | Must | 6 | 3 | A |
+| **HU-8.10** | Liquidar comisiones por período | E8 | Must · depende de HU-8.09 | 6 | 5 | A |
+| **HU-7.06** | Consultar las comisiones por vendedor | E7 | Must · depende de HU-8.09 | 7 | 3 | A |
+| **HU-8.01** | Consultar el inventario de unidades en venta | E8 | Must | 6 | 2 | B |
+| **HU-8.02** | Fijar el precio de lista y el precio mínimo | E8 | Must · depende de HU-8.01 | 6 | 2 | B |
+| **HU-8.04** | Registrar una venta de contado | E8 | Must · depende de HU-8.02 | 6 | 5 | B |
+| **HU-8.08** | Registrar vendedores y reglas de comisión | E8 | Must | 6 | 3 | B |
+| **HU-8.09** | Calcular la comisión de cada venta | E8 | Must · depende de HU-8.08, HU-8.04 | 6 | 5 | B |
+| **HU-8.12** | Ver el margen de la unidad vendida | E8 | Must · depende de HU-8.04, HU-8.09 | 6 | 3 | B |
+| **HU-5.09** | Facturar la postventa no cubierta por garantía | E5 | Must | 8 | 3 | B |
+| **HU-9.01** | Definir planes de crédito | E9 | Must | 6 | 3 | C |
+| **HU-9.02** | Registrar y aprobar un crédito | E9 | Must · depende de HU-9.01, HU-8.05 | 6 | 5 | C |
+| **HU-9.03** | Generar la tabla de amortización | E9 | Must · depende de HU-9.02 | 6 | 5 | C |
+| **HU-8.05** | Registrar una venta financiada | E8 | Must · depende de HU-8.04, HU-9.02 | 6 | 5 | C |
+| | **16 historias** | | | | **58** | |
+
+**Demo:** Una unidad dada de baja se publica con precio de lista y mínimo, se vende de contado con su tratamiento fiscal y su comisión, y se ve su margen; se define un plan de crédito, se aprueba un crédito y la venta financiada genera su tabla de amortización.
+
+### Sprint 8 · Cuotas, mora y cartera (01/03 – 12/03/2027) · 51 SP
+
+| Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
+|---|---|---|---|---|---|---|
+| **HU-9.04** | Devengar los intereses mensuales | E9 | Must | 6 | 5 | A |
+| **HU-9.09** | Calcular la mora y el interés moratorio | E9 | Must | 6 | 5 | A |
+| **HU-9.10** | Calcular la antigüedad de la cartera y la provisión por incobrables | E9 | Must · depende de HU-9.09 | 6 | 5 | A |
+| **HU-9.14** | Conciliar la cartera con la contabilidad | E9 | Must · depende de HU-9.06 | 6 | 3 | A |
+| **HU-3.03** | Capitalizar una mejora a una unidad de la flota | E3 | Should | 6 | 3 | B |
+| **HU-7.05** | Consultar la cartera financiada y la mora | E7 | Must · depende de HU-9.10 | 7 | 5 | B |
+| **HU-9.13** | Emitir el estado de cuenta del crédito | E9 | Must · depende de HU-9.06 | 6 | 3 | B |
+| **HU-9.05** | Facturar los intereses | E9 | Must | 6 | 5 | C |
+| **HU-9.06** | Registrar el cobro de una cuota | E9 | Must | 6 | 5 | C |
+| **HU-9.07** | Registrar abonos extraordinarios a capital | E9 | Must · depende de HU-9.06 | 6 | 3 | C |
+| **HU-9.08** | Cancelar un crédito de forma anticipada | E9 | Must · depende de HU-9.06 | 6 | 3 | C |
+| **HU-6.06** | Registrar documentos FEL emitidos fuera del sistema | E6 | Should | 5 | 3 | C |
+| **HU-3.11** | Extender un contrato vigente | E3 | Should | 6 | 3 | C |
+| | **13 historias** | | | | **51** | |
+
+**Demo:** Se devengan y facturan los intereses del mes; se cobra una cuota, un abono extraordinario y una cancelación anticipada; se calcula la mora con su interés moratorio y la provisión por incobrables; la cartera concilia con la contabilidad y el cliente recibe el estado de cuenta de su crédito.
+
+### Sprint 9 · Controles restantes, tablero y casos de borde (15/03 – 26/03/2027) · 42 SP
+
+| Historia | Descripción | Épica | MoSCoW | Valor | SP | Equipo |
+|---|---|---|---|---|---|---|
+| **HU-4.12** | Retener ISR en pagos al exterior | E4 | Should | 5 | 3 | A |
+| **HU-7.10** | Consultar un tablero gerencial | E7 | Should | 4 | 5 | A |
+| **HU-4.15** | Registrar notas de crédito y devoluciones de proveedores | E4 | Should | 5 | 3 | B |
+| **HU-5.10** | Realizar el conteo físico de repuestos | E5 | Should | 5 | 3 | B |
+| **HU-7.08** | Consultar el inventario de unidades y repuestos | E7 | Should | 4 | 3 | B |
+| **HU-8.03** | Reservar una unidad con anticipo | E8 | Should | 3 | 3 | B |
+| **HU-8.06** | Controlar el traspaso de propiedad | E8 | Should | 3 | 3 | B |
+| **HU-8.11** | Registrar la garantía ofrecida al comprador | E8 | Should | 3 | 3 | B |
+| **HU-5.08** | Validar la garantía de una unidad vendida | E5 | Should · depende de HU-8.11 | 5 | 3 | B |
+| **HU-6.04** | Emitir notas de débito | E6 | Should | 5 | 3 | C |
+| **HU-6.10** | Identificar depósitos no aplicados | E6 | Should | 5 | 3 | C |
+| **HU-9.11** | Registrar y liberar la garantía prendaria | E9 | Should | 3 | 2 | C |
+| **HU-9.12** | Recuperar una unidad por impago | E9 | Should · depende de HU-9.11 | 3 | 5 | C |
+| | **13 historias** | | | | **42** | |
+
+**Demo:** La gerencia consulta el tablero gerencial; una unidad se reserva con anticipo, se controla su traspaso y su garantía; se recupera una unidad por impago; se emiten notas de débito, se identifican depósitos no aplicados y se hace el conteo físico de repuestos.
 
 ## 6. Dependencias
 
@@ -215,21 +343,19 @@ El reparto respeta el campo "Depende de" de cada historia en `user-stories/`. De
 
 ## 7. Releases siguientes
 
-A 70 SP por sprint, repartidos por equipo en la planeación de cada sprint.
-
-| Release | Sprints | Fechas | Historias | SP |
+| Release | Sprints | Fechas | Contenido | SP |
 |---|---|---|---|---|
-| 1.1 | 5–6 | 18/01 – 12/02/2027 | **Corte completo e importación:** 1.02, 1.04, 1.05, 1.06, 1.10, 1.11, 2.01, 2.02, 2.16, 4.01, 4.02, 4.04, 4.07, 4.08, 5.01, 5.02, 5.03, 4.03, 4.05, 4.06 · **Retenciones, taller completo, seguros y anticipos:** 10.07, 4.11, 4.16, 3.01, 3.04, 5.07, 5.04, 5.05, 5.06, 6.08, 6.09 · **Cierres avanzados, ocupación, baja de flota y reportes:** 2.13, 2.14, 3.12, 3.15, 7.01, 7.03, 7.07, 7.09 | 116 |
-| 2 | 7–8 | 15/02 – 12/03/2027 | **Venta de contado y comisiones:** 5.09, 7.06, 2.04, 2.06, 8.01, 8.02, 8.04, 8.07, 8.08, 8.09, 8.10, 8.12 · **Venta financiada y crédito:** 8.05, 9.01–9.08 · **Cuotas, mora y cartera:** 7.05, 2.11, 9.09, 9.10, 9.13, 9.14, 6.06, 3.03, 3.11, 3.14 | 117 |
-| 3 | 9 | 15/03 – 26/03/2027 | **Controles restantes, tablero y casos de borde:** 4.12, 4.15, 5.10, 6.04, 6.10, 7.08, 7.10, 8.03, 8.06, 8.11, 9.11, 9.12, 5.08 | 42 |
+| 1.1 | 5–6 | 18/01 – 12/02/2027 | Completar el recorrido de la unidad, importación detallada, retenciones, taller completo, cierres avanzados y reportes | 116 |
+| 2 | 7–8 | 15/02 – 12/03/2027 | Venta de contado, comisiones, crédito, cuotas, mora y cartera | 109 |
+| 3 | 9 | 15/03 – 26/03/2027 | Controles restantes, tablero y casos de borde | 42 |
 
-En el Release 1.1, las historias del recorrido de la unidad (1.02 a 5.03, 3.01 y 5.07) completan los criterios que su versión delgada dejó pendientes.
+El detalle por sprint y equipo está en la sección 5. El desglose de lo que queda fuera del MVP, con sus cifras por épica, está en [TrimBreakDown.pdf](TrimBreakDown.pdf).
 
 ## 8. Puesta en marcha y orden de sacrificio
 
 ### Historias que se entregan en la puesta en marcha
 
-Cuatro historias del Release 1 se entregan en el Sprint 4, antes del arranque, porque el ciclo se puede demostrar sin ellas en ambiente de pruebas:
+Cuatro historias del Release 1 se entregan en el Sprint 4, antes del arranque, porque el ciclo se puede demostrar sin ellas en ambiente de pruebas. El Sprint 4 suma además HU-2.11 (lista de verificación del cierre), para que el primer cierre real sea completo y reproducible:
 
 | Historia | SP | Mientras tanto |
 |---|---|---|
@@ -242,11 +368,12 @@ Cuatro historias del Release 1 se entregan en el Sprint 4, antes del arranque, p
 
 Se sacrifica en este orden, sin tocar el recorrido central (costo, alta, contrato, factura, cobro y cierre):
 
-1. HU-6.12 Antigüedad de saldos de clientes (5)
-2. HU-7.04 Unidades por etapa (3)
-3. HU-3.09 Cargos adicionales (5)
-4. HU-2.05 Revertir una partida (3)
-5. HU-7.02 Rentabilidad en todo el ciclo (5); se mantiene HU-3.13
+1. HU-3.14 Alerta de fin de vida útil en flota (3), que pasa al Sprint 4
+2. HU-6.12 Antigüedad de saldos de clientes (5)
+3. HU-7.04 Unidades por etapa (3)
+4. HU-3.09 Cargos adicionales (5)
+5. HU-2.05 Revertir una partida (3)
+6. HU-7.02 Rentabilidad en todo el ciclo (5); se mantiene HU-3.13
 
 **No se recortan:** autenticación y permisos, auditoría, la hoja de costo conciliada, el alta en flota, el contrato, la factura FEL, el cobro, la depreciación y el cierre mensual. Si alguno peligra, se informa y se mueve la fecha del MVP; no se presenta incompleto.
 
