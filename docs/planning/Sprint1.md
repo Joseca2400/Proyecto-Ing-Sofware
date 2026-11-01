@@ -1,21 +1,10 @@
 # Sprint 1 · Base contable, compra en USD y preparación del ingreso
 
-Versión 4 · 31 de octubre de 2026 · Sustituye a la versión 3 ([Old/Sprint1-v3.md](Old/Sprint1-v3.md)). Forma parte del [plan v5](PlanMVP.md): MVP al cierre del Sprint 3 con 6 desarrolladores.
+31 de octubre de 2026 · Primer sprint del MVP según el [plan del MVP](PlanMVP.md). Las versiones anteriores se conservan en [Old/](Old/).
 
-## 1. Qué cambia respecto a la versión 3
+**Punto de partida:** el Sprint 0 dejó la base técnica construida y verificada: Angular 22, FastAPI, PostgreSQL 16, Alembic, Docker y GitHub Actions ([Sprint0-HelloWorld.md](../arquitectura/Sprint0-HelloWorld.md)). De la infraestructura (HT-01) solo queda el ambiente de pruebas desplegado. Las historias del recorrido de la unidad se construyen en su versión delgada; el taller, la hoja de costo y el alta en flota van en el Sprint 2.
 
-| Aspecto | v3 | **v4 (este)** |
-|---|---|---|
-| Duración | 4 semanas (02/11 – 27/11) | **2 semanas (02/11 – 13/11)** |
-| Equipo | 3 desarrolladores (A, B, C) | **6 desarrolladores en 3 equipos de 2**, dueños de módulos |
-| Punto de partida | Sin código ni stack | **Sprint 0 terminado**: arquitectura construida y verificada ([Sprint0-HelloWorld.md](../arquitectura/Sprint0-HelloWorld.md)) |
-| Stack | Por definirse | **Decidido**: Angular 22, FastAPI, PostgreSQL 16, Alembic, Docker y GitHub Actions |
-| Alcance | Corte completo hasta el alta en flota | **Primera mitad del corte** (hasta la compra y la importación) más la base contable y la preparación del ingreso. El taller, la hoja de costo y el alta pasan al Sprint 2 |
-| HT-01 | 3 días | **1 día**: solo falta el ambiente de pruebas desplegado |
-
-Se conservan de la v3 los criterios de cada historia en su versión delgada, la medición por criterios aceptados y las reglas del día 1.
-
-## 2. Objetivo
+## 1. Objetivo
 
 **Un usuario autenticado registra la compra en USD de una unidad por VIN y sus gastos de importación; cada paso genera su partida y queda auditado; el contador revisa partidas sin poder aprobar las suyas; se registran las facturas locales de proveedores; y la línea de ingreso queda lista para contratar (perfil fiscal, clientes, tarifario y base del front).**
 
@@ -25,22 +14,20 @@ Equipo B:  VIN → tipo de cambio → proveedor → compra USD → gastos de imp
 Equipo C:  base del front (login, menú por rol, componentes) → perfil fiscal → clientes → tarifario → adaptador FEL → prueba de punta a punta
 ```
 
-## 3. Fechas y capacidad
+## 2. Fechas y carga
 
 | Dato | Valor |
 |---|---|
 | Sprint | Lunes 02/11 a viernes 13/11/2026 |
-| K1 y puesta al día del equipo | Lunes 02/11 |
+| K1 y puesta al día | Lunes 02/11 |
 | Integración | Miércoles 11/11: la compra pasa por todas las capas en el ambiente de pruebas |
 | Demo y retrospectiva | Viernes 13/11 |
-| Equipo | 6 desarrolladores: equipos A, B y C, cada uno con una persona del equipo original y una nueva |
-| Capacidad bruta | 6 × 10 = 60 días-persona |
-| Ceremonias | 6 días-persona |
-| Capacidad planificable | 54 días-persona |
-| Trabajo estimado | **46.5 días-persona**, con K1, puesta al día y pruebas |
-| Margen | **7.5 días-persona (14 %)**, para la incorporación de las personas nuevas |
+| Equipos | A (plataforma y contabilidad), B (ciclo de la unidad) y C (ingreso) |
+| Alcance | **51 SP** en 19 historias |
+| Trabajo estimado | **46.5 días de trabajo**, con K1, puesta al día y pruebas |
+| Margen | **14 %** de la capacidad del sprint, para imprevistos e integración |
 
-## 4. K1 · Sesión técnica de arranque (lunes 02/11)
+## 3. K1 · Sesión técnica de arranque (lunes 02/11)
 
 **Ya decidido** (no se discute de nuevo):
 1. Stack y arquitectura: monolito modular según [Arquitectura-Propuesta.md](../arquitectura/Arquitectura-Propuesta.md) y las reglas de `CLAUDE.md` / `AGENTS.md`.
@@ -61,7 +48,7 @@ Equipo C:  base del front (login, menú por rol, componentes) → perfil fiscal 
 | Tipos de TypeScript desde el OpenAPI | Herramienta y dónde se generan | Todos los equipos |
 | Contrato del motor contable | Entradas, salidas y errores del servicio que B y C usarán para pedir partidas | B y C desde la primera semana |
 
-**Puesta al día de las 3 personas nuevas:** lectura de `CLAUDE.md`, de la arquitectura y del hello world; cada una levanta el ambiente con `docker compose up --build` y hace un primer pull request pequeño en su módulo.
+**Puesta al día:** todo el equipo lee `CLAUDE.md`, la arquitectura y el hello world; cada persona levanta el ambiente con `docker compose up --build` y hace un primer pull request pequeño en su módulo.
 
 ### Supuestos por validar
 
@@ -73,9 +60,9 @@ Equipo C:  base del front (login, menú por rol, componentes) → perfil fiscal 
 | Agente de retención | La empresa no retiene IVA ni ISR | **13/11**, contador (afecta el Sprint 3) |
 | Certificador FEL | Se elige con credenciales de pruebas | **20/11**, responsables del proyecto |
 
-## 5. Alcance por historia
+## 4. Alcance por historia
 
-Versión delgada de cada historia; los criterios completos están en `user-stories/`. **SP** según el [plan v5](PlanMVP.md).
+Versión delgada de cada historia; los criterios completos están en `user-stories/`. **SP** según el [plan del MVP](PlanMVP.md).
 
 | Historia | SP | Equipo | Incluye en el Sprint 1 | Queda pendiente |
 |---|---|---|---|---|
@@ -102,11 +89,11 @@ Versión delgada de cada historia; los criterios completos están en `user-stori
 
 **Partidas de la compra y de los gastos:** en el Sprint 1 el equipo B las pide al servicio de `contabilidad` según el contrato de K1. Si el servicio completo (HU-2.03, Sprint 2) aún no está, se usa la versión mínima del motor contable de A; no se escriben partidas desde el módulo `compras`.
 
-## 6. Tareas por equipo
+## 5. Tareas por equipo
 
-Cada estimación incluye sus pruebas. Días-persona.
+Cada estimación incluye sus pruebas, en días de trabajo.
 
-### Equipo A · Plataforma y contabilidad — 17 días (capacidad 18)
+### Equipo A · Plataforma y contabilidad — 17 días
 
 | ID | Tarea | Historias | Días |
 |---|---|---|---|
@@ -119,7 +106,7 @@ Cada estimación incluye sus pruebas. Días-persona.
 | A6 | Catálogo y dimensiones: semilla, consulta y alta mínima, con pantalla | HU-1.02, HU-1.04 | 2.5 |
 | A7 | Pantalla de captura de partida y bandeja de aprobación | HU-2.01, HU-2.02 | 1.5 |
 
-### Equipo B · Ciclo de la unidad — 14 días (capacidad 18)
+### Equipo B · Ciclo de la unidad — 14 días
 
 | ID | Tarea | Historias | Días |
 |---|---|---|---|
@@ -133,9 +120,9 @@ Cada estimación incluye sus pruebas. Días-persona.
 | B7 | Facturas de compras y gastos locales, con su cuenta por pagar y su partida | HU-4.09 | 2 |
 | B8 | Pruebas de estados, precisión monetaria y reversa de la compra | — | 1.5 |
 
-El margen de B (4 días) cubre la dependencia del motor contable de A: si A4 se atrasa, B adelanta la captura de B4, B5 y B7 y conecta las partidas al final.
+B es el equipo con más holgura en este sprint, y la usa para cubrir la dependencia del motor contable de A: si A4 se atrasa, B adelanta la captura de B4, B5 y B7 y conecta las partidas al final.
 
-### Equipo C · Ingreso — 15.5 días (capacidad 18)
+### Equipo C · Ingreso — 15.5 días
 
 | ID | Tarea | Historias | Días |
 |---|---|---|---|
@@ -150,27 +137,29 @@ El margen de B (4 días) cubre la dependencia del motor contable de A: si A4 se 
 
 ### Resumen de carga
 
-| Equipo | Trabajo | Capacidad | Margen |
+| Equipo | Historias | SP | Días de trabajo |
 |---|---|---|---|
-| A | 17 | 18 | 1 |
-| B | 14 | 18 | 4 |
-| C | 15.5 | 18 | 2.5 |
-| **Total** | **46.5** | **54** | **7.5** |
+| A | 8 | 19 | 17 |
+| B | 8 | 23 | 14 |
+| C | 3 | 9 | 15.5 |
+| **Total** | **19** | **51** | **46.5** |
 
-El margen de A es el más corto y A está en el camino crítico (sesión y motor contable). Si se atrasa, B o C toman A6 (catálogo) o A7 (pantallas de partidas), que no requieren el contexto del motor.
+C tiene pocos SP porque dedica la mayor parte del sprint a trabajo sin historia propia: la base del front, la prueba del recorrido y el adaptador FEL.
 
-## 7. Calendario
+A es el equipo con menos holgura y está en el camino crítico (sesión y motor contable). Si se atrasa, B o C toman A6 (catálogo) o A7 (pantallas de partidas), que no requieren el contexto del motor.
+
+## 6. Calendario
 
 | Día | Qué |
 |---|---|
-| Lun 02/11 | K1 y puesta al día; ambiente levantado por las 6 personas |
+| Lun 02/11 | K1 y puesta al día; todo el equipo con el ambiente levantado |
 | Mié 04/11 | Sesión con el contador: catálogo, dimensiones, VIN y reglas de la compra |
 | Jue 05/11 | Login real y menú por rol funcionando en el ambiente de pruebas; contrato del motor contable publicado |
 | Lun 09/11 | Partida manual y revisión funcionando; la compra empieza a pedir partidas |
 | Mié 11/11 | **Integración**: la compra en USD con su partida y sus gastos pasa por todas las capas en el ambiente de pruebas. Sesión con el contador: importación e IVA |
-| Vie 13/11 | **Demo**, aceptación por criterios y retrospectiva; se mide la velocidad real para recalcular el plan |
+| Vie 13/11 | **Demo**, aceptación por criterios y retrospectiva; se mide el ritmo real para ajustar el plan |
 
-## 8. Definición de terminado del Sprint 1
+## 7. Definición de terminado del Sprint 1
 
 1. Se inicia sesión con los cuatro roles y cada uno respeta sus permisos en el servidor.
 2. La compra en USD y los gastos de importación se registran desde el navegador, en el ambiente de pruebas, y cada uno genera su partida en la misma transacción.
@@ -181,7 +170,7 @@ El margen de A es el más corto y A está en el camino crítico (sesión y motor
 7. Las migraciones se aplican desde una base vacía y todas las pruebas, incluida la del recorrido desde la interfaz, pasan en CI.
 8. El contador valida el caso de la compra y de los gastos de importación.
 
-## 9. Guion de la demo (13/11, 15 minutos)
+## 8. Guion de la demo (13/11, 15 minutos)
 
 1. **Sesión y permisos:** el auxiliar inicia sesión y ve sus restricciones; luego el contador.
 2. **Preparación:** catálogo de cuentas y tipo de cambio de 7.70 del día de la compra.
@@ -194,11 +183,11 @@ El margen de A es el más corto y A está en el camino crítico (sesión y motor
 
 Los importes son datos de demostración sujetos a validación del contador.
 
-## 10. Riesgos del sprint
+## 9. Riesgos del sprint
 
 | Riesgo | Respuesta |
 |---|---|
-| Las personas nuevas tardan en rendir | Parejas mixtas, primer pull request pequeño el lunes, margen del 14 % |
+| La puesta al día toma más de lo previsto | Primer pull request pequeño el lunes, guía en `CLAUDE.md` y margen del 14 % |
 | El motor contable (A4) se atrasa y bloquea la compra (B4) | Contrato publicado el jueves 05/11; B avanza con B7 y B8 mientras tanto |
 | Las decisiones de K1 se alargan | Se cierran el lunes 02/11; si no hay acuerdo, decide el dueño del módulo afectado |
 | Integración tardía entre equipos | Integración obligatoria el miércoles 11/11 en el ambiente de pruebas; nada se demuestra sin persistencia |
