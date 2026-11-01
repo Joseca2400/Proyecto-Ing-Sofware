@@ -9,16 +9,19 @@ Generan las tablas de sprints de `docs/planning/PlanMVP.md` y los PDF del plan a
 | `generar_plan.py` | Punto de entrada: actualiza `PlanMVP.md`, revisa la línea de tiempo y produce los PDF |
 | `pdf_plan.py` · `pdf_trim.py` | Páginas de `KilometroCero-Plan.pdf` y `TrimBreakDown.pdf` (el texto fijo vive aquí) |
 | `estilos.css` | Estilos compartidos de ambos PDF |
-| `html_a_pdf.swift` | Convierte el HTML en PDF con WebKit (macOS) |
+| `html_a_pdf.swift` | Convierte el HTML en PDF con WebKit (macOS) y avisa si una página se desborda |
 
 ## Uso
 
 ```bash
-python3 docs/herramientas/generar_plan.py            # PlanMVP.md + PDF (macOS)
-python3 docs/herramientas/generar_plan.py --sin-pdf  # PlanMVP.md + HTML en docs/herramientas/build/
+python3 docs/herramientas/generar_plan.py             # PlanMVP.md + los dos PDF
+python3 docs/herramientas/generar_plan.py --sin-pdf   # PlanMVP.md + HTML en docs/herramientas/build/
+python3 docs/herramientas/generar_plan.py --estricto  # termina con error si hay avisos (lo usa la CI)
 ```
 
-Solo usa la biblioteca estándar de Python 3.9 o superior. Sin macOS, abre `build/plan.html` y `build/trim.html` en el navegador e imprímelos a PDF (tamaño carta, sin márgenes, con gráficos de fondo).
+Solo usa la biblioteca estándar de Python 3.9 o superior. Para los PDF usa WebKit en macOS (`swift`), que además termina con error si el contenido de una página invade el pie; en otro sistema usa Chrome o Chromium sin interfaz (sin esa detección: revisa el PDF antes de commitearlo). Sin ninguno de los dos, abre `build/plan.html` y `build/trim.html` en el navegador e imprímelos a PDF (carta, sin márgenes, con gráficos de fondo).
+
+La CI ejecuta el generador con `--sin-pdf --estricto` y falla si `PlanMVP.md` no coincide con lo que generan `sprints.json` y `user-stories/`.
 
 ## Cómo cambiar el plan
 

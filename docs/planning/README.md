@@ -26,5 +26,5 @@ La arquitectura y lo construido en el Sprint 0 están en [`../arquitectura/`](..
 | [Old/Planning-v2.md](Old/Planning-v2.md) | Planning v2: corte transversal, valor de negocio y puntos de historia |
 | [Old/Sprint1-v3.md](Old/Sprint1-v3.md) | Sprint 1 v3: corte de 4 semanas; de ahí salen las versiones delgadas de las historias |
 | [Old/PlanSprints.md](Old/PlanSprints.md) | Plan de sprints v3 y backlog completo con valor y SP |
-| [Old/AjustePlaneacion.md](Old/AjustePlaneacion.md) | Plan v4: MVP en 4 sprints; las historias descartadas y sus condiciones siguen vigentes |
+| [Old/AjustePlaneacion.md](Old/AjustePlaneacion.md) | Plan v4: MVP en 4 sprints y origen de las historias descartadas (sus condiciones están ahora en PlanMVP.md) |
 | [Old/RevisionSprint1.md](Old/RevisionSprint1.md) | Revisión del prototipo descartado contra el Sprint 1 v3 |

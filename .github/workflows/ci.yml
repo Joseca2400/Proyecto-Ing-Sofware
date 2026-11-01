@@ -57,3 +57,18 @@ jobs:
           npm run lint
       - run: npx ng test --watch=false
       - run: npm run build
+
+  planeacion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: PlanMVP.md coincide con sprints.json y user-stories/
+        run: |
+          python3 docs/herramientas/generar_plan.py --sin-pdf --estricto
+          git diff --exit-code docs/planning/PlanMVP.md || {
+            echo "PlanMVP.md no está al día: ejecuta python3 docs/herramientas/generar_plan.py y commitea el resultado."
+            exit 1
+          }

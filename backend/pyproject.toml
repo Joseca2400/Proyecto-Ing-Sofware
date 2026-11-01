@@ -2,6 +2,11 @@
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    # El TestClient de Starlette avisa que pasará de httpx a httpx2. Se quita este filtro
+    # cuando FastAPI/Starlette exijan httpx2 y se actualice requirements-dev.txt.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
 
 [tool.ruff]
 line-length = 110

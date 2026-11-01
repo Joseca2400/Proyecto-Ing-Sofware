@@ -105,7 +105,16 @@ El trabajo se reparte en tres equipos, cada uno dueño de sus módulos **de punt
 | Alerta de fin de vida útil en flota | HU-3.14 | 3 |
 | **Total** | | **187** |
 
-**Historias descartadas (6, 24 SP):** HU-10.10 Operar en paralelo, HU-10.06 Cargar la cartera financiada, HU-1.03 Importar el catálogo existente, HU-10.04 Cargar unidades en proceso, HU-4.10 Compras a particulares y HU-9.15 Reestructurar un crédito. No aplican a una empresa sin sistema previo ni créditos vigentes; cada una tiene su condición para volver en [Old/AjustePlaneacion.md](Old/AjustePlaneacion.md#51-historias-descartadas-6-historias-24-sp).
+**Historias descartadas (6 historias, 24 SP).** No se construyen; cada una vuelve al backlog si cambia su condición:
+
+| Historia | SP | Por qué se descarta | Vuelve al backlog si… |
+|---|---|---|---|
+| **HU-10.10** Operar en paralelo antes del arranque definitivo | 3 | No hay un sistema anterior con el cual comparar | Aparece un sistema contable previo |
+| **HU-10.06** Cargar la cartera financiada vigente | 5 | No hay créditos vigentes | El cliente confirma créditos vigentes |
+| **HU-1.03** Importar el catálogo de cuentas existente | 5 | Sin sistema anterior, el catálogo se diseña nuevo con el contador sobre la semilla del Sprint 1 | El contador tiene un catálogo en Excel que quiere conservar |
+| **HU-10.04** Cargar unidades en importación, en taller y en venta | 3 | Las unidades que estén en camino al arrancar se registran con el flujo normal de compra del Sprint 1 | Hay muchas unidades en proceso al arrancar |
+| **HU-4.10** Registrar compras a particulares con factura especial | 3 | Could; no confirmado por el cliente | El cliente confirma compras frecuentes a particulares |
+| **HU-9.15** Reestructurar un crédito | 5 | Could; no es necesaria para operar el financiamiento | Hay créditos en mora que reestructurar |
 
 ## 5. Sprints
 

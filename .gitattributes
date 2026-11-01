@@ -1,0 +1,13 @@
+# Saltos de línea: LF en todo el repositorio.
+* text=auto eol=lf
+
+# Las historias y el contexto se escribieron con CRLF y se conservan tal cual (sin conversión),
+# para no reescribir todo su historial; .editorconfig mantiene CRLF al editarlos.
+docs/planning/user-stories/*.md -text
+docs/planning/contexto/*.md -text
+
+# Binarios
+*.pdf binary
+*.png binary
+*.ico binary
+*.svg text eol=lf

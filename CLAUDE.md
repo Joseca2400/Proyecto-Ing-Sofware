@@ -37,7 +37,7 @@ npm run lint                                                       # angular-esl
 npm run format:check                                               # prettier; npm run format para corregir
 ```
 
-CI (`.github/workflows/ci.yml`) en cada push y PR: estilo (ruff, prettier, eslint), `pytest` contra un servicio PostgreSQL y `ng test` + `ng build` del front.
+CI (`.github/workflows/ci.yml`) en cada push y PR: estilo (ruff, prettier, eslint), `pytest` contra un servicio PostgreSQL, `ng test` + `ng build` del front y que `PlanMVP.md` coincida con `sprints.json` (`generar_plan.py --sin-pdf --estricto`).
 
 Plan y PDF: después de cambiar `docs/planning/sprints.json` o `user-stories/`, ejecutar `python3 docs/herramientas/generar_plan.py` (ver `docs/herramientas/README.md`). Las tablas de sprints de `PlanMVP.md` se generan; no se editan a mano.
 

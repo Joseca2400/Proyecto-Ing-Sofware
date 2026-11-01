@@ -1,13 +1,14 @@
 """Regenera el plan a partir de docs/planning/sprints.json y docs/planning/user-stories/.
 
-    python3 docs/herramientas/generar_plan.py            # PlanMVP.md + los dos PDF (en macOS)
-    python3 docs/herramientas/generar_plan.py --sin-pdf  # solo PlanMVP.md y los HTML en build/
+    python3 docs/herramientas/generar_plan.py             # PlanMVP.md + los dos PDF
+    python3 docs/herramientas/generar_plan.py --sin-pdf   # solo PlanMVP.md y los HTML en build/
+    python3 docs/herramientas/generar_plan.py --estricto  # además, termina con error si hay avisos (CI)
 
 - Reescribe en PlanMVP.md el bloque entre <!-- inicio:sprints --> y <!-- fin:sprints -->.
 - Revisa que la tabla de la línea de tiempo de PlanMVP.md tenga los mismos SP por sprint.
-- Escribe build/plan.html y build/trim.html y, si hay `swift` (macOS), los convierte en
-  docs/planning/KilometroCero-Plan.pdf y docs/planning/TrimBreakDown.pdf.
-  En otro sistema, abrir los HTML en el navegador e imprimir a PDF (tamaño carta, sin márgenes).
+- Escribe build/plan.html y build/trim.html y los convierte en docs/planning/KilometroCero-Plan.pdf
+  y docs/planning/TrimBreakDown.pdf: con WebKit (`swift`, macOS), que además detecta páginas
+  desbordadas, o con Chrome/Chromium sin interfaz en cualquier sistema.
 """
 
 import re
@@ -69,11 +70,23 @@ def actualizar_plan_md(sprints, historias):
     return avisos
 
 
+CHROME = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome",
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
+
+
 def a_pdf(html, pdf):
-    if not shutil.which("swift"):
-        print(f"Sin swift: abre {html} en el navegador e imprímelo a PDF.")
-        return
-    subprocess.run(["swift", str(AQUI / "html_a_pdf.swift"), str(html), str(pdf)], check=True)
+    """Convierte el HTML en PDF. Devuelve False si la conversión falló o detectó desbordes."""
+    if shutil.which("swift"):
+        orden = ["swift", str(AQUI / "html_a_pdf.swift"), str(html), str(pdf)]
+    else:
+        chrome = next((c for c in CHROME if shutil.which(c) or Path(c).exists()), None)
+        if not chrome:
+            print(f"Sin swift ni Chrome: abre {html} en el navegador e imprímelo a PDF (carta, sin márgenes).")
+            return True
+        # Chrome no detecta desbordes: revisar el PDF a ojo antes de commitearlo.
+        orden = [chrome, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+                 "--virtual-time-budget=5000", f"--print-to-pdf={pdf}", html.resolve().as_uri()]
+    return subprocess.run(orden).returncode == 0
 
 
 def main():
@@ -85,11 +98,15 @@ def main():
     import pdf_trim
 
     BUILD.mkdir(exist_ok=True)
+    fallas = 0
     salidas = {"plan.html": (pdf_plan.HTML, "KilometroCero-Plan.pdf"), "trim.html": (pdf_trim.HTML, "TrimBreakDown.pdf")}
     for nombre, (html, pdf) in salidas.items():
         (BUILD / nombre).write_text(html, encoding="utf-8")
-        if "--sin-pdf" not in sys.argv:
-            a_pdf(BUILD / nombre, PLANNING / pdf)
+        if "--sin-pdf" not in sys.argv and not a_pdf(BUILD / nombre, PLANNING / pdf):
+            print(f"Error: revisa {pdf} (falló una página o hay contenido desbordado)")
+            fallas += 1
+    if fallas or ("--estricto" in sys.argv and avisos):
+        sys.exit(1)
     print("Listo")
 
 
