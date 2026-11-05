@@ -1,0 +1,161 @@
+.encabezado {
+  margin-bottom: 24px;
+}
+
+.encabezado h1 {
+  font-size: 28px;
+}
+
+.encabezado p {
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.tarjeta {
+  background: var(--white);
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+}
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.justificacion {
+  flex: 1 1 100%;
+}
+
+input,
+textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+button {
+  align-self: flex-end;
+  background: var(--teal);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mensaje {
+  margin-bottom: 16px;
+}
+
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.resultado-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+.resultado-calculo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 18px;
+}
+
+.operador {
+  color: var(--gray);
+}
+
+.tipo-cambio {
+  font-variant-numeric: tabular-nums;
+}
+
+.resultado-calculo strong {
+  font-size: 22px;
+}
+
+.nota {
+  color: var(--gray);
+  font-size: 13px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-light);
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacio,
+small {
+  color: var(--gray);
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.banguat {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.personalizado {
+  background: #fff8e1;
+  color: #f57f17;
+  cursor: help;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.falla {
+  color: var(--error);
+}

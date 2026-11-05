@@ -1,0 +1,105 @@
+<section class="encabezado">
+  <h1>Transacciones en USD</h1>
+  <p>
+    Registra el monto original en dólares. El sistema calcula el equivalente en quetzales usando
+    el tipo de cambio del Banguat de esa fecha. Si el banco aplicó un tipo distinto, indícalo con
+    justificación.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Fecha
+    <input type="date" formControlName="fecha" />
+  </label>
+
+  <label>
+    Monto (US$)
+    <input type="text" inputmode="decimal" formControlName="monto_usd" placeholder="8500.00" />
+    @if (formulario.controls.monto_usd.touched && formulario.controls.monto_usd.invalid) {
+      <small class="falla">Número positivo con hasta 6 decimales</small>
+    }
+  </label>
+
+  <label>
+    Tipo de cambio personalizado (opcional)
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="tipo_cambio_personalizado"
+      placeholder="7.72 — deja vacío para usar el del Banguat"
+    />
+    @if (
+      formulario.controls.tipo_cambio_personalizado.touched &&
+      formulario.controls.tipo_cambio_personalizado.invalid
+    ) {
+      <small class="falla">Número positivo con hasta 8 decimales</small>
+    }
+  </label>
+
+  @if (tienePersonalizado()) {
+    <label class="justificacion">
+      Justificación
+      <textarea
+        formControlName="justificacion"
+        rows="2"
+        placeholder="Por ejemplo: el banco aplicó este tipo al momento de comprar las divisas"
+      ></textarea>
+    </label>
+  }
+
+  <button type="submit" [disabled]="guardando()">Registrar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (ultimaConversion(); as tx) {
+  <div class="resultado tarjeta" role="status">
+    <span class="resultado-label">Resultado</span>
+    <div class="resultado-calculo">
+      <span>{{ tx.monto_usd | monto: 'USD' }}</span>
+      <span class="operador">×</span>
+      <span class="tipo-cambio">{{ tx.tipo_cambio_aplicado }}</span>
+      <span class="operador">=</span>
+      <strong>{{ tx.monto_gtq | monto: 'GTQ' }}</strong>
+    </div>
+    @if (tx.justificacion) {
+      <small class="nota">Tipo personalizado · {{ tx.justificacion }}</small>
+    }
+  </div>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th class="numero">Monto USD</th>
+      <th class="numero">Tipo de cambio</th>
+      <th class="numero">Monto GTQ</th>
+      <th>Tipo</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (tx of transacciones(); track tx.id) {
+      <tr>
+        <td>{{ tx.fecha }}</td>
+        <td class="numero">{{ tx.monto_usd | monto: 'USD' }}</td>
+        <td class="numero">{{ tx.tipo_cambio_aplicado }}</td>
+        <td class="numero">{{ tx.monto_gtq | monto: 'GTQ' }}</td>
+        <td>
+          @if (tx.justificacion) {
+            <span class="chip personalizado" [title]="tx.justificacion">Personalizado</span>
+          } @else {
+            <span class="chip banguat">Banguat</span>
+          }
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="5" class="vacio">Todavía no hay transacciones registradas</td>
+      </tr>
+    }
+  </tbody>
+</table>

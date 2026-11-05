@@ -19,6 +19,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/tipo-cambio').then((m) => m.TipoCambioPantalla),
       },
+      {
+        path: 'configuracion/transacciones-usd',
+        title: 'Transacciones en USD · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/transaccion-usd').then((m) => m.TransaccionUSDPantalla),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

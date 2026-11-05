@@ -22,5 +22,6 @@ export class Layout {
     { etiqueta: 'Contabilidad' },
     { etiqueta: 'Reportes' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
+    { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
   ];
 }

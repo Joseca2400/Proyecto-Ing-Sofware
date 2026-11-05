@@ -1,8 +1,12 @@
-"""Reglas del tipo de cambio (HU-1.06, versión delgada del Sprint 1).
+"""Reglas del módulo de configuración (Sprint 1, equipo B).
 
-Incluido: carga manual de un valor positivo por fecha y bloqueo cuando falta el de una fecha.
-Diferido: consulta automática al servicio del Banguat (adaptador en `comun/`) y corrección
-de un tipo ya usado en partidas, con aprobación del gerente financiero.
+HU-1.06 (incluido): carga manual del tipo de cambio positivo por fecha; bloqueo cuando falta.
+HU-1.06 (diferido): consulta automática al Banguat (adaptador en `comun/`) y corrección con
+aprobación del gerente financiero.
+
+HU-1.07 (incluido): registro de transacciones en USD con monto original, tipo de cambio aplicado
+y equivalente en quetzales; tipo personalizado positivo con justificación obligatoria.
+HU-1.07 (diferido): reportes de saldos en USD.
 """
 
 from datetime import date
@@ -11,9 +15,9 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.comun.dinero import a_decimal
+from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.configuracion.models import TipoCambio
+from app.modulos.configuracion.models import TipoCambio, TransaccionUSD
 
 DECIMALES_TIPO_CAMBIO = 8
 
@@ -75,3 +79,73 @@ def tipo_cambio_de(db: Session, fecha: date) -> Decimal:
             status=409,
         )
     return tipo.valor
+
+
+# ── HU-1.07: transacciones en USD ─────────────────────────────────────────────
+
+_MAX_DECIMALES_MONTO = 6
+
+
+def _validar_monto_usd(texto: str) -> Decimal:
+    try:
+        valor = a_decimal(texto.strip())
+    except (InvalidOperation, ValueError):
+        raise ErrorNegocio("El monto en USD debe ser un número, por ejemplo 8500.00") from None
+    if not valor.is_finite() or valor <= 0:
+        raise ErrorNegocio("El monto en USD debe ser mayor que cero")
+    if -valor.as_tuple().exponent > _MAX_DECIMALES_MONTO:
+        raise ErrorNegocio(f"El monto en USD admite como máximo {_MAX_DECIMALES_MONTO} decimales")
+    return valor
+
+
+def registrar_transaccion_usd(
+    db: Session,
+    fecha: date,
+    monto_usd_texto: str,
+    tipo_cambio_personalizado: str | None = None,
+    justificacion: str | None = None,
+) -> TransaccionUSD:
+    """Registra una transacción en USD y calcula su equivalente en quetzales.
+
+    Por defecto usa el tipo de cambio del Banguat de la fecha. Si se indica un tipo personalizado,
+    debe ser positivo y la justificación es obligatoria (criterio 4 de HU-1.07).
+    """
+    monto_usd = _validar_monto_usd(monto_usd_texto)
+
+    if tipo_cambio_personalizado is not None:
+        tc = _validar_valor(tipo_cambio_personalizado)
+        if not justificacion or not justificacion.strip():
+            raise ErrorNegocio("El tipo de cambio personalizado requiere justificación")
+        justificacion = justificacion.strip()
+    else:
+        tc = tipo_cambio_de(db, fecha)
+        justificacion = None
+
+    monto_gtq = redondear(convertir(monto_usd, tc), _MAX_DECIMALES_MONTO)
+
+    transaccion = TransaccionUSD(
+        fecha=fecha,
+        monto_usd=monto_usd,
+        tipo_cambio_aplicado=tc,
+        monto_gtq=monto_gtq,
+        justificacion=justificacion,
+    )
+    db.add(transaccion)
+    db.commit()
+    db.refresh(transaccion)
+    return transaccion
+
+
+def listar_transacciones_usd(
+    db: Session,
+    desde: date | None = None,
+    hasta: date | None = None,
+) -> list[TransaccionUSD]:
+    consulta = select(TransaccionUSD).order_by(
+        TransaccionUSD.fecha.desc(), TransaccionUSD.id.desc()
+    )
+    if desde:
+        consulta = consulta.where(TransaccionUSD.fecha >= desde)
+    if hasta:
+        consulta = consulta.where(TransaccionUSD.fecha <= hasta)
+    return list(db.scalars(consulta))
