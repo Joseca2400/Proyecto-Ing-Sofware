@@ -13,6 +13,12 @@ export const routes: Routes = [
         title: 'Inicio · Kilómetro Cero',
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
+      {
+        path: 'configuracion/tipo-cambio',
+        title: 'Tipo de cambio · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/tipo-cambio').then((m) => m.TipoCambioPantalla),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

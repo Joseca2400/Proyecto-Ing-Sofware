@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.comun import config
 from app.comun.errores import registrar_manejadores
+from app.modulos.configuracion.router import router as configuracion_router
 from app.modulos.sistema.router import router as sistema_router
 
 app = FastAPI(title=config.APP_NOMBRE, version=config.APP_VERSION)
@@ -19,3 +20,4 @@ def health() -> dict[str, str]:
 
 # Cada módulo nuevo se registra aquí, siempre bajo /api/v1.
 app.include_router(sistema_router, prefix="/api/v1")
+app.include_router(configuracion_router, prefix="/api/v1")

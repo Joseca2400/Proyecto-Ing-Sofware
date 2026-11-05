@@ -1,0 +1,52 @@
+<section class="encabezado">
+  <h1>Tipo de cambio</h1>
+  <p>
+    Referencia del Banguat, en quetzales por un dólar. Mientras no hay conexión con el Banguat se
+    carga a mano.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Fecha
+    <input type="date" formControlName="fecha" />
+  </label>
+  <label>
+    Valor (Q por US$ 1)
+    <input type="text" inputmode="decimal" formControlName="valor" placeholder="7.75" />
+    @if (formulario.controls.valor.touched && formulario.controls.valor.invalid) {
+      <small class="falla">Número positivo con hasta 8 decimales</small>
+    }
+  </label>
+  <button type="submit" [disabled]="guardando()">Guardar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th class="numero">Valor</th>
+      <th>Origen</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (tipo of tipos(); track tipo.id) {
+      <tr>
+        <td>{{ tipo.fecha }}</td>
+        <td class="numero">{{ tipo.valor }}</td>
+        <td>{{ tipo.origen === 'manual' ? 'Manual' : 'Banguat' }}</td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="3" class="vacio">Todavía no hay tipos de cambio cargados</td>
+      </tr>
+    }
+  </tbody>
+</table>

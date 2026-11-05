@@ -21,5 +21,6 @@ export class Layout {
     { etiqueta: 'Unidades' },
     { etiqueta: 'Contabilidad' },
     { etiqueta: 'Reportes' },
+    { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
   ];
 }
