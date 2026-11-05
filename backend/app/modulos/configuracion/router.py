@@ -19,6 +19,7 @@ router = APIRouter(prefix="/configuracion", tags=["Configuración"])
 
 # ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
 
+
 @router.get("/tipos-cambio", response_model=list[TipoCambioSalida])
 def listar_tipos_cambio(
     desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
@@ -41,13 +42,13 @@ def consultar_tipo_cambio(fecha: date, db: Session = Depends(get_db)) -> TipoCam
 
 # ── HU-1.07: transacciones en USD ─────────────────────────────────────────────
 
+
 @router.get("/transacciones-usd", response_model=list[TransaccionUSDSalida])
 def listar_transacciones_usd(
     desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
 ) -> list[TransaccionUSDSalida]:
     return [
-        TransaccionUSDSalida.model_validate(t)
-        for t in service.listar_transacciones_usd(db, desde, hasta)
+        TransaccionUSDSalida.model_validate(t) for t in service.listar_transacciones_usd(db, desde, hasta)
     ]
 
 

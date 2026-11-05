@@ -38,7 +38,6 @@ describe('TransaccionUSDPantalla', () => {
     tipoPers = '',
     justificacion = '',
   ): void {
-    const inputs = el.querySelectorAll<HTMLInputElement>('input[type=text], input[type=date]');
     // fecha es el primer input (type=date), monto el segundo, tipoPers el tercero
     const fechaInput = el.querySelector<HTMLInputElement>('input[type=date]')!;
     const montoInput = el.querySelectorAll<HTMLInputElement>('input[type=text]')[0]!;
@@ -114,12 +113,16 @@ describe('TransaccionUSDPantalla', () => {
 
     const envio = http.expectOne({ method: 'POST', url: URL });
     expect(envio.request.body).toEqual({
-      fecha: jasmine.any(String),
+      fecha: expect.any(String),
       monto_usd: '1000.00',
       tipo_cambio_personalizado: '7.72',
       justificacion: 'El banco lo aplicó',
     });
-    envio.flush({ ...TX_STUB, tipo_cambio_aplicado: '7.72000000', justificacion: 'El banco lo aplicó' });
+    envio.flush({
+      ...TX_STUB,
+      tipo_cambio_aplicado: '7.72000000',
+      justificacion: 'El banco lo aplicó',
+    });
     http.expectOne(URL).flush([]);
     await fixture.whenStable();
   });
@@ -147,6 +150,7 @@ describe('TransaccionUSDPantalla', () => {
     await fixture.whenStable();
 
     llenar(fixture.nativeElement as HTMLElement, '2026-11-02', '-500');
+    fixture.detectChanges();
     http.expectNone({ method: 'POST', url: URL });
     expect(texto(fixture)).toContain('Número positivo');
   });

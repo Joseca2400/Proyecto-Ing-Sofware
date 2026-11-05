@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
@@ -31,9 +31,7 @@ export class TransaccionUSDPantalla {
 
   // Reacciona a cambios del campo de tipo personalizado para mostrar la justificación.
   protected readonly tienePersonalizado = toSignal(
-    this.formulario.controls.tipo_cambio_personalizado.valueChanges.pipe(
-      map((v) => !!v?.trim()),
-    ),
+    this.formulario.controls.tipo_cambio_personalizado.valueChanges.pipe(map((v) => !!v?.trim())),
     { initialValue: false },
   );
 

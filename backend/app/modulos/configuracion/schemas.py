@@ -3,8 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
-
 # ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
+
 
 class TipoCambioEntrada(BaseModel):
     """Carga manual. El valor llega como texto ("7.75123456") para no pasar por float."""
@@ -35,6 +35,7 @@ class TipoCambioSalida(BaseModel):
 
 # ── HU-1.07: transacciones en USD ─────────────────────────────────────────────
 
+
 class TransaccionUSDEntrada(BaseModel):
     """Registro de un monto en USD.
 
@@ -58,7 +59,7 @@ class TransaccionUSDEntrada(BaseModel):
     @classmethod
     def tipo_personalizado_como_texto(cls, valor: object) -> object:
         if valor is not None and not isinstance(valor, str):
-            raise ValueError('El tipo de cambio personalizado se envía como texto')
+            raise ValueError("El tipo de cambio personalizado se envía como texto")
         return valor
 
 

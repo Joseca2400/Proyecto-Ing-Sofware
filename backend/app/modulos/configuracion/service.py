@@ -141,9 +141,7 @@ def listar_transacciones_usd(
     desde: date | None = None,
     hasta: date | None = None,
 ) -> list[TransaccionUSD]:
-    consulta = select(TransaccionUSD).order_by(
-        TransaccionUSD.fecha.desc(), TransaccionUSD.id.desc()
-    )
+    consulta = select(TransaccionUSD).order_by(TransaccionUSD.fecha.desc(), TransaccionUSD.id.desc())
     if desde:
         consulta = consulta.where(TransaccionUSD.fecha >= desde)
     if hasta:
