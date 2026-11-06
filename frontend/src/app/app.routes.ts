@@ -13,6 +13,30 @@ export const routes: Routes = [
         title: 'Inicio · Kilómetro Cero',
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
+      {
+        path: 'compras/proveedores',
+        title: 'Proveedores · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/proveedores').then((m) => m.ProveedoresPantalla),
+      },
+      {
+        path: 'compras/facturas',
+        title: 'Facturas de compras · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/facturas').then((m) => m.FacturasComprasPantalla),
+      },
+      {
+        path: 'configuracion/tipo-cambio',
+        title: 'Tipo de cambio · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/tipo-cambio').then((m) => m.TipoCambioPantalla),
+      },
+      {
+        path: 'configuracion/transacciones-usd',
+        title: 'Transacciones en USD · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/transaccion-usd').then((m) => m.TransaccionUSDPantalla),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -1,0 +1,177 @@
+<section class="encabezado">
+  <h1>Proveedores</h1>
+  <p>
+    Registra proveedores locales con su NIT o del exterior con su identificación fiscal y país. El
+    NIT se valida con su dígito verificador y no puede repetirse. El régimen de IVA del proveedor
+    local decide si sus facturas dan crédito fiscal.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <fieldset class="tipo">
+    <legend>Tipo</legend>
+    <label class="opcion">
+      <input type="radio" formControlName="tipo" value="local" /> Local
+    </label>
+    <label class="opcion">
+      <input type="radio" formControlName="tipo" value="exterior" /> Del exterior
+    </label>
+  </fieldset>
+
+  <label class="ancho">
+    Nombre o razón social
+    <input type="text" formControlName="nombre" name="nombre" />
+    @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+      <small class="falla">El nombre es obligatorio</small>
+    }
+  </label>
+
+  @if (tipo() === 'local') {
+    <label>
+      NIT
+      <input type="text" formControlName="nit" name="nit" placeholder="1234567-9" />
+      @if (formulario.controls.nit.touched && formulario.controls.nit.invalid) {
+        <small class="falla">Dígitos y verificador (dígito o K)</small>
+      }
+    </label>
+    <label>
+      Régimen de IVA
+      <select formControlName="regimen" name="regimen">
+        @for (regimen of regimenes; track regimen.valor) {
+          <option [value]="regimen.valor">{{ regimen.etiqueta }}</option>
+        }
+      </select>
+    </label>
+  } @else {
+    <label>
+      Identificación fiscal
+      <input
+        type="text"
+        formControlName="identificacion_fiscal"
+        name="identificacion_fiscal"
+        placeholder="EIN, Tax ID…"
+      />
+    </label>
+    <label class="corto">
+      País
+      <input type="text" formControlName="pais" name="pais" placeholder="US" maxlength="2" />
+      @if (formulario.controls.pais.touched && formulario.controls.pais.invalid) {
+        <small class="falla">Código de dos letras</small>
+      }
+    </label>
+  }
+
+  <label>
+    Rubro
+    <select formControlName="rubro" name="rubro">
+      @for (rubro of rubros; track rubro.valor) {
+        <option [value]="rubro.valor">{{ rubro.etiqueta }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Moneda habitual
+    <select formControlName="moneda_habitual" name="moneda_habitual">
+      <option value="GTQ">Quetzales (GTQ)</option>
+      <option value="USD">Dólares (USD)</option>
+    </select>
+  </label>
+
+  <label class="corto">
+    Días de crédito
+    <input type="number" min="0" max="365" formControlName="dias_credito" name="dias_credito" />
+  </label>
+
+  <label>
+    Banco (opcional)
+    <input type="text" formControlName="banco" name="banco" />
+  </label>
+
+  <label>
+    Cuenta bancaria (opcional)
+    <input type="text" formControlName="cuenta_bancaria" name="cuenta_bancaria" />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<form class="filtros" [formGroup]="filtro" (ngSubmit)="cargar()">
+  <input
+    type="search"
+    formControlName="buscar"
+    name="buscar"
+    placeholder="Buscar por nombre, NIT o identificación"
+    aria-label="Buscar proveedor"
+  />
+  <select formControlName="tipo" name="filtro_tipo" aria-label="Filtrar por tipo">
+    <option value="">Todos los tipos</option>
+    <option value="local">Locales</option>
+    <option value="exterior">Del exterior</option>
+  </select>
+  <select formControlName="rubro" name="filtro_rubro" aria-label="Filtrar por rubro">
+    <option value="">Todos los rubros</option>
+    @for (rubro of rubros; track rubro.valor) {
+      <option [value]="rubro.valor">{{ rubro.etiqueta }}</option>
+    }
+  </select>
+  <button type="submit" class="secundario">Consultar</button>
+</form>
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Identificación</th>
+        <th>Rubro</th>
+        <th>Moneda</th>
+        <th class="numero">Crédito</th>
+        <th>Banco</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of proveedores(); track p.id) {
+        <tr>
+          <td>{{ p.nombre }}</td>
+          <td>
+            <span class="chip" [class.exterior]="p.tipo === 'exterior'">{{
+              p.tipo === 'local' ? 'Local' : 'Exterior'
+            }}</span>
+          </td>
+          <td>
+            @if (p.tipo === 'local') {
+              NIT {{ p.nit_formateado }}
+              <small>· {{ etiquetaRegimen(p.regimen) }}</small>
+            } @else {
+              {{ p.identificacion_fiscal }} · {{ p.pais }}
+            }
+          </td>
+          <td>{{ etiquetaRubro(p.rubro) }}</td>
+          <td>{{ p.moneda_habitual }}</td>
+          <td class="numero">{{ p.dias_credito === 0 ? 'Contado' : p.dias_credito + ' días' }}</td>
+          <td>
+            @if (p.banco) {
+              {{ p.banco }}
+              @if (p.cuenta_bancaria) {
+                <small>· {{ p.cuenta_bancaria }}</small>
+              }
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">No hay proveedores que coincidan</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
