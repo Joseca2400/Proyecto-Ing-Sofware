@@ -14,6 +14,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
       {
+        path: 'compras/proveedores',
+        title: 'Proveedores · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/proveedores').then((m) => m.ProveedoresPantalla),
+      },
+      {
         path: 'configuracion/tipo-cambio',
         title: 'Tipo de cambio · Kilómetro Cero',
         loadComponent: () =>

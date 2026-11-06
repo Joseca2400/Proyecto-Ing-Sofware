@@ -3,4 +3,5 @@
 Regla de dependencia: un módulo solo importa el `service` de otro módulo, nunca sus `models`.
 """
 
+from app.modulos.compras import models as compras_models  # noqa: F401
 from app.modulos.configuracion import models as configuracion_models  # noqa: F401
