@@ -148,11 +148,73 @@ export interface FacturaCompra {
   creado_en: string;
 }
 
+// ── HU-4.04: gastos de importación ────────────────────────────────────────────
+
+export type Moneda = 'GTQ' | 'USD';
+
+/** El IVA de importación es crédito fiscal; los demás conceptos suman al costo de la unidad. */
+export type TratamientoGasto = 'costo' | 'credito_fiscal';
+
+export interface ConceptoGasto {
+  codigo: string;
+  nombre: string;
+  cuenta: string;
+  tratamiento: TratamientoGasto;
+  suma_al_costo: boolean;
+}
+
+export interface GastoImportacionEntrada {
+  vin: string;
+  concepto: string;
+  proveedor_id: number;
+  fecha: string;
+  documento: string;
+  descripcion?: string;
+  moneda: Moneda;
+  /** Texto ("350.00"); en USD el servidor aplica el tipo de cambio de la fecha. */
+  monto: string;
+}
+
+export interface GastoImportacion {
+  id: number;
+  vin: string;
+  concepto: string;
+  concepto_nombre: string;
+  proveedor: { id: number; nombre: string; tipo: TipoProveedor };
+  fecha: string;
+  documento: string;
+  descripcion: string | null;
+  moneda: Moneda;
+  monto: string;
+  /** Solo en USD; en quetzales viene null. */
+  tipo_cambio: string | null;
+  monto_gtq: string;
+  cuenta: string;
+  tratamiento: TratamientoGasto;
+  suma_al_costo: boolean;
+  cuenta_por_pagar: CuentaPorPagar;
+  creado_en: string;
+}
+
+/** Totales en quetzales que calcula el servidor; el front solo les da formato. */
+export interface ResumenGastosUnidad {
+  vin: string;
+  gastos: number;
+  total_costo_gtq: string;
+  total_credito_fiscal_gtq: string;
+}
+
+export interface FiltroGastos {
+  vin?: string;
+  proveedor_id?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ComprasService {
   private readonly http = inject(HttpClient);
   private readonly urlProveedores = `${API_URL}/compras/proveedores`;
   private readonly urlFacturas = `${API_URL}/compras/facturas`;
+  private readonly urlGastos = `${API_URL}/compras/gastos-importacion`;
 
   proveedores(filtro: FiltroProveedores = {}): Observable<Proveedor[]> {
     const params: Record<string, string> = {};
@@ -174,5 +236,24 @@ export class ComprasService {
 
   registrarFactura(datos: FacturaCompraEntrada): Observable<FacturaCompra> {
     return this.http.post<FacturaCompra>(this.urlFacturas, datos);
+  }
+
+  conceptosGasto(): Observable<ConceptoGasto[]> {
+    return this.http.get<ConceptoGasto[]>(`${this.urlGastos}/conceptos`);
+  }
+
+  gastosImportacion(filtro: FiltroGastos = {}): Observable<GastoImportacion[]> {
+    const params: Record<string, string> = {};
+    if (filtro.vin) params['vin'] = filtro.vin;
+    if (filtro.proveedor_id) params['proveedor_id'] = String(filtro.proveedor_id);
+    return this.http.get<GastoImportacion[]>(this.urlGastos, { params });
+  }
+
+  registrarGastoImportacion(datos: GastoImportacionEntrada): Observable<GastoImportacion> {
+    return this.http.post<GastoImportacion>(this.urlGastos, datos);
+  }
+
+  resumenGastosUnidad(vin: string): Observable<ResumenGastosUnidad> {
+    return this.http.get<ResumenGastosUnidad>(`${this.urlGastos}/unidad/${vin}`);
   }
 }

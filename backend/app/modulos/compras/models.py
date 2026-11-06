@@ -1,8 +1,8 @@
 """Tablas del módulo de compras (equipo B).
 
-Sprint 1: proveedores (HU-4.01) y facturas de compras y gastos locales con su cuenta por pagar
-(HU-4.09). Después llegan la compra en EE. UU. (HU-4.02) y los gastos de importación (HU-4.04),
-todas ligadas a un proveedor.
+Sprint 1: proveedores (HU-4.01), facturas de compras y gastos locales con su cuenta por pagar
+(HU-4.09) y gastos de importación por VIN con su cuenta por pagar (HU-4.04). Después llega la
+compra en EE. UU. (HU-4.02), también ligada a un proveedor.
 """
 
 from datetime import date, datetime
@@ -21,7 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.comun.db import Base
-from app.comun.dinero import MONTO
+from app.comun.dinero import MONTO, TIPO_CAMBIO
 
 TIPOS_PROVEEDOR = ("local", "exterior")
 RUBROS_PROVEEDOR = (
@@ -167,13 +167,92 @@ class LineaFacturaCompra(Base):
     factura: Mapped[FacturaCompra] = relationship(back_populates="lineas")
 
 
+class ConceptoGastoImportacion(Base):
+    """Catálogo de conceptos de gasto de importación (HU-4.04, criterio 1), sembrado en `0009`.
+
+    El tratamiento decide si el gasto suma al costo de la unidad o es crédito fiscal (el IVA de
+    importación, criterio 3). La cuenta es el código del catálogo (HU-1.02) al que se debita el
+    gasto cuando exista la partida; se guarda como texto, igual que en las líneas de factura.
+    """
+
+    __tablename__ = "concepto_gasto_importacion"
+    __table_args__ = (
+        CheckConstraint(
+            "tratamiento IN ('costo', 'credito_fiscal')", name="ck_concepto_gasto_importacion_tratamiento"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(20), unique=True)
+    nombre: Mapped[str] = mapped_column(String(100))
+    cuenta: Mapped[str] = mapped_column(String(20))
+    tratamiento: Mapped[str] = mapped_column(String(15))
+    orden: Mapped[int] = mapped_column(Integer)
+
+
+class GastoImportacion(Base):
+    """Gasto de importación de una unidad (HU-4.04), en GTQ o USD, con su equivalente en quetzales.
+
+    Cuenta y tratamiento se copian del concepto al registrar, como el régimen en la factura: si el
+    catálogo cambia después, el gasto conserva cómo se registró. En quetzales no hay tipo de cambio
+    y el equivalente es el mismo monto; en dólares se guarda el tipo de cambio aplicado (HU-1.07).
+    """
+
+    __tablename__ = "gasto_importacion"
+    __table_args__ = (
+        CheckConstraint("moneda IN ('GTQ', 'USD')", name="ck_gasto_importacion_moneda"),
+        CheckConstraint("monto > 0 AND monto_gtq > 0", name="ck_gasto_importacion_montos"),
+        CheckConstraint(
+            "(moneda = 'GTQ' AND tipo_cambio IS NULL AND monto_gtq = monto)"
+            " OR (moneda = 'USD' AND tipo_cambio > 0)",
+            name="ck_gasto_importacion_tipo_cambio",
+        ),
+        CheckConstraint(
+            "tratamiento IN ('costo', 'credito_fiscal')", name="ck_gasto_importacion_tratamiento"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(
+        String(17), ForeignKey("unidad.vin", name="fk_gasto_importacion_vin_unidad"), index=True
+    )
+    concepto: Mapped[str] = mapped_column(ForeignKey("concepto_gasto_importacion.codigo"))
+    proveedor_id: Mapped[int] = mapped_column(ForeignKey("proveedor.id"), index=True)
+    fecha: Mapped[date] = mapped_column(Date, index=True)
+    documento: Mapped[str] = mapped_column(String(50))
+    descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    moneda: Mapped[str] = mapped_column(String(3))
+    monto: Mapped[Decimal] = mapped_column(MONTO)
+    tipo_cambio: Mapped[Decimal | None] = mapped_column(TIPO_CAMBIO, nullable=True)
+    monto_gtq: Mapped[Decimal] = mapped_column(MONTO)
+    cuenta: Mapped[str] = mapped_column(String(20))
+    tratamiento: Mapped[str] = mapped_column(String(15))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    proveedor: Mapped[Proveedor] = relationship(lazy="joined")
+    concepto_ref: Mapped[ConceptoGastoImportacion] = relationship(lazy="joined")
+    cuenta_por_pagar: Mapped["CuentaPorPagar"] = relationship(
+        back_populates="gasto_importacion", uselist=False, lazy="joined"
+    )
+
+    @property
+    def concepto_nombre(self) -> str:
+        return self.concepto_ref.nombre
+
+
 class CuentaPorPagar(Base):
-    """Saldo a favor de un proveedor. Hoy nace solo de una factura local (HU-4.09) por su total;
-    la compra en EE. UU. (HU-4.02, en USD) y los pagos (HU-4.14) llegan después."""
+    """Saldo a favor de un proveedor. Nace de una factura local (HU-4.09) por su total o de un gasto
+    de importación (HU-4.04) por su monto y en su moneda; siempre de uno solo de los dos. La compra
+    en EE. UU. (HU-4.02, en USD) y los pagos (HU-4.14) llegan después."""
 
     __tablename__ = "cuenta_por_pagar"
     __table_args__ = (
         UniqueConstraint("factura_compra_id", name="uq_cuenta_por_pagar_factura"),
+        UniqueConstraint("gasto_importacion_id", name="uq_cuenta_por_pagar_gasto_importacion"),
+        CheckConstraint(
+            "num_nonnulls(factura_compra_id, gasto_importacion_id) = 1",
+            name="ck_cuenta_por_pagar_origen",
+        ),
         CheckConstraint("moneda IN ('GTQ', 'USD')", name="ck_cuenta_por_pagar_moneda"),
         CheckConstraint("monto > 0", name="ck_cuenta_por_pagar_monto"),
         CheckConstraint("saldo >= 0 AND saldo <= monto", name="ck_cuenta_por_pagar_saldo"),
@@ -182,7 +261,10 @@ class CuentaPorPagar(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     proveedor_id: Mapped[int] = mapped_column(ForeignKey("proveedor.id"), index=True)
-    factura_compra_id: Mapped[int] = mapped_column(ForeignKey("factura_compra.id"))
+    factura_compra_id: Mapped[int | None] = mapped_column(ForeignKey("factura_compra.id"), nullable=True)
+    gasto_importacion_id: Mapped[int | None] = mapped_column(
+        ForeignKey("gasto_importacion.id"), nullable=True
+    )
     fecha: Mapped[date] = mapped_column(Date)
     fecha_vencimiento: Mapped[date] = mapped_column(Date, index=True)
     moneda: Mapped[str] = mapped_column(String(3))
@@ -190,4 +272,5 @@ class CuentaPorPagar(Base):
     saldo: Mapped[Decimal] = mapped_column(MONTO)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    factura: Mapped[FacturaCompra] = relationship(back_populates="cuenta_por_pagar")
+    factura: Mapped[FacturaCompra | None] = relationship(back_populates="cuenta_por_pagar")
+    gasto_importacion: Mapped[GastoImportacion | None] = relationship(back_populates="cuenta_por_pagar")

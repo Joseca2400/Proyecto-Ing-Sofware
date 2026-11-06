@@ -5,6 +5,7 @@ import { UnidadesPantalla } from './unidades';
 
 const URL = '/api/v1/unidades';
 const VIN = '1HGCM82633A004352';
+const URL_GASTOS = `/api/v1/compras/gastos-importacion/unidad/${VIN}`;
 
 const CATALOGOS = {
   estados: [
@@ -41,6 +42,13 @@ const ALTA = {
   documento: 'Alta de la unidad',
   usuario_id: null,
   fecha: '2026-11-06T10:00:00Z',
+};
+
+const SIN_GASTOS = {
+  vin: VIN,
+  gastos: 0,
+  total_costo_gtq: '0.000000',
+  total_credito_fiscal_gtq: '0.000000',
 };
 
 describe('UnidadesPantalla', () => {
@@ -119,6 +127,7 @@ describe('UnidadesPantalla', () => {
     envio.flush(HONDA);
     http.expectOne(URL).flush([HONDA]);
     http.expectOne(`${URL}/${VIN}/historial`).flush([ALTA]);
+    http.expectOne(URL_GASTOS).flush(SIN_GASTOS);
     await fixture.whenStable();
 
     expect(el.textContent).toContain(`Unidad ${VIN} registrada`);
@@ -168,6 +177,7 @@ describe('UnidadesPantalla', () => {
 
     el.querySelector<HTMLButtonElement>('tbody button')!.click();
     http.expectOne(`${URL}/${VIN}/historial`).flush([ALTA]);
+    http.expectOne(URL_GASTOS).flush(SIN_GASTOS);
     await fixture.whenStable();
 
     const opciones = [...el.querySelectorAll('[name=nuevo_estado] option')].map(
@@ -194,6 +204,7 @@ describe('UnidadesPantalla', () => {
         documento: 'BL MSCU1234567',
       },
     ]);
+    http.expectOne(URL_GASTOS).flush(SIN_GASTOS);
     await fixture.whenStable();
 
     expect(el.textContent).toContain(`La unidad ${VIN} pasó a En aduana`);
@@ -206,6 +217,7 @@ describe('UnidadesPantalla', () => {
 
     el.querySelector<HTMLButtonElement>('tbody button')!.click();
     http.expectOne(`${URL}/${VIN}/historial`).flush([ALTA]);
+    http.expectOne(URL_GASTOS).flush(SIN_GASTOS);
     await fixture.whenStable();
 
     escribir(el, 'nuevo_estado', 'en_aduana');
@@ -214,6 +226,26 @@ describe('UnidadesPantalla', () => {
 
     http.expectNone({ method: 'POST', url: `${URL}/${VIN}/estado` });
     expect(el.textContent).toContain('Indica el documento');
+  });
+
+  it('muestra en la ficha los gastos de importación que suman al costo', async () => {
+    const fixture = await crear([HONDA]);
+    const el = elemento(fixture);
+
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    http.expectOne(`${URL}/${VIN}/historial`).flush([ALTA]);
+    http.expectOne(URL_GASTOS).flush({
+      vin: VIN,
+      gastos: 3,
+      total_costo_gtq: '4275.100000',
+      total_credito_fiscal_gtq: '1020.000000',
+    });
+    await fixture.whenStable();
+
+    const ficha = el.querySelector('.ficha dl')!.textContent ?? '';
+    expect(ficha).toContain('Gastos de importación');
+    expect(ficha).toMatch(/4,275\.10\s+suman al costo/);
+    expect(ficha).toMatch(/IVA de importación \D*1,020\.00: crédito fiscal, no suma/);
   });
 
   it('consulta con los filtros de búsqueda y estado', async () => {

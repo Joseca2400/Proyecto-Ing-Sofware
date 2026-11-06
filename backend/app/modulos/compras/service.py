@@ -14,6 +14,18 @@ pagar al proveedor por el total, con vencimiento según sus días de crédito.
 HU-4.09 (diferido): importar el XML del DTE (criterio 3) y el libro de compras (criterio 5, con
 HU-2.15).
 
+HU-4.04 (incluido): gastos de importación ligados a una unidad registrada (VIN), con un catálogo
+de conceptos (flete, seguro de transporte, agente aduanal, almacenaje, DAI, IVA de importación,
+IPRIMA, placas y otros) que da a cada uno su cuenta y su tratamiento; el IVA de importación es
+crédito fiscal y no suma al costo de la unidad; cada gasto tiene proveedor (HU-4.01), puede ser
+en GTQ o USD (con el tipo de cambio de la fecha, HU-1.06/HU-1.07, y su equivalente en quetzales)
+y abre su cuenta por pagar en la moneda del documento, como la factura de HU-4.09. La ficha de la
+unidad muestra el total que suma al costo (`resumen_gastos_unidad`).
+HU-4.04 (diferido): ligar el gasto a un expediente (criterio 2) y prorratear los compartidos
+(HU-4.05); la DUCA (HU-4.06), que cuadrará DAI e IVA contra estos gastos; el IVA de los servicios
+locales con FEL como crédito fiscal (criterio 5; hoy esa factura se captura en HU-4.09); un tipo
+de cambio personalizado con justificación.
+
 Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
 - El perfil fiscal valida su NIT con el mismo `comun/nit.py`; no se duplica la regla.
 - Las retenciones diferidas dependen de que la empresa sea agente de retención de IVA o ISR:
@@ -38,22 +50,45 @@ Pendiente para HU-4.09 cuando salgan las historias de las que depende (ver `regi
 - HU-6.02 (FEL, equipo C): el adaptador puede verificar la autorización del DTE con la SAT.
 - HU-1.07: facturas locales en dólares, con el tipo de cambio de la fecha.
 
+Pendiente para HU-4.04 cuando salgan las historias de las que depende:
+- HU-2.01/HU-2.03 (motor contable, equipo A): pedir la partida en la misma transacción que el
+  gasto (ver `registrar_gasto_importacion`): débito a la cuenta del concepto por `monto_gtq`
+  (1.1.04.01 con el VIN si suma al costo; 1.1.03.02 si es IVA de importación) y crédito a
+  proveedores (2.1.01.01 del exterior o 2.1.01.02 locales; en USD, con el monto original y el
+  tipo de cambio).
+- HU-1.02 (catálogo): la cuenta de cada concepto es texto; guardar la referencia a la cuenta.
+- HU-4.05/HU-4.06: el expediente y la DUCA; el gasto podrá ligarse al expediente en vez del VIN.
+
 Pendiente al mezclar HU-1.09 y HU-1.11: exigir sesión y permiso del auxiliar contable, y que la
 auditoría automática registre el alta del proveedor y de la factura (con el VIN de cada línea).
+Hecho para la auditoría, también del gasto de importación (con su VIN); la sesión sigue pendiente.
 """
 
 import re
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.comun.dinero import convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.comun.nit import NITInvalido, formatear_nit, normalizar_nit
-from app.modulos.compras.models import CuentaPorPagar, FacturaCompra, LineaFacturaCompra, Proveedor
-from app.modulos.compras.schemas import FacturaCompraEntrada, LineaFacturaEntrada, ProveedorEntrada
+from app.modulos.compras.models import (
+    ConceptoGastoImportacion,
+    CuentaPorPagar,
+    FacturaCompra,
+    GastoImportacion,
+    LineaFacturaCompra,
+    Proveedor,
+)
+from app.modulos.compras.schemas import (
+    FacturaCompraEntrada,
+    GastoImportacionEntrada,
+    LineaFacturaEntrada,
+    ProveedorEntrada,
+)
 from app.modulos.configuracion import service as configuracion
 from app.modulos.unidades import service as unidades
 
@@ -175,21 +210,24 @@ _CUENTA = re.compile(r"[0-9]+([.-][0-9]+)*")
 _LIMITE_MONTO = Decimal("1000000000000")  # cabe en NUMERIC(18, 6)
 
 
-def _monto(texto: str, campo: str, linea: int, permite_cero: bool) -> Decimal:
-    """Lee un monto enviado como texto: número finito, con hasta 6 decimales, nunca float."""
+def _monto(texto: str, campo: str, permite_cero: bool, prefijo: str = "") -> Decimal:
+    """Lee un monto enviado como texto: número finito, con hasta 6 decimales, nunca float.
+
+    `prefijo` ubica el error ("Línea 2: "); `campo` es el sujeto del mensaje ("la base").
+    """
     try:
         valor = Decimal(texto)
     except InvalidOperation:
-        raise ErrorNegocio(f"Línea {linea}: {campo} no es un número válido") from None
+        raise ErrorNegocio(f"{prefijo}{campo} no es un número válido") from None
     if not valor.is_finite():
-        raise ErrorNegocio(f"Línea {linea}: {campo} no es un número válido")
+        raise ErrorNegocio(f"{prefijo}{campo} no es un número válido")
     if -valor.as_tuple().exponent > 6:  # type: ignore[operator]
-        raise ErrorNegocio(f"Línea {linea}: {campo} admite hasta 6 decimales")
+        raise ErrorNegocio(f"{prefijo}{campo} admite hasta 6 decimales")
     if valor < 0 or (valor == 0 and not permite_cero):
         condicion = "no puede ser negativo" if permite_cero else "debe ser mayor que cero"
-        raise ErrorNegocio(f"Línea {linea}: {campo} {condicion}")
+        raise ErrorNegocio(f"{prefijo}{campo} {condicion}")
     if valor >= _LIMITE_MONTO:
-        raise ErrorNegocio(f"Línea {linea}: {campo} excede el máximo permitido")
+        raise ErrorNegocio(f"{prefijo}{campo} excede el máximo permitido")
     return valor
 
 
@@ -219,8 +257,8 @@ def _linea(db: Session, numero: int, datos: LineaFacturaEntrada) -> LineaFactura
         cuenta=datos.cuenta,
         linea_negocio=datos.linea_negocio,
         vin=vin,
-        base=_monto(datos.base, "la base", numero, permite_cero=False),
-        iva=_monto(datos.iva, "el IVA", numero, permite_cero=True),
+        base=_monto(datos.base, "la base", permite_cero=False, prefijo=f"Línea {numero}: "),
+        iva=_monto(datos.iva, "el IVA", permite_cero=True, prefijo=f"Línea {numero}: "),
     )
 
 
@@ -316,3 +354,111 @@ def obtener_factura(db: Session, factura_id: int) -> FacturaCompra:
     if factura is None:
         raise ErrorNegocio(f"No existe la factura {factura_id}", status=404)
     return factura
+
+
+# ── HU-4.04: gastos de importación ────────────────────────────────────────────
+
+_DECIMALES_MONTO = 6
+
+
+def listar_conceptos(db: Session) -> list[ConceptoGastoImportacion]:
+    """Catálogo de conceptos (criterio 1), en el orden en que se sembró."""
+    return list(db.scalars(select(ConceptoGastoImportacion).order_by(ConceptoGastoImportacion.orden)))
+
+
+def registrar_gasto_importacion(db: Session, datos: GastoImportacionEntrada) -> GastoImportacion:
+    """Registra el gasto ligado a la unidad y abre su cuenta por pagar, todo en una transacción."""
+    vin = unidades.validar_vin(datos.vin)
+    if not unidades.existe_vin(db, vin):
+        raise ErrorNegocio(f"No existe la unidad con VIN {vin}; regístrela antes")
+    concepto = db.scalar(
+        select(ConceptoGastoImportacion).where(ConceptoGastoImportacion.codigo == datos.concepto)
+    )
+    if concepto is None:
+        raise ErrorNegocio(f"Concepto de gasto de importación desconocido: {datos.concepto}")
+    proveedor = obtener_proveedor(db, datos.proveedor_id)
+    if datos.fecha > date.today():
+        raise ErrorNegocio("La fecha del gasto no puede ser futura")
+    if not datos.documento:
+        raise ErrorNegocio("Indique el documento del gasto: factura, recibo, DUCA…")
+    monto = _monto(datos.monto, "El monto", permite_cero=False)
+
+    # Criterio 4: en dólares se convierte con el tipo de cambio de la fecha (HU-1.06); si no está
+    # cargado, `configuracion` rechaza el registro.
+    tipo_cambio = None
+    monto_gtq = monto
+    if datos.moneda == "USD":
+        tipo_cambio = configuracion.tipo_cambio_de(db, datos.fecha)
+        monto_gtq = redondear(convertir(monto, tipo_cambio), _DECIMALES_MONTO)
+
+    gasto = GastoImportacion(
+        vin=vin,
+        concepto=concepto.codigo,
+        proveedor_id=proveedor.id,
+        fecha=datos.fecha,
+        documento=datos.documento,
+        descripcion=datos.descripcion,
+        moneda=datos.moneda,
+        monto=monto,
+        tipo_cambio=tipo_cambio,
+        monto_gtq=monto_gtq,
+        # Criterio 3: el tratamiento del concepto decide si suma al costo o es crédito fiscal.
+        cuenta=concepto.cuenta,
+        tratamiento=concepto.tratamiento,
+    )
+    # La deuda queda en la moneda del documento: un gasto en dólares se le debe en dólares.
+    gasto.cuenta_por_pagar = CuentaPorPagar(
+        proveedor_id=proveedor.id,
+        fecha=datos.fecha,
+        fecha_vencimiento=datos.fecha + timedelta(days=proveedor.dias_credito),
+        moneda=datos.moneda,
+        monto=monto,
+        saldo=monto,
+    )
+    db.add(gasto)
+    # Pendiente HU-2.01/HU-2.03: aquí se pide la partida a `contabilidad` (sin commit propio), para
+    # que el gasto, su cuenta por pagar y su partida se confirmen juntos.
+    db.commit()
+    db.refresh(gasto)
+    return gasto
+
+
+def listar_gastos_importacion(
+    db: Session, vin: str | None = None, proveedor_id: int | None = None
+) -> list[GastoImportacion]:
+    """Gastos del más reciente al más antiguo, opcionalmente de una unidad o de un proveedor."""
+    consulta = select(GastoImportacion).order_by(GastoImportacion.fecha.desc(), GastoImportacion.id.desc())
+    if vin and vin.strip():
+        consulta = consulta.where(GastoImportacion.vin == vin.strip().upper())
+    if proveedor_id is not None:
+        consulta = consulta.where(GastoImportacion.proveedor_id == proveedor_id)
+    return list(db.scalars(consulta).unique())
+
+
+def obtener_gasto_importacion(db: Session, gasto_id: int) -> GastoImportacion:
+    gasto = db.get(GastoImportacion, gasto_id)
+    if gasto is None:
+        raise ErrorNegocio(f"No existe el gasto de importación {gasto_id}", status=404)
+    return gasto
+
+
+def resumen_gastos_unidad(db: Session, vin: str) -> dict:
+    """Totales en quetzales de los gastos de una unidad: lo que suma a su costo y lo que es crédito
+    fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
+    unidad = unidades.obtener_por_vin(db, vin)
+    filas = db.execute(
+        select(
+            GastoImportacion.tratamiento,
+            func.count(GastoImportacion.id),
+            func.sum(GastoImportacion.monto_gtq),
+        )
+        .where(GastoImportacion.vin == unidad.vin)
+        .group_by(GastoImportacion.tratamiento)
+    ).all()
+    totales = {tratamiento: total for tratamiento, _, total in filas}
+    return {
+        "vin": unidad.vin,
+        "gastos": sum(cantidad for _, cantidad, _ in filas),
+        "total_costo_gtq": totales.get("costo", Decimal(0)),
+        "total_credito_fiscal_gtq": totales.get("credito_fiscal", Decimal(0)),
+    }

@@ -18,6 +18,7 @@ export class Layout {
     { etiqueta: 'Inicio', ruta: '/inicio' },
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
+    { etiqueta: 'Gastos de importación', ruta: '/compras/gastos-importacion' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Contabilidad' },
