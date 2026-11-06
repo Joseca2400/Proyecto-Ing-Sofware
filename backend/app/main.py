@@ -9,6 +9,7 @@ from app.modulos.configuracion.router import router as configuracion_router
 from app.modulos.contabilidad.router import router as contabilidad_router
 from app.modulos.seguridad.router import router as seguridad_router
 from app.modulos.sistema.router import router as sistema_router
+from app.modulos.unidades.router import router as unidades_router
 
 app = FastAPI(title=config.APP_NOMBRE, version=config.APP_VERSION)
 
@@ -27,3 +28,4 @@ app.include_router(seguridad_router, prefix="/api/v1")
 app.include_router(configuracion_router, prefix="/api/v1")
 app.include_router(compras_router, prefix="/api/v1")
 app.include_router(contabilidad_router, prefix="/api/v1")
+app.include_router(unidades_router, prefix="/api/v1")

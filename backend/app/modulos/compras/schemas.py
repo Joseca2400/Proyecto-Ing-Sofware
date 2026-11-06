@@ -12,7 +12,6 @@ RubroProveedor = Literal[
 ]
 Moneda = Literal["GTQ", "USD"]
 RegimenProveedor = Literal["general", "pequeno_contribuyente"]
-LineaNegocio = Literal["alquiler", "venta", "taller", "financiamiento", "administracion"]
 
 # ── HU-4.01: proveedores ───────────────────────────────────────────────────────
 
@@ -77,16 +76,17 @@ class ProveedorSalida(BaseModel):
 
 class LineaFacturaEntrada(BaseModel):
     """Línea del DTE. Base e IVA llegan como texto ("1250.00") para no pasar por float; la forma de
-    la cuenta, el VIN y los montos se validan en el service."""
+    la cuenta, la línea de negocio (contra `configuracion`), el VIN (contra `unidades`) y los montos
+    se validan en el service."""
 
     descripcion: str = Field(max_length=300)
     cuenta: str = Field(max_length=20)
-    linea_negocio: LineaNegocio
+    linea_negocio: str = Field(max_length=20)
     vin: str | None = Field(default=None, max_length=17)
     base: str
     iva: str
 
-    @field_validator("descripcion", "cuenta", mode="before")
+    @field_validator("descripcion", "cuenta", "linea_negocio", mode="before")
     @classmethod
     def recortar(cls, valor: object) -> object:
         return valor.strip() if isinstance(valor, str) else valor
@@ -146,7 +146,7 @@ class LineaFacturaSalida(BaseModel):
     numero_linea: int
     descripcion: str
     cuenta: str
-    linea_negocio: LineaNegocio
+    linea_negocio: str
     vin: str | None
     base: Decimal
     iva: Decimal

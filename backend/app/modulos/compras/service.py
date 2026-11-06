@@ -25,12 +25,12 @@ Pendiente para HU-4.09 cuando salgan las historias de las que depende (ver `regi
 - HU-1.02 (catálogo, equipo A): la cuenta de cada línea hoy es texto con forma de código
   ("5.1.02"). Validarla contra el service de `configuracion`: que exista, sea de detalle y esté
   activa; y guardar la referencia a la cuenta en lugar del texto (migración de datos).
-- HU-1.04 (dimensiones, equipo A): la línea de negocio hoy es una lista fija. Tomarla de las
-  dimensiones y aplicar lo que defina la cuenta: línea obligatoria o por defecto, y si el VIN es
-  obligatorio, opcional o no aplica.
-- HU-1.05 (unidades, equipo B): el VIN hoy solo se valida en su forma (17 caracteres, sin I, O
-  ni Q). Validar el dígito verificador y que la unidad exista, y ligar la línea a la unidad para
-  su hoja de costo.
+- HU-1.04 (dimensiones, equipo A): la línea de negocio ya se valida contra la lista de
+  `configuracion`. Falta aplicar lo que defina la cuenta (línea obligatoria o por defecto, y si el
+  VIN es obligatorio, opcional o no aplica) con `configuracion.resolver_dimensiones`, que pide la
+  cuenta del catálogo (HU-1.02).
+- HU-1.05 (unidades): hecho. El VIN se valida con el service de `unidades` (forma y dígito
+  verificador) y la unidad debe existir; la línea queda ligada a la unidad por llave foránea.
 - HU-2.01/HU-2.03 (motor contable, equipo A): pedir la partida al service de `contabilidad` en la
   misma transacción que la factura (regla 3 de la arquitectura): débito a la cuenta de cada línea
   por su base (más su IVA si es pequeño contribuyente), débito a IVA por cobrar por el crédito
@@ -54,6 +54,8 @@ from app.comun.errores import ErrorNegocio
 from app.comun.nit import NITInvalido, formatear_nit, normalizar_nit
 from app.modulos.compras.models import CuentaPorPagar, FacturaCompra, LineaFacturaCompra, Proveedor
 from app.modulos.compras.schemas import FacturaCompraEntrada, LineaFacturaEntrada, ProveedorEntrada
+from app.modulos.configuracion import service as configuracion
+from app.modulos.unidades import service as unidades
 
 
 def _nit_repetido(nit: str) -> ErrorNegocio:
@@ -170,8 +172,6 @@ _NUMERO = re.compile(r"[0-9]{1,20}")
 _AUTORIZACION = re.compile(r"[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}")
 # Forma de un código del catálogo ("5", "5.1.02", "5-1-02"); HU-1.02 valida que la cuenta exista.
 _CUENTA = re.compile(r"[0-9]+([.-][0-9]+)*")
-# Forma del VIN (norma de EE. UU.): 17 caracteres sin I, O ni Q; HU-1.05 valida el verificador.
-_VIN = re.compile(r"[A-HJ-NPR-Z0-9]{17}")
 _LIMITE_MONTO = Decimal("1000000000000")  # cabe en NUMERIC(18, 6)
 
 
@@ -193,22 +193,32 @@ def _monto(texto: str, campo: str, linea: int, permite_cero: bool) -> Decimal:
     return valor
 
 
-def _linea(numero: int, datos: LineaFacturaEntrada) -> LineaFacturaCompra:
+def _linea(db: Session, numero: int, datos: LineaFacturaEntrada) -> LineaFacturaCompra:
     if not datos.descripcion:
         raise ErrorNegocio(f"Línea {numero}: la descripción es obligatoria")
     # Pendiente HU-1.02: la cuenta debe existir en el catálogo, ser de detalle y estar activa.
     if not _CUENTA.fullmatch(datos.cuenta):
         raise ErrorNegocio(f"Línea {numero}: la cuenta debe ser un código del catálogo, por ejemplo 5.1.02")
-    # Pendiente HU-1.04: la cuenta decide si la línea de negocio y el VIN son obligatorios.
-    # Pendiente HU-1.05: dígito verificador del VIN y que la unidad exista.
-    if datos.vin is not None and not _VIN.fullmatch(datos.vin):
-        raise ErrorNegocio(f"Línea {numero}: el VIN debe tener 17 letras o dígitos, sin I, O ni Q")
+    # Pendiente HU-1.04 con HU-1.02: la cuenta decide si la línea de negocio y el VIN son obligatorios.
+    if datos.linea_negocio not in configuracion.LINEAS_NEGOCIO:
+        raise ErrorNegocio(
+            f"Línea {numero}: línea de negocio desconocida ({datos.linea_negocio}); "
+            f"use una de: {', '.join(configuracion.LINEAS_NEGOCIO)}"
+        )
+    vin = None
+    if datos.vin is not None:
+        try:
+            vin = unidades.validar_vin(datos.vin)
+        except ErrorNegocio as error:
+            raise ErrorNegocio(f"Línea {numero}: {error.mensaje}") from None
+        if not unidades.existe_vin(db, vin):
+            raise ErrorNegocio(f"Línea {numero}: no existe la unidad con VIN {vin}; regístrela antes")
     return LineaFacturaCompra(
         numero_linea=numero,
         descripcion=datos.descripcion,
         cuenta=datos.cuenta,
         linea_negocio=datos.linea_negocio,
-        vin=datos.vin,
+        vin=vin,
         base=_monto(datos.base, "la base", numero, permite_cero=False),
         iva=_monto(datos.iva, "el IVA", numero, permite_cero=True),
     )
@@ -252,7 +262,7 @@ def registrar_factura(db: Session, datos: FacturaCompraEntrada) -> FacturaCompra
     if repetida is not None:
         raise _dte_repetido(proveedor, datos.serie, datos.numero)
 
-    lineas = [_linea(numero, linea) for numero, linea in enumerate(datos.lineas, start=1)]
+    lineas = [_linea(db, numero, linea) for numero, linea in enumerate(datos.lineas, start=1)]
     total_base = sum((linea.base for linea in lineas), Decimal(0))
     total_iva = sum((linea.iva for linea in lineas), Decimal(0))
     total = total_base + total_iva

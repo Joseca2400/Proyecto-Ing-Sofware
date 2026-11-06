@@ -22,8 +22,9 @@ const AUTORIZACION =
 const VIN = /^\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}\s*$/;
 
 // HU-4.09 (Sprint 1): captura del DTE recibido de un proveedor local, con su cuenta por pagar.
-// Cuenta, línea de negocio y VIN se validan solo en su forma hasta que existan el catálogo
-// (HU-1.02), las dimensiones (HU-1.04) y las unidades (HU-1.05).
+// Aquí solo se revisa la forma. El servidor valida la línea de negocio contra configuración
+// (HU-1.04), el dígito verificador del VIN y que la unidad exista (HU-1.05); la cuenta, hasta que
+// se conecte el catálogo (HU-1.02), solo en su forma.
 // Diferido: importar el XML del DTE y el libro de compras.
 @Component({
   selector: 'app-facturas-compras',
