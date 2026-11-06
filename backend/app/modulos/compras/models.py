@@ -168,7 +168,7 @@ class LineaFacturaCompra(Base):
 
 
 class ConceptoGastoImportacion(Base):
-    """Catálogo de conceptos de gasto de importación (HU-4.04, criterio 1), sembrado en `0009`.
+    """Catálogo de conceptos de gasto de importación (HU-4.04, criterio 1), sembrado en `0011`.
 
     El tratamiento decide si el gasto suma al costo de la unidad o es crédito fiscal (el IVA de
     importación, criterio 3). La cuenta es el código del catálogo (HU-1.02) al que se debita el

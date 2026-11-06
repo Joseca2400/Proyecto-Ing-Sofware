@@ -50,12 +50,13 @@ Pendiente para HU-4.09 cuando salgan las historias de las que depende (ver `regi
 - HU-6.02 (FEL, equipo C): el adaptador puede verificar la autorización del DTE con la SAT.
 - HU-1.07: facturas locales en dólares, con el tipo de cambio de la fecha.
 
-Pendiente para HU-4.04 cuando salgan las historias de las que depende:
-- HU-2.01/HU-2.03 (motor contable, equipo A): pedir la partida en la misma transacción que el
-  gasto (ver `registrar_gasto_importacion`): débito a la cuenta del concepto por `monto_gtq`
-  (1.1.04.01 con el VIN si suma al costo; 1.1.03.02 si es IVA de importación) y crédito a
-  proveedores (2.1.01.01 del exterior o 2.1.01.02 locales; en USD, con el monto original y el
-  tipo de cambio).
+Pendiente para HU-4.04:
+- HU-2.01/HU-2.03 (motor contable, equipo A): el motor ya existe
+  (`contabilidad.registrar_automatica`, sin commit propio); se conectará en otra historia. Allí se
+  pedirá la partida en la misma transacción que el gasto (ver `registrar_gasto_importacion`):
+  débito a la cuenta del concepto por `monto_gtq` (1.1.04.01 con el VIN si suma al costo;
+  1.1.03.02 si es IVA de importación) y crédito a proveedores (2.1.01.01 del exterior o 2.1.01.02
+  locales; en USD, con el monto original y el tipo de cambio).
 - HU-1.02 (catálogo): la cuenta de cada concepto es texto; guardar la referencia a la cuenta.
 - HU-4.05/HU-4.06: el expediente y la DUCA; el gasto podrá ligarse al expediente en vez del VIN.
 
@@ -416,8 +417,9 @@ def registrar_gasto_importacion(db: Session, datos: GastoImportacionEntrada) -> 
         saldo=monto,
     )
     db.add(gasto)
-    # Pendiente HU-2.01/HU-2.03: aquí se pide la partida a `contabilidad` (sin commit propio), para
-    # que el gasto, su cuenta por pagar y su partida se confirmen juntos.
+    # Pendiente: el motor contable ya existe (`contabilidad.registrar_automatica`, sin commit
+    # propio) y se conectará en otra historia, para que el gasto, su cuenta por pagar y su partida
+    # se confirmen juntos.
     db.commit()
     db.refresh(gasto)
     return gasto

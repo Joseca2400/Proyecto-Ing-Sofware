@@ -47,6 +47,11 @@ def _cuenta(db: Session, cuenta_id: int) -> Cuenta:
     return cuenta
 
 
+def obtener_cuenta(db: Session, cuenta_id: int) -> Cuenta:
+    """Cuenta por id, para los módulos que validan contra el catálogo (el motor contable)."""
+    return _cuenta(db, cuenta_id)
+
+
 def _fijar_dimensiones(cuenta: Cuenta, linea_obligatoria: bool, vin: str, linea_defecto: str | None) -> None:
     if vin not in MODOS_VIN:
         raise ErrorNegocio(f"VIN debe ser uno de: {', '.join(MODOS_VIN)}")

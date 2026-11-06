@@ -1,0 +1,1125 @@
+<div class="aplicacion">
+  <aside class="lateral" [class.abierto]="menuAbierto()">
+    <a
+      class="marca"
+      routerLink="/mockup"
+      (click)="prepararVista()"
+      aria-label="Kilómetro Cero, resumen"
+    >
+      <span class="simbolo"><span>KM</span><b>0</b></span>
+      <span>Kilómetro Cero<small>GESTIÓN AUTOMOTRIZ</small></span>
+    </a>
+    <div class="sede">
+      <span class="punto"></span> Sede Guatemala <span class="sede-pais">GT</span>
+    </div>
+    <nav aria-label="Navegación del prototipo">
+      @for (grupo of grupos; track grupo.titulo) {
+        <p class="grupo-titulo">{{ grupo.titulo }}</p>
+        @for (entrada of grupo.entradas; track entrada.id) {
+          <a
+            [routerLink]="['/mockup']"
+            [queryParams]="{ vista: entrada.id }"
+            [class.activo]="vista() === entrada.id"
+            [attr.aria-current]="vista() === entrada.id ? 'page' : null"
+            (click)="prepararVista()"
+          >
+            <app-icono [nombre]="entrada.icono" /><span>{{ entrada.nombre }}</span>
+            @if (entrada.id === 'ventas' || entrada.id === 'financiamiento') {
+              <small class="futuro">R2</small>
+            }
+          </a>
+        }
+      }
+    </nav>
+    <div class="lateral-pie">
+      <span class="avatar">MC</span>
+      <div><strong>María Castillo</strong><small>Contador · Perfil de ejemplo</small></div>
+      <app-icono nombre="escudo" />
+    </div>
+  </aside>
+  @if (menuAbierto()) {
+    <button class="velo-menu" aria-label="Cerrar menú" (click)="prepararVista()"></button>
+  }
+  <div class="principal">
+    <header class="barra">
+      <button
+        class="boton-icono movil"
+        aria-label="Abrir menú"
+        [attr.aria-expanded]="menuAbierto()"
+        (click)="menuAbierto.set(!menuAbierto())"
+      >
+        <app-icono nombre="menu" />
+      </button>
+      <div class="migas">
+        Espacio de trabajo <span>/</span> <strong>{{ titulo() }}</strong>
+      </div>
+      <label class="buscador"
+        ><app-icono nombre="buscar" /><input
+          aria-label="Buscar unidad por VIN, placa o modelo"
+          placeholder="Buscar VIN, placa o modelo…"
+          [ngModel]="busqueda()"
+          (ngModelChange)="buscar($event)"
+        /><span class="atajo">VIN</span></label
+      >
+      <span class="etiqueta-demo"><span class="punto"></span> Prototipo</span>
+      <a
+        class="boton-icono salir"
+        routerLink="/inicio"
+        aria-label="Ir al sistema actual"
+        title="Ir al sistema actual"
+        ><app-icono nombre="salir"
+      /></a>
+    </header>
+    <main id="contenido-mockup">
+      <div class="encabezado">
+        <div>
+          <p class="ceja">
+            KILÓMETRO CERO / {{ vista() === 'resumen' ? 'VISTA GENERAL' : 'OPERACIÓN CONECTADA' }}
+          </p>
+          <h1>{{ titulo() }}</h1>
+          <p class="subtitulo">{{ descripciones[vista()] }}</p>
+        </div>
+        <div class="acciones">
+          @if (vista() === 'resumen') {
+            <label class="selector-periodo"
+              ><app-icono nombre="calendario" /><select
+                aria-label="Período del resumen"
+                [ngModel]="periodo()"
+                (ngModelChange)="periodo.set($event)"
+              >
+                <option value="noviembre">Noviembre 2026</option>
+                <option value="octubre">Octubre 2026</option>
+              </select></label
+            >
+          }
+          @if (vista() === 'resumen' || vista() === 'alquileres') {
+            <button class="boton primario" (click)="nuevoContrato()">
+              <app-icono nombre="mas" /> Nuevo contrato
+            </button>
+          }
+          @if (vista() === 'flota' || vista() === 'reportes') {
+            <button class="boton secundario" (click)="exportar()">
+              <app-icono nombre="descargar" /> Exportar CSV demo
+            </button>
+          }
+        </div>
+      </div>
+      @if (aviso()) {
+        <div class="aviso" role="status">
+          <app-icono nombre="check" />{{ aviso()
+          }}<button class="boton-icono" aria-label="Cerrar aviso" (click)="aviso.set('')">
+            <app-icono nombre="cerrar" />
+          </button>
+        </div>
+      }
+      @if (vista() === 'resumen') {
+        <div class="saludo">
+          <span><span class="punto"></span> Así va tu operación</span
+          ><small>{{
+            periodo() === 'noviembre'
+              ? 'Corte ilustrativo · 06 nov 2026'
+              : 'Cierre ilustrativo · 31 oct 2026'
+          }}</small>
+        </div>
+        <section class="indicadores" aria-label="Indicadores de ejemplo">
+          <article class="indicador">
+            <div class="indicador-titulo">
+              Unidades alquiladas <span class="icono-suave"><app-icono nombre="auto" /></span>
+            </div>
+            <div class="cifra">{{ periodo() === 'noviembre' ? '18' : '16' }}<span>/ 24</span></div>
+            <div class="indicador-pie">
+              <span class="positivo"
+                >{{ periodo() === 'noviembre' ? '75%' : '67%' }} de la flota</span
+              ><span>en este corte</span>
+            </div>
+            <div class="barra-mini">
+              <span [style.width.%]="periodo() === 'noviembre' ? 75 : 67"></span>
+            </div>
+          </article>
+          <article class="indicador">
+            <div class="indicador-titulo">
+              Ingresos de alquiler <span class="icono-suave"><app-icono nombre="grafica" /></span>
+            </div>
+            <div class="cifra dinero">
+              {{ (periodo() === 'noviembre' ? '148500.00' : '132800.00') | monto }}
+            </div>
+            <div class="indicador-pie">
+              <span class="positivo">{{ periodo() === 'noviembre' ? '+11.8%' : '+2.5%' }}</span
+              ><span>vs. mes anterior</span>
+            </div>
+            <small class="nota-indicador">Ingreso facturado del período</small>
+          </article>
+          <article class="indicador">
+            <div class="indicador-titulo">
+              Cuentas por cobrar
+              <span class="icono-suave ambar"><app-icono nombre="cartera" /></span>
+            </div>
+            <div class="cifra dinero">
+              {{ (periodo() === 'noviembre' ? '32450.00' : '28900.00') | monto }}
+            </div>
+            <div class="indicador-pie">
+              <span class="advertencia"
+                >{{ (periodo() === 'noviembre' ? '8400.00' : '5200.00') | monto }} vencidos</span
+              >
+            </div>
+            <button class="enlace" (click)="navegar('facturacion')">
+              Revisar cobranza <app-icono nombre="flecha" />
+            </button>
+          </article>
+          <article class="indicador">
+            <div class="indicador-titulo">
+              Unidades en preparación <span class="icono-suave"><app-icono nombre="barco" /></span>
+            </div>
+            <div class="cifra">
+              {{ periodo() === 'noviembre' ? '4' : '3' }}<span>unidades</span>
+            </div>
+            <div class="indicador-pie">
+              <span>{{
+                periodo() === 'noviembre'
+                  ? '2 en tránsito · 1 aduana · 1 taller'
+                  : '1 en tránsito · 1 aduana · 1 taller'
+              }}</span>
+            </div>
+            <button class="enlace" (click)="navegar('importaciones')">
+              Ver recorrido <app-icono nombre="flecha" />
+            </button>
+          </article>
+        </section>
+        <div class="paneles-resumen">
+          <section class="panel grafico-panel">
+            <div class="panel-titulo">
+              <div>
+                <h2>Ingresos de alquiler</h2>
+                <p>El movimiento de los últimos seis meses</p>
+              </div>
+              <span class="leyenda"><span class="punto"></span> GTQ</span>
+            </div>
+            <div class="grafica" role="img" [attr.aria-label]="descripcionGrafica()">
+              <div class="eje-y">
+                <span>Q 150 mil</span><span>Q 100 mil</span><span>Q 50 mil</span><span>Q 0</span>
+              </div>
+              <div class="barras">
+                <div class="rejilla"></div>
+                @for (mes of meses(); track mes.nombre) {
+                  <div class="columna">
+                    <div
+                      class="barra-dato"
+                      [class.destacada]="mes.nombre === (periodo() === 'noviembre' ? 'Nov' : 'Oct')"
+                      [style.height.%]="mes.alto"
+                      [attr.title]="mes.ingreso | monto"
+                    >
+                      <span class="valor-grafica">{{ mes.ingreso | monto }}</span>
+                    </div>
+                    <span class="mes">{{ mes.nombre }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="grafico-pie">
+              <span>Valores ilustrativos · 2026</span
+              ><button class="enlace" (click)="navegar('reportes')">
+                Explorar rentabilidad <app-icono nombre="flecha" />
+              </button>
+            </div>
+          </section>
+          <section class="panel pendientes">
+            <div class="panel-titulo">
+              <div>
+                <h2>Requieren tu atención</h2>
+                <p>Pendientes al 06 nov 2026</p>
+              </div>
+              <span class="contador">3</span>
+            </div>
+            <button class="pendiente" (click)="navegar('alquileres')">
+              <span class="icono-suave azul"><app-icono nombre="contrato" /></span
+              ><span
+                ><strong>Una devolución próxima</strong
+                ><small>Toyota RAV4 · 08 nov, 09:00</small></span
+              ><app-icono nombre="flecha" />
+            </button>
+            <button class="pendiente" (click)="navegar('contabilidad')">
+              <span class="icono-suave ambar"><app-icono nombre="libro" /></span
+              ><span
+                ><strong>Una partida por revisar</strong
+                ><small>Compra en USD · PAR-00128</small></span
+              ><app-icono nombre="flecha" />
+            </button>
+            <button class="pendiente" (click)="navegar('facturacion')">
+              <span class="icono-suave rojo"><app-icono nombre="reloj" /></span
+              ><span
+                ><strong>Un cobro vencido</strong
+                ><small>Logística del Valle · {{ '8400.00' | monto }}</small></span
+              ><app-icono nombre="flecha" />
+            </button>
+            <div class="nota-pendientes">
+              <app-icono nombre="escudo" /><span>Registrar y aprobar son funciones separadas.</span>
+            </div>
+          </section>
+        </div>
+      }
+      @if (vista() === 'resumen' || vista() === 'flota') {
+        <section class="panel tabla-panel">
+          <div class="panel-titulo">
+            <div>
+              <h2>
+                {{ vista() === 'resumen' ? 'Tu flota, en movimiento' : 'Directorio de unidades' }}
+              </h2>
+              <p>
+                {{
+                  vista() === 'resumen'
+                    ? 'Una mirada a las unidades de tu operación'
+                    : 'Busca por VIN, placa o modelo desde la barra superior'
+                }}
+                · Muestra de 6 unidades
+              </p>
+            </div>
+            @if (vista() === 'resumen') {
+              <button class="enlace" (click)="navegar('flota')">
+                Ver unidades <app-icono nombre="flecha" />
+              </button>
+            }
+          </div>
+          <div class="filtros" aria-label="Filtrar unidades por estado">
+            @for (estado of estados; track estado) {
+              <button
+                [class.seleccionado]="filtro() === estado"
+                [attr.aria-pressed]="filtro() === estado"
+                (click)="filtro.set(estado)"
+              >
+                {{ estado }}
+              </button>
+            }
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>UNIDAD</th>
+                  <th>VIN / PLACA</th>
+                  <th>ESTADO</th>
+                  <th>KILOMETRAJE</th>
+                  <th class="derecha">COSTO ACUMULADO</th>
+                  <th><span class="solo-lector">Detalle</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vehiculo of unidadesFiltradas(); track vehiculo.codigo) {
+                  <tr>
+                    <td>
+                      <div class="celda-unidad">
+                        <span class="mini-auto"><app-icono nombre="auto" /></span
+                        ><span
+                          ><button class="nombre-unidad" (click)="abrirUnidad(vehiculo)">
+                            {{ vehiculo.modelo }} <span>{{ vehiculo.anio }}</span></button
+                          ><small
+                            >{{ vehiculo.codigo }} <span>·</span> {{ vehiculo.tipo }}</small
+                          ></span
+                        >
+                      </div>
+                    </td>
+                    <td>
+                      <span class="vin">{{ vehiculo.vin }}</span
+                      ><small>{{ vehiculo.placa }}</small>
+                    </td>
+                    <td>
+                      <span class="estado" [class]="'estado ' + vehiculo.tono"
+                        ><span class="punto"></span>{{ vehiculo.estado }}</span
+                      >
+                    </td>
+                    <td class="tabular">
+                      {{ vehiculo.kilometraje }} <span class="muted">km</span>
+                    </td>
+                    <td class="derecha tabular">{{ vehiculo.costo | monto }}</td>
+                    <td>
+                      <button
+                        class="boton-icono"
+                        [attr.aria-label]="'Ver ficha de ' + vehiculo.modelo"
+                        (click)="abrirUnidad(vehiculo)"
+                      >
+                        <app-icono nombre="flecha" />
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="vacio">
+                      <app-icono nombre="buscar" />
+                      <h3>No encontramos unidades</h3>
+                      <p>Prueba otro VIN, placa o estado.</p>
+                      <button class="enlace" (click)="busqueda.set(''); filtro.set('Todas')">
+                        Limpiar filtros
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="tabla-pie">
+            <span
+              >{{ unidadesFiltradas().length }}
+              {{ unidadesFiltradas().length === 1 ? 'unidad' : 'unidades' }} en esta muestra</span
+            ><span>Moneda funcional: <strong>GTQ</strong></span>
+          </div>
+        </section>
+      }
+      @if (vista() === 'alquileres') {
+        <div class="franja-info">
+          <app-icono nombre="contrato" /><span
+            ><strong>El alquiler es el centro de la operación.</strong> Cada contrato vincula
+            cliente, unidad, tarifa y depósito en garantía.</span
+          ><span class="chip">MVP · E03</span>
+        </div>
+        <section class="panel">
+          <div class="panel-titulo">
+            <div>
+              <h2>Contratos de alquiler</h2>
+              <p>{{ datos.contratos().length }} contratos en esta demostración · HU-3.06</p>
+            </div>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>CONTRATO / CLIENTE</th>
+                  <th>UNIDAD</th>
+                  <th>SALIDA → DEVOLUCIÓN</th>
+                  <th>TARIFA DIARIA</th>
+                  <th>ESTADO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (contrato of datos.contratos(); track contrato.numero) {
+                  <tr>
+                    <td>
+                      <strong>{{ contrato.numero }}</strong
+                      ><small>{{ contrato.cliente }}</small>
+                    </td>
+                    <td>{{ contrato.unidad }}</td>
+                    <td>
+                      <span>{{ contrato.salida.replace('T', ' · ') }}</span
+                      ><small>{{ contrato.devolucion.replace('T', ' · ') }}</small>
+                    </td>
+                    <td>{{ contrato.tarifa | monto: contrato.moneda }}</td>
+                    <td>
+                      <span class="estado" [class.verde]="contrato.estado === 'Activo'">{{
+                        contrato.estado
+                      }}</span>
+                    </td>
+                    <td>
+                      <button
+                        class="enlace"
+                        (click)="
+                          verDocumento(
+                            contrato.numero,
+                            contrato.cliente +
+                              ' · Unidad ' +
+                              contrato.unidad +
+                              '. Salida: ' +
+                              contrato.salida.replace('T', ' ') +
+                              '. Devolución: ' +
+                              contrato.devolucion.replace('T', ' ') +
+                              '. Depósito en garantía: ' +
+                              contrato.deposito +
+                              ' ' +
+                              contrato.moneda +
+                              '. El depósito se registra como pasivo, separado del ingreso. Kilometraje de salida: ' +
+                              contrato.kilometraje +
+                              ' km. Combustible: ' +
+                              contrato.combustible +
+                              '. Estado: ' +
+                              contrato.estado +
+                              '.'
+                          )
+                        "
+                      >
+                        Ver detalle
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <div class="nota-seccion">
+          <app-icono nombre="escudo" /> Los borradores de esta demo no reservan unidades. La
+          disponibilidad, los montos y las aprobaciones se validarán en el servidor.
+        </div>
+      }
+      @if (vista() === 'importaciones') {
+        <div class="franja-info">
+          <app-icono nombre="barco" /><span
+            ><strong>Un VIN, una hoja de costo.</strong> Compra en USD + importación +
+            reacondicionamiento.</span
+          ><span class="chip">MVP · E04</span>
+        </div>
+        <div class="kanban">
+          @for (etapa of etapas; track etapa.titulo) {
+            <section class="etapa">
+              <div class="etapa-titulo">
+                <app-icono [nombre]="etapa.icono" />
+                <h2>{{ etapa.titulo }}</h2>
+                <span>{{ etapa.total }}</span>
+              </div>
+              <p>{{ etapa.texto }}</p>
+              <article class="tarjeta-unidad">
+                <span class="ceja">{{ etapa.id }}</span>
+                <h3>{{ etapa.modelo }}</h3>
+                <p>{{ etapa.referencia }}</p>
+                <div class="costo-etapa">
+                  <small>Costo acumulado</small><strong>{{ etapa.costo | monto }}</strong>
+                </div>
+                <div class="dias"><app-icono nombre="reloj" />{{ etapa.dias }}</div>
+                <button
+                  class="enlace"
+                  (click)="
+                    verDocumento(
+                      'Seguimiento · ' + etapa.id,
+                      etapa.modelo +
+                        '. Etapa: ' +
+                        etapa.titulo +
+                        '. Costo acumulado de ejemplo: GTQ ' +
+                        etapa.costo +
+                        '. El costo se concilia por VIN con el mayor. El IVA acreditable se presenta por separado y no se capitaliza. En el MVP los gastos se asignan directamente al VIN; el expediente, DUCA y prorrateo detallados llegan en Release 1.1.'
+                    )
+                  "
+                >
+                  Ver seguimiento <app-icono nombre="flecha" />
+                </button>
+              </article>
+            </section>
+          }
+        </div>
+        <section class="panel bloque">
+          <h2>Compra en moneda de origen</h2>
+          <p class="subtitulo">Honda CR-V · KC-005 · Ejemplo de HU-4.02 y HU-1.07</p>
+          <div class="datos-fila">
+            <div>
+              <small>Precio original</small><strong>{{ '14000.00' | monto: 'USD' }}</strong>
+            </div>
+            <div><small>Tipo de cambio ilustrativo</small><strong>7.70000000 GTQ/USD</strong></div>
+            <div>
+              <small>Equivalente registrado</small><strong>{{ '107800.00' | monto }}</strong>
+            </div>
+            <div>
+              <small>Cuenta por pagar</small><span class="estado ambar">Pendiente · USD</span>
+            </div>
+          </div>
+        </section>
+      }
+      @if (vista() === 'taller') {
+        <div class="franja-info">
+          <app-icono nombre="taller" /><span
+            ><strong>Taller propio.</strong> Reacondicionamiento, mantenimiento de flota y postventa
+            de unidades vendidas.</span
+          ><span class="chip">E05</span>
+        </div>
+        <div class="dos-columnas">
+          @for (orden of ordenes; track orden.numero) {
+            <article class="panel orden">
+              <div class="panel-titulo">
+                <span class="ceja">{{ orden.numero }}</span
+                ><span class="estado ambar">{{ orden.estado }}</span>
+              </div>
+              <h2>{{ orden.modelo }}</h2>
+              <span class="chip">{{ orden.tipo }}</span>
+              <p>{{ orden.tarea }}</p>
+              <div class="datos-fila">
+                <div>
+                  <small>Responsable</small><strong>{{ orden.responsable }}</strong>
+                </div>
+                <div>
+                  <small>Mano de obra</small
+                  ><strong>{{ orden.horas }} · {{ orden.monto | monto }}</strong>
+                </div>
+              </div>
+              <div class="destino">
+                <app-icono nombre="libro" /><span
+                  ><small>Destino contable</small><strong>{{ orden.destino }}</strong></span
+                >
+              </div>
+              <button
+                class="boton secundario"
+                (click)="
+                  verDocumento(
+                    orden.numero + ' · ' + orden.modelo,
+                    orden.tarea +
+                      '. Responsable: ' +
+                      orden.responsable +
+                      '. Mano de obra: ' +
+                      orden.horas +
+                      ', GTQ ' +
+                      orden.monto +
+                      '. Destino al cierre: ' +
+                      orden.destino +
+                      '. El MVP incluye el reacondicionamiento con mano de obra. Los destinos restantes, repuestos y subcontratos se completan en Release 1.1.'
+                  )
+                "
+              >
+                Consultar orden <app-icono nombre="flecha" />
+              </button>
+            </article>
+          }
+        </div>
+      }
+      @if (vista() === 'facturacion') {
+        <div class="franja-info">
+          <app-icono nombre="factura" /><span
+            ><strong>Facturas y saldos de ejemplo.</strong> Los documentos de esta vista no están
+            certificados por FEL.</span
+          ><span class="chip">MVP · E06</span>
+        </div>
+        <section class="panel">
+          <div class="panel-titulo">
+            <div>
+              <h2>Seguimiento de cobranza</h2>
+              <p>Documentos por cliente y moneda · HU-6.02, HU-6.07 y HU-6.12</p>
+            </div>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>DOCUMENTO / CLIENTE</th>
+                  <th>ORIGEN</th>
+                  <th>VENCIMIENTO</th>
+                  <th>SALDO ORIGINAL</th>
+                  <th>ESTADO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (factura of datos.facturas; track factura.numero) {
+                  <tr>
+                    <td>
+                      <strong>{{ factura.numero }}</strong
+                      ><small>{{ factura.cliente }}</small>
+                    </td>
+                    <td>{{ factura.concepto }}</td>
+                    <td>{{ factura.vence }}</td>
+                    <td class="tabular">{{ factura.monto | monto: factura.moneda }}</td>
+                    <td>
+                      <span [class]="'estado ' + factura.tono">{{ factura.estado }}</span>
+                    </td>
+                    <td>
+                      <button
+                        class="enlace"
+                        (click)="
+                          verDocumento(
+                            factura.numero,
+                            factura.cliente +
+                              '. ' +
+                              factura.concepto +
+                              '. Saldo original: ' +
+                              factura.moneda +
+                              ' ' +
+                              factura.monto +
+                              '. Vencimiento: ' +
+                              factura.vence +
+                              '. Estado: ' +
+                              factura.estado +
+                              '. En el flujo final se registrará el cobro con fecha, moneda, cuenta bancaria y referencia, y se generará su partida dentro de la misma transacción. Esta vista no emite ni cobra documentos.'
+                          )
+                        "
+                      >
+                        Ver documento
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+      @if (vista() === 'contabilidad') {
+        <div class="franja-info">
+          <app-icono nombre="libro" /><span
+            ><strong>Noviembre 2026</strong> · Período abierto · Moneda funcional GTQ</span
+          ><span class="chip">MVP · E02</span>
+        </div>
+        <section class="panel">
+          <div class="panel-titulo">
+            <div>
+              <h2>Libro de partidas</h2>
+              <p>Registro → Revisión → Contabilización · HU-2.01, HU-2.02 y HU-2.03</p>
+            </div>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>PARTIDA / CONCEPTO</th>
+                  <th>ORIGEN</th>
+                  <th class="derecha">DEBE</th>
+                  <th class="derecha">HABER</th>
+                  <th>ESTADO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (partida of datos.partidas; track partida.numero) {
+                  <tr>
+                    <td>
+                      <strong>{{ partida.numero }}</strong
+                      ><small>{{ partida.concepto }}</small>
+                    </td>
+                    <td>{{ partida.origen }}</td>
+                    <td class="derecha tabular">{{ partida.debe | monto }}</td>
+                    <td class="derecha tabular">{{ partida.haber | monto }}</td>
+                    <td>
+                      <span [class]="'estado ' + partida.tono">{{ partida.estado }}</span>
+                    </td>
+                    <td>
+                      <button
+                        class="enlace"
+                        (click)="
+                          verDocumento(
+                            partida.numero,
+                            partida.concepto +
+                              '. Origen: ' +
+                              partida.origen +
+                              '. Debe: GTQ ' +
+                              partida.debe +
+                              '. Haber: GTQ ' +
+                              partida.haber +
+                              '. Registró: auxiliar contable (ejemplo). Estado: ' +
+                              partida.estado +
+                              '. El contador revisa la cuenta, la línea de negocio y el VIN antes de contabilizar. Quien registra no aprueba su propio documento.'
+                          )
+                        "
+                      >
+                        Revisar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <div class="dos-columnas">
+          <section class="panel bloque">
+            <h2>Preparación del cierre</h2>
+            <p class="subtitulo">Recorrido previsto · HU-2.07, HU-2.08 y HU-2.12</p>
+            <ol class="lista-pasos">
+              <li>Revisar partidas y documentos pendientes</li>
+              <li>Calcular depreciación y revaluación de USD</li>
+              <li>Validar saldos y cerrar el período</li>
+            </ol>
+          </section>
+          <section class="panel bloque">
+            <h2>Trazabilidad desde el origen</h2>
+            <p class="subtitulo">
+              Cada partida conserva su documento, actor, fecha y VIN. Solo el módulo de contabilidad
+              genera partidas; documento y partida se confirman juntos.
+            </p>
+            <span class="estado verde"
+              ><app-icono nombre="escudo" /> Auditoría en la misma transacción</span
+            >
+          </section>
+        </div>
+      }
+      @if (vista() === 'reportes') {
+        <div class="franja-info">
+          <app-icono nombre="grafica" /><span
+            ><strong>Rentabilidad operativa por unidad.</strong> Noviembre 2026 · Período abierto ·
+            GTQ · Muestra ilustrativa de flota.</span
+          ><span class="chip">MVP · HU-7.02</span>
+        </div>
+        <section class="panel">
+          <div class="panel-titulo">
+            <div>
+              <h2>¿Qué aporta cada vehículo?</h2>
+              <p>Resultado después de depreciación y costos operativos · HU-3.13</p>
+            </div>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>UNIDAD</th>
+                  <th>OCUPACIÓN DEL PERÍODO</th>
+                  <th class="derecha">INGRESOS</th>
+                  <th class="derecha">RESULTADO OPERATIVO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vehiculo of datos.unidades; track vehiculo.codigo) {
+                  @if (vehiculo.estado !== 'En tránsito') {
+                    <tr>
+                      <td>
+                        <strong>{{ vehiculo.modelo }}</strong
+                        ><small>{{ vehiculo.codigo }} · {{ vehiculo.vin }}</small>
+                      </td>
+                      <td>
+                        <div class="ocupacion">
+                          <div class="barra-mini">
+                            <span [style.width.%]="vehiculo.ocupacion"></span>
+                          </div>
+                          {{ vehiculo.ocupacion }}%
+                        </div>
+                      </td>
+                      <td class="derecha tabular">{{ vehiculo.ingreso | monto }}</td>
+                      <td class="derecha positivo tabular">
+                        <strong>{{ vehiculo.resultado | monto }}</strong>
+                      </td>
+                      <td>
+                        <button class="enlace" (click)="abrirUnidad(vehiculo)">Ver unidad</button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <p class="nota-seccion">
+          El MVP cubre el ciclo hasta la flota. Venta, comisiones e intereses completan la
+          rentabilidad de todo el ciclo en Release 2. La demo exporta CSV; PDF y Excel son parte del
+          alcance posterior.
+        </p>
+      }
+      @if (vista() === 'configuracion') {
+        <div class="dos-columnas">
+          <section class="panel bloque">
+            <div class="panel-titulo">
+              <h2>Perfil de la empresa</h2>
+              <app-icono nombre="ajustes" />
+            </div>
+            <dl class="lista-datos">
+              <div>
+                <dt>Nombre comercial</dt>
+                <dd>Kilómetro Cero</dd>
+              </div>
+              <div>
+                <dt>Operación</dt>
+                <dd>Una sede · Guatemala</dd>
+              </div>
+              <div>
+                <dt>Moneda funcional</dt>
+                <dd>Quetzal (GTQ)</dd>
+              </div>
+              <div>
+                <dt>Moneda de transacción</dt>
+                <dd>GTQ y USD</dd>
+              </div>
+              <div>
+                <dt>Régimen fiscal y certificador</dt>
+                <dd>Por definir con el contador</dd>
+              </div>
+            </dl>
+            <p class="nota-seccion">HU-1.01, HU-1.06, HU-1.07 y HU-1.08</p>
+          </section>
+          <section class="panel bloque">
+            <h2>Roles y separación de funciones</h2>
+            <p class="subtitulo">HU-1.09 y HU-1.10 · Vista informativa</p>
+            @for (rol of roles; track rol.nombre) {
+              <div class="rol">
+                <span class="avatar">{{ rol.iniciales }}</span>
+                <div>
+                  <strong>{{ rol.nombre }}</strong
+                  ><small>{{ rol.permiso }}</small>
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+        <section class="panel bloque">
+          <h2>Bitácora de cambios</h2>
+          <p class="subtitulo">HU-1.11 · Registro ilustrativo de persistencia</p>
+          <div class="evento">
+            <span class="punto"></span>
+            <div>
+              <strong>Compra registrada · KC-005</strong>
+              <p>Auxiliar contable · 06 nov 2026, 08:42 · VIN 2HKRS4H52PH102805</p>
+              <small>Estado anterior: sin registro → Estado nuevo: en tránsito</small>
+            </div>
+          </div>
+        </section>
+      }
+      @if (vista() === 'ventas' || vista() === 'financiamiento' || vista() === 'arranque') {
+        <section class="panel futuro-panel">
+          <span class="icono-futuro"
+            ><app-icono
+              [nombre]="
+                vista() === 'ventas' ? 'venta' : vista() === 'financiamiento' ? 'cartera' : 'carga'
+              " /></span
+          ><span class="chip">{{
+            vista() === 'arranque' ? 'SPRINT 4 · ARRANQUE' : 'RELEASE 2 · FUERA DEL MVP'
+          }}</span>
+          <h2>
+            {{
+              vista() === 'ventas'
+                ? 'De la flota a una nueva etapa'
+                : vista() === 'financiamiento'
+                  ? 'Cada crédito, con sus cuentas claras'
+                  : 'Un inicio con datos confiables'
+            }}
+          </h2>
+          <p>
+            {{
+              vista() === 'ventas'
+                ? 'La unidad sale de la flota a su valor en libros. Desde aquí se gestionarán precio, venta y comisión.'
+                : vista() === 'financiamiento'
+                  ? 'El crédito propio conectará la venta con el enganche, las cuotas, los intereses y la cartera.'
+                  : 'La carga inicial conectará los saldos contables, la flota, los terceros y los contratos activos.'
+            }}
+          </p>
+          <div class="futuro-pasos">
+            @if (vista() === 'ventas') {
+              <div>
+                <b>01</b>
+                <h3>Inventario de venta</h3>
+                <p>Unidades dadas de baja y precio mínimo.</p>
+                <small>HU-8.01 · HU-8.02</small>
+              </div>
+              <div>
+                <b>02</b>
+                <h3>Contado o crédito</h3>
+                <p>Venta ligada al VIN y al comprador.</p>
+                <small>HU-8.04 · HU-8.05</small>
+              </div>
+              <div>
+                <b>03</b>
+                <h3>Margen y comisión</h3>
+                <p>Resultado neto y comisión del vendedor.</p>
+                <small>HU-8.09 · HU-8.12</small>
+              </div>
+            }
+            @if (vista() === 'financiamiento') {
+              <div>
+                <b>01</b>
+                <h3>Condiciones y aprobación</h3>
+                <p>Enganche, plazo, tasa y moneda.</p>
+                <small>HU-9.01 · HU-9.02</small>
+              </div>
+              <div>
+                <b>02</b>
+                <h3>Amortización y cobros</h3>
+                <p>Capital, interés y cuotas separados.</p>
+                <small>HU-9.03 · HU-9.06</small>
+              </div>
+              <div>
+                <b>03</b>
+                <h3>Cartera y mora</h3>
+                <p>Antigüedad y conciliación contable.</p>
+                <small>HU-9.10 · HU-9.14</small>
+              </div>
+            }
+            @if (vista() === 'arranque') {
+              <div>
+                <b>01</b>
+                <h3>Preparar y validar</h3>
+                <p>Plantillas y errores por fila.</p>
+                <small>HU-10.01</small>
+              </div>
+              <div>
+                <b>02</b>
+                <h3>Cargar datos</h3>
+                <p>Saldos, flota, terceros y contratos.</p>
+                <small>HU-10.02 · 03 · 05 · 08</small>
+              </div>
+              <div>
+                <b>03</b>
+                <h3>Conciliar y aceptar</h3>
+                <p>Validación final del contador.</p>
+                <small>HU-10.09</small>
+              </div>
+            }
+          </div>
+          <button class="boton primario" (click)="navegar('resumen')">
+            Volver al resumen <app-icono nombre="flecha" />
+          </button>
+        </section>
+      }
+      <footer class="pie">
+        <span
+          ><span class="punto"></span> Prototipo navegable · Datos ficticios · Sin operaciones
+          reales</span
+        ><span>{{
+          vista() === 'resumen'
+            ? 'Tablero conceptual · HU-7.10 · Release 3'
+            : 'Diseño inicial · Noviembre 2026'
+        }}</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<dialog #detalle class="dialogo ficha" aria-labelledby="titulo-ficha">
+  @if (unidad(); as vehiculo) {
+    <div class="dialogo-titulo">
+      <span class="ceja">FICHA DE LA UNIDAD / {{ vehiculo.codigo }}</span
+      ><button class="boton-icono" aria-label="Cerrar ficha" (click)="detalle.close()">
+        <app-icono nombre="cerrar" />
+      </button>
+    </div>
+    <div class="ficha-hero">
+      <span class="auto-grande"><app-icono nombre="auto" /></span
+      ><span [class]="'estado ' + vehiculo.tono">{{ vehiculo.estado }}</span>
+      <h2 id="titulo-ficha">{{ vehiculo.modelo }} {{ vehiculo.anio }}</h2>
+      <p>{{ vehiculo.tipo }} · {{ vehiculo.placa }}</p>
+    </div>
+    <div class="vin-destacado">
+      <small>VIN · IDENTIFICADOR DE LA UNIDAD</small><strong>{{ vehiculo.vin }}</strong>
+    </div>
+    <div class="datos-fila">
+      <div>
+        <small>Kilometraje</small><strong>{{ vehiculo.kilometraje }} km</strong>
+      </div>
+      <div>
+        <small>Costo acumulado</small><strong>{{ vehiculo.costo | monto }}</strong>
+      </div>
+    </div>
+    <h3>Hoja de costo <span class="muted">/ GTQ</span></h3>
+    <dl class="lista-datos">
+      <div>
+        <dt>Compra de la unidad</dt>
+        <dd>{{ vehiculo.compra | monto }}</dd>
+      </div>
+      <div>
+        <dt>Importación y nacionalización</dt>
+        <dd>{{ vehiculo.importacion | monto }}</dd>
+      </div>
+      <div>
+        <dt>Reacondicionamiento</dt>
+        <dd>{{ vehiculo.taller | monto }}</dd>
+      </div>
+      <div class="total">
+        <dt>Costo acumulado</dt>
+        <dd>{{ vehiculo.costo | monto }}</dd>
+      </div>
+    </dl>
+    <p class="nota-seccion">
+      El IVA acreditable no integra el costo. Valores ilustrativos de HU-4.08; el sistema final
+      concilia la hoja con el mayor.
+    </p>
+    <h3>Recorrido por VIN</h3>
+    <div class="recorrido">
+      <span class="completo">Compra</span
+      ><span [class.completo]="vehiculo.estado !== 'En tránsito'">Importación</span
+      ><span [class.completo]="vehiculo.estado !== 'En tránsito'">Taller</span
+      ><span [class.completo]="vehiculo.estado !== 'En tránsito'">Flota</span>
+    </div>
+    <button class="boton secundario ancho" (click)="detalle.close(); navegar('reportes')">
+      Consultar rentabilidad <app-icono nombre="flecha" />
+    </button>
+  }
+</dialog>
+
+<dialog #formulario class="dialogo contrato-dialogo" aria-labelledby="titulo-contrato">
+  <div class="dialogo-titulo">
+    <span class="ceja">ALQUILERES / HU-3.06</span
+    ><button class="boton-icono" aria-label="Cerrar formulario" (click)="formulario.close()">
+      <app-icono nombre="cerrar" />
+    </button>
+  </div>
+  <h2 id="titulo-contrato">Nuevo contrato</h2>
+  <p class="subtitulo">Prepara la salida de una unidad disponible.</p>
+  <div class="franja-info compacta">
+    Borrador de demostración · Se conserva solo durante esta sesión.
+  </div>
+  <form #contratoForm="ngForm" (ngSubmit)="guardarContrato(contratoForm)">
+    <div class="campos">
+      <label class="campo completo"
+        >Cliente
+        <input
+          name="cliente"
+          ngModel
+          required
+          maxlength="100"
+          placeholder="Nombre o razón social"
+          autocomplete="off" /></label
+      ><label class="campo completo"
+        >Unidad disponible
+        <select name="unidad" ngModel required>
+          <option value="" disabled>Selecciona una unidad</option>
+          @for (vehiculo of disponibles; track vehiculo.codigo) {
+            <option [value]="vehiculo.codigo">
+              {{ vehiculo.modelo }} · {{ vehiculo.placa }} · {{ vehiculo.codigo }}
+            </option>
+          }
+        </select></label
+      ><label class="campo"
+        >Fecha y hora de salida
+        <input name="salida" type="datetime-local" ngModel required /></label
+      ><label class="campo"
+        >Devolución prevista
+        <input name="devolucion" type="datetime-local" ngModel required /></label
+      ><label class="campo"
+        >Moneda
+        <select name="moneda" [ngModel]="'GTQ'" required>
+          <option value="GTQ">GTQ · Quetzales</option>
+          <option value="USD">USD · Dólares</option>
+        </select></label
+      ><label class="campo"
+        >Tarifa diaria
+        <input
+          name="tarifa"
+          ngModel
+          inputmode="decimal"
+          required
+          pattern="[0-9]{1,10}(\.[0-9]{1,2})?"
+          placeholder="450.00" /></label
+      ><label class="campo"
+        >Depósito en garantía
+        <input
+          name="deposito"
+          ngModel
+          inputmode="decimal"
+          required
+          pattern="[0-9]{1,10}(\.[0-9]{1,2})?"
+          placeholder="1500.00" /></label
+      ><label class="campo"
+        >Kilometraje de salida
+        <input
+          name="kilometraje"
+          ngModel
+          inputmode="numeric"
+          required
+          pattern="[0-9]{1,7}"
+          placeholder="36200" /></label
+      ><label class="campo completo"
+        >Combustible de salida
+        <select name="combustible" [ngModel]="'Lleno'" required>
+          <option>Lleno</option>
+          <option>3/4</option>
+          <option>1/2</option>
+          <option>1/4</option>
+        </select></label
+      >
+    </div>
+    <p class="nota-seccion">
+      El depósito es una garantía, no un ingreso. El monto estimado se calculará en el servidor al
+      conectar el flujo real.
+    </p>
+    @if (errorFormulario()) {
+      <p class="error-formulario" role="alert">{{ errorFormulario() }}</p>
+    }
+    <div class="dialogo-acciones">
+      <button class="boton secundario" type="button" (click)="formulario.close()">Cancelar</button
+      ><button class="boton primario" type="submit">
+        Guardar borrador demo <app-icono nombre="flecha" />
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<dialog #documento class="dialogo" aria-labelledby="titulo-documento">
+  <div class="dialogo-titulo">
+    <span class="ceja">DETALLE ILUSTRATIVO</span
+    ><button class="boton-icono" aria-label="Cerrar detalle" (click)="documento.close()">
+      <app-icono nombre="cerrar" />
+    </button>
+  </div>
+  <h2 id="titulo-documento">{{ documentoTitulo() }}</h2>
+  <p class="texto-documento">{{ documentoTexto() }}</p>
+  <div class="franja-info compacta">
+    Vista de demostración. No modifica registros ni genera partidas.
+  </div>
+  <button class="boton secundario ancho" (click)="documento.close()">Cerrar</button>
+</dialog>

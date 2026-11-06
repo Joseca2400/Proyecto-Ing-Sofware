@@ -1,3 +1,5 @@
+@import './styles/mockup.css';
+
 /* Paleta tomada de la maqueta del prototipo Express (etiqueta de git legacy-prototipos). */
 :root {
   --teal: #0f4c5c;
