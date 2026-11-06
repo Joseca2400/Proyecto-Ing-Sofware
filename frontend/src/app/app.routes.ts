@@ -4,6 +4,11 @@ import { Layout } from './core/layout/layout';
 // Cada módulo de negocio se agrega como hijo del layout y se carga solo cuando se usa.
 export const routes: Routes = [
   {
+    path: 'mockup',
+    title: 'Prototipo · Kilómetro Cero',
+    loadComponent: () => import('./features/mockup/mockup').then((m) => m.Mockup),
+  },
+  {
     path: '',
     component: Layout,
     children: [
