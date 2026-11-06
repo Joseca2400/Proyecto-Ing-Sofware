@@ -198,3 +198,116 @@ class FacturaCompraSalida(BaseModel):
     def genera_credito_fiscal(self) -> bool:
         """La factura de un pequeño contribuyente no da crédito fiscal de IVA (criterio 4)."""
         return self.regimen_proveedor == "general"
+
+
+# ── HU-4.04: gastos de importación ────────────────────────────────────────────
+
+TratamientoGasto = Literal["costo", "credito_fiscal"]
+
+
+class ConceptoGastoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    codigo: str
+    nombre: str
+    cuenta: str
+    tratamiento: TratamientoGasto
+
+    @computed_field
+    @property
+    def suma_al_costo(self) -> bool:
+        """El IVA de importación es crédito fiscal y no suma al costo de la unidad (criterio 3)."""
+        return self.tratamiento == "costo"
+
+
+class GastoImportacionEntrada(BaseModel):
+    """Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
+    `unidades`), el concepto, el proveedor y el tipo de cambio se validan en el service."""
+
+    vin: str = Field(max_length=30)
+    concepto: str = Field(max_length=20)
+    proveedor_id: int
+    fecha: date
+    documento: str = Field(max_length=50)
+    descripcion: str | None = Field(default=None, max_length=300)
+    moneda: Moneda
+    monto: str
+
+    @field_validator("vin", mode="before")
+    @classmethod
+    def normalizar_vin(cls, valor: object) -> object:
+        return valor.strip().upper() if isinstance(valor, str) else valor
+
+    @field_validator("concepto", "documento", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return valor.strip() if isinstance(valor, str) else valor
+
+    @field_validator("descripcion", mode="before")
+    @classmethod
+    def recortar_opcional(cls, valor: object) -> object:
+        if isinstance(valor, str):
+            return valor.strip() or None
+        return valor
+
+    @field_validator("monto", mode="before")
+    @classmethod
+    def monto_como_texto(cls, valor: object) -> object:
+        if not isinstance(valor, str):
+            raise ValueError('Los montos se envían como texto, por ejemplo "350.00"')
+        return valor.strip()
+
+
+class ProveedorGasto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    tipo: TipoProveedor
+
+
+class GastoImportacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vin: str
+    concepto: str
+    concepto_nombre: str
+    proveedor: ProveedorGasto
+    fecha: date
+    documento: str
+    descripcion: str | None
+    moneda: Moneda
+    monto: Decimal
+    tipo_cambio: Decimal | None
+    monto_gtq: Decimal
+    cuenta: str
+    tratamiento: TratamientoGasto
+    cuenta_por_pagar: CuentaPorPagarSalida
+    creado_en: datetime
+
+    @field_serializer("monto", "monto_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("tipo_cambio")
+    def tipo_cambio_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.8f}"
+
+    @computed_field
+    @property
+    def suma_al_costo(self) -> bool:
+        return self.tratamiento == "costo"
+
+
+class ResumenGastosUnidad(BaseModel):
+    """Totales en quetzales que calcula el servidor; el front solo les da formato."""
+
+    vin: str
+    gastos: int
+    total_costo_gtq: Decimal
+    total_credito_fiscal_gtq: Decimal
+
+    @field_serializer("total_costo_gtq", "total_credito_fiscal_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
