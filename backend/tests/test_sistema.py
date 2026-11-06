@@ -11,7 +11,7 @@ def test_estado_del_sistema_conecta_la_base_y_lee_la_migracion(cliente):
     assert cuerpo["mensaje"] == "Hola, mundo: la API responde"
     assert cuerpo["base_datos"]["conectada"] is True
     assert cuerpo["base_datos"]["motor"] == "postgresql"
-    assert cuerpo["base_datos"]["revision_esquema"] == "0001"
+    assert cuerpo["base_datos"]["revision_esquema"]  # la revisión vigente cambia con cada migración
 
 
 def test_ruta_inexistente_usa_el_formato_de_error_comun(cliente):
