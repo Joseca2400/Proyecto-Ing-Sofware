@@ -74,7 +74,8 @@ class LineaPartida(Base):
         ),
         CheckConstraint(
             "(moneda = 'GTQ' AND monto_usd IS NULL AND tipo_cambio IS NULL)"
-            " OR (moneda = 'USD' AND monto_usd > 0 AND tipo_cambio > 0)",
+            " OR (moneda = 'USD' AND monto_usd IS NOT NULL AND tipo_cambio IS NOT NULL"
+            " AND monto_usd > 0 AND tipo_cambio > 0)",
             name="ck_linea_partida_moneda",
         ),
         CheckConstraint("vin IS NULL OR length(vin) = 17", name="ck_linea_partida_vin"),

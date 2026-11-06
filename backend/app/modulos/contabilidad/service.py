@@ -51,6 +51,8 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
     except ErrorNegocio as error:
         raise ErrorNegocio(f"Línea {numero}: {error.mensaje}", error.status) from None
     vin = (datos.vin or "").strip().upper() or None
+    if vin is not None and len(vin) != 17:
+        raise ErrorNegocio(f"Línea {numero}: el VIN debe tener 17 caracteres")
     monto = _monto(datos.monto, numero)
 
     monto_usd = tipo_cambio = None
@@ -58,7 +60,12 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
         if not cuenta.monetaria_usd:
             raise ErrorNegocio(f"Línea {numero}: la cuenta {cuenta.codigo} no admite montos en USD")
         monto_usd, tipo_cambio = monto, configuracion.tipo_cambio_de(db, fecha)
-        monto = redondear(convertir(monto_usd, tipo_cambio), DECIMALES)
+        equivalente = convertir(monto_usd, tipo_cambio)
+        if equivalente >= _LIMITE:
+            raise ErrorNegocio(f"Línea {numero}: el equivalente en quetzales excede el máximo permitido")
+        monto = redondear(equivalente, DECIMALES)
+        if monto >= _LIMITE:
+            raise ErrorNegocio(f"Línea {numero}: el equivalente en quetzales excede el máximo permitido")
         if monto <= 0:
             raise ErrorNegocio(f"Línea {numero}: el equivalente en quetzales es cero")
 
@@ -98,13 +105,17 @@ def _exigir_cuadre(partida: Partida) -> None:
         raise ErrorNegocio("La partida necesita al menos un débito y un crédito")
     if debe != haber:
         raise ErrorNegocio(
-            f"La partida no cuadra: débitos {debe:.2f}, créditos {haber:.2f}, "
-            f"diferencia {abs(debe - haber):.2f}"
+            f"La partida no cuadra: débitos {debe:.6f}, créditos {haber:.6f}, "
+            f"diferencia {abs(debe - haber):.6f}"
         )
 
 
-def _obtener(db: Session, partida_id: int) -> Partida:
-    partida = db.get(Partida, partida_id)
+def _obtener(db: Session, partida_id: int, *, bloquear: bool = False) -> Partida:
+    consulta = select(Partida).where(Partida.id == partida_id)
+    if bloquear:
+        # Releer también las líneas después del candado: la sesión puede tener datos obsoletos.
+        consulta = consulta.with_for_update().execution_options(populate_existing=True)
+    partida = db.scalar(consulta)
     if partida is None:
         raise ErrorNegocio(f"No existe la partida {partida_id}", 404)
     return partida
@@ -146,7 +157,7 @@ def crear_borrador(db: Session, datos: PartidaEntrada, usuario_id: int | None = 
 
 def corregir(db: Session, partida_id: int, datos: PartidaEntrada) -> Partida:
     """Reemplaza el contenido de un borrador o de una partida devuelta."""
-    partida = _obtener(db, partida_id)
+    partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "borrador", "devuelta", accion="editar")
     nuevas = _lineas(db, datos.fecha, datos.lineas)  # valida todo antes de tocar la partida
     partida.fecha, partida.concepto = datos.fecha, datos.concepto
@@ -160,7 +171,7 @@ def corregir(db: Session, partida_id: int, datos: PartidaEntrada) -> Partida:
 
 
 def enviar_a_revision(db: Session, partida_id: int) -> Partida:
-    partida = _obtener(db, partida_id)
+    partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "borrador", "devuelta", accion="enviar a revisión")
     _exigir_cuadre(partida)
     partida.estado, partida.comentario = "en_revision", None
@@ -170,7 +181,7 @@ def enviar_a_revision(db: Session, partida_id: int) -> Partida:
 
 
 def contabilizar(db: Session, partida_id: int, usuario_id: int | None = None) -> Partida:
-    partida = _obtener(db, partida_id)
+    partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "en_revision", accion="contabilizar")
     _exigir_cuadre(partida)
     _contabilizar(db, partida, usuario_id)
@@ -180,7 +191,7 @@ def contabilizar(db: Session, partida_id: int, usuario_id: int | None = None) ->
 
 
 def devolver(db: Session, partida_id: int, comentario: str) -> Partida:
-    partida = _obtener(db, partida_id)
+    partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "en_revision", accion="devolver")
     if not comentario.strip():
         raise ErrorNegocio("La devolución necesita un comentario")
@@ -240,7 +251,14 @@ def registrar_automatica(
     try:
         db.flush()
         _contabilizar(db, partida, usuario_id)
-    except IntegrityError:
+    except IntegrityError as error:
         db.rollback()
-        raise ErrorNegocio(f"El documento {documento_tipo} {documento_id} ya tiene su partida", 409) from None
+        if (
+            getattr(error.orig, "sqlstate", None) == "23505"
+            and getattr(getattr(error.orig, "diag", None), "constraint_name", None) == "uq_partida_documento"
+        ):
+            raise ErrorNegocio(
+                f"El documento {documento_tipo} {documento_id} ya tiene su partida", 409
+            ) from error
+        raise
     return partida
