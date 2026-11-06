@@ -12,7 +12,12 @@ from app.modulos.compras.schemas import (
     TipoProveedor,
 )
 
-# Pendiente al mezclar HU-1.09/HU-1.10: exigir sesión y permisos por rol.
+# Pendiente (HU-1.09/HU-1.10): las rutas siguen abiertas porque el front aún no tiene login
+# (tarea C1 del equipo C); exigir sesión hoy dejaría sin funcionar las pantallas de compras.
+# Cuando exista el login del front, proteger con `app.modulos.seguridad.service`:
+# - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
+# - Altas de proveedores y facturas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR))`.
+# Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
 router = APIRouter(prefix="/compras", tags=["Compras"])
 
 

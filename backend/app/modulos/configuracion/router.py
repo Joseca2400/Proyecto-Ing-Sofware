@@ -53,7 +53,11 @@ def definir_dimensiones(
 
 
 # ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
-# Pendiente: exigir sesión y permisos por rol (HU-1.09/HU-1.10) en las rutas del equipo B.
+# Pendiente (HU-1.09/HU-1.10): las rutas del equipo B (tipo de cambio y transacciones en USD)
+# siguen abiertas porque el front aún no tiene login (tarea C1 del equipo C). Cuando exista:
+# - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
+# - Altas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR, GERENTE_FINANCIERO))`.
+# Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
 
 
 @router.get("/tipos-cambio", response_model=list[TipoCambioSalida])
