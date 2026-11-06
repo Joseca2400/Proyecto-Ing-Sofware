@@ -9,6 +9,16 @@ from app.comun.db import SessionLocal
 
 URL = "/api/v1/compras/facturas"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
+URL_UNIDADES = "/api/v1/unidades"
+VIN = "1HGCM82633A004352"
+UNIDAD = {
+    "vin": VIN,
+    "marca": "Honda",
+    "linea": "Accord",
+    "modelo": 2003,
+    "color": "Gris",
+    "tipo_vehiculo": "sedan",
+}
 
 GENERAL = {
     "tipo": "local",
@@ -64,10 +74,12 @@ def _factura(proveedor_id: int, **cambios) -> dict:
 
 
 @pytest.fixture(autouse=True)
-def tablas_vacias():
+def tablas_vacias(cliente):
+    """Sin facturas ni unidades previas; solo existe la unidad con VIN que usan las líneas (HU-1.05)."""
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
         db.commit()
+    assert cliente.post(URL_UNIDADES, json=UNIDAD).status_code == 201
 
 
 @pytest.fixture
@@ -215,6 +227,9 @@ def test_valida_los_datos_del_dte(cliente, general, cambios, mensaje):
         ({"cuenta": "5..1"}, "código del catálogo"),
         ({"vin": "1HGCM82633A00435"}, "VIN"),  # 16 caracteres
         ({"vin": "1HGCM82633A0O4352"}, "VIN"),  # lleva O
+        ({"vin": "1HGCM82623A004352"}, "dígito verificador"),
+        ({"vin": "1FTFW1ET9DFC10312"}, "no existe la unidad"),  # VIN válido sin registrar
+        ({"linea_negocio": "sucursal"}, "línea de negocio desconocida"),
         ({"base": "0"}, "mayor que cero"),
         ({"base": "-10"}, "mayor que cero"),
         ({"iva": "-1"}, "negativo"),
@@ -236,9 +251,9 @@ def test_valida_cada_linea(cliente, general, cambios, mensaje):
 
 @pytest.mark.parametrize(
     "cambios",
-    [{"base": 1000.0}, {"iva": 120}, {"linea_negocio": "sucursal"}],
+    [{"base": 1000.0}, {"iva": 120}],
 )
-def test_rechaza_montos_numericos_y_lineas_de_negocio_desconocidas(cliente, general, cambios):
+def test_rechaza_montos_numericos(cliente, general, cambios):
     respuesta = cliente.post(URL, json=_factura(general, lineas=[_linea(**cambios)]))
 
     assert respuesta.status_code == 422
@@ -268,5 +283,16 @@ def test_la_base_impide_credito_fiscal_a_un_pequeno_contribuyente(cliente, peque
     with SessionLocal() as db, pytest.raises(Exception, match="ck_factura_compra_credito_fiscal"):
         db.execute(
             text("UPDATE factura_compra SET credito_fiscal = total_iva WHERE id = :id"),
+            {"id": factura["id"]},
+        )
+
+
+def test_la_base_liga_la_linea_a_una_unidad_existente(cliente, general):
+    """HU-1.05: el VIN de la línea es llave foránea a la unidad."""
+    factura = cliente.post(URL, json=_factura(general, lineas=[_linea(vin=VIN)])).json()
+
+    with SessionLocal() as db, pytest.raises(Exception, match="fk_linea_factura_compra_vin_unidad"):
+        db.execute(
+            text("UPDATE linea_factura_compra SET vin = '1FTFW1ET9DFC10312' WHERE factura_id = :id"),
             {"id": factura["id"]},
         )

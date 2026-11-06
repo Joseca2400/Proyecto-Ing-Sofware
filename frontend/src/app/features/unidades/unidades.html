@@ -1,0 +1,226 @@
+<section class="encabezado">
+  <h1>Unidades</h1>
+  <p>
+    Cada vehículo se identifica por su VIN: 17 caracteres sin I, O ni Q y, si es de Norteamérica,
+    con el dígito verificador correcto en la posición 9. El VIN no se repite. La unidad tiene un
+    solo estado a la vez y cada cambio guarda la fecha y el documento que lo originó.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label class="vin">
+    VIN
+    <input
+      type="text"
+      formControlName="vin"
+      name="vin"
+      maxlength="17"
+      placeholder="1HGCM82633A004352"
+    />
+    @if (formulario.controls.vin.touched && formulario.controls.vin.invalid) {
+      <small class="falla">17 caracteres, sin I, O ni Q</small>
+    }
+  </label>
+
+  <label>
+    Marca
+    <input type="text" formControlName="marca" name="marca" />
+    @if (formulario.controls.marca.touched && formulario.controls.marca.invalid) {
+      <small class="falla">Obligatoria</small>
+    }
+  </label>
+
+  <label>
+    Línea
+    <input type="text" formControlName="linea" name="linea" placeholder="Accord, F-150…" />
+    @if (formulario.controls.linea.touched && formulario.controls.linea.invalid) {
+      <small class="falla">Obligatoria</small>
+    }
+  </label>
+
+  <label class="corto">
+    Modelo (año)
+    <input type="number" formControlName="modelo" name="modelo" min="1981" />
+  </label>
+
+  <label>
+    Color
+    <input type="text" formControlName="color" name="color" />
+    @if (formulario.controls.color.touched && formulario.controls.color.invalid) {
+      <small class="falla">Obligatorio</small>
+    }
+  </label>
+
+  <label>
+    Tipo de vehículo
+    <select formControlName="tipo_vehiculo" name="tipo_vehiculo">
+      @for (tipo of catalogos().tipos_vehiculo; track tipo) {
+        <option [value]="tipo">{{ etiqueta(tipo) }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Línea de negocio
+    <select formControlName="linea_negocio" name="linea_negocio">
+      <option value="">Sin asignar</option>
+      @for (linea of catalogos().lineas_negocio; track linea) {
+        <option [value]="linea">{{ etiqueta(linea) }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Estado inicial
+    <select formControlName="estado" name="estado">
+      @for (estado of estadosIniciales(); track estado) {
+        <option [value]="estado">{{ etiqueta(estado) }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="ancho">
+    Documento de origen (opcional)
+    <input
+      type="text"
+      formControlName="documento"
+      name="documento"
+      placeholder="Factura de la subasta, BL…"
+    />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionada(); as unidad) {
+  <section class="tarjeta ficha" aria-label="Ficha de la unidad">
+    <header>
+      <h2>{{ unidad.marca }} {{ unidad.linea }} {{ unidad.modelo }}</h2>
+      <span class="chip" [attr.data-estado]="unidad.estado">{{ etiqueta(unidad.estado) }}</span>
+    </header>
+    <dl>
+      <dt>VIN</dt>
+      <dd class="codigo">{{ unidad.vin }}</dd>
+      <dt>Color</dt>
+      <dd>{{ unidad.color }}</dd>
+      <dt>Tipo</dt>
+      <dd>{{ etiqueta(unidad.tipo_vehiculo) }}</dd>
+      <dt>Línea de negocio</dt>
+      <dd>{{ etiqueta(unidad.linea_negocio) || 'Sin asignar' }}</dd>
+    </dl>
+
+    <form class="cambio" [formGroup]="cambio" (ngSubmit)="cambiarEstado()">
+      <label>
+        Nuevo estado
+        <select formControlName="estado" name="nuevo_estado">
+          <option value="" disabled>Selecciona</option>
+          @for (estado of catalogos().estados; track estado) {
+            @if (estado !== unidad.estado) {
+              <option [value]="estado">{{ etiqueta(estado) }}</option>
+            }
+          }
+        </select>
+      </label>
+      <label class="ancho">
+        Documento que origina el cambio
+        <input
+          type="text"
+          formControlName="documento"
+          name="documento_cambio"
+          placeholder="DUCA, orden de taller, factura…"
+        />
+        @if (cambio.controls.documento.touched && cambio.controls.documento.invalid) {
+          <small class="falla">Indica el documento</small>
+        }
+      </label>
+      <button type="submit" [disabled]="guardando()">Cambiar estado</button>
+    </form>
+
+    <h3>Historial de estados</h3>
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>De</th>
+            <th>A</th>
+            <th>Documento</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of historial(); track c.id) {
+            <tr>
+              <td>{{ c.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ c.estado_anterior ? etiqueta(c.estado_anterior) : 'Alta' }}</td>
+              <td>{{ etiqueta(c.estado_nuevo) }}</td>
+              <td>{{ c.documento }}</td>
+              <td>{{ c.usuario_id ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+<form class="filtros" [formGroup]="filtro" (ngSubmit)="cargar()">
+  <input
+    type="search"
+    formControlName="buscar"
+    name="buscar"
+    placeholder="Buscar por VIN, marca o línea"
+    aria-label="Buscar unidad"
+  />
+  <select formControlName="estado" name="filtro_estado" aria-label="Filtrar por estado">
+    <option value="">Todos los estados</option>
+    @for (estado of catalogos().estados; track estado) {
+      <option [value]="estado">{{ etiqueta(estado) }}</option>
+    }
+  </select>
+  <button type="submit" class="secundario">Consultar</button>
+</form>
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>VIN</th>
+        <th>Vehículo</th>
+        <th>Color</th>
+        <th>Tipo</th>
+        <th>Línea de negocio</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of unidades(); track u.id) {
+        <tr [class.activa]="seleccionada()?.id === u.id">
+          <td class="codigo">{{ u.vin }}</td>
+          <td>{{ u.marca }} {{ u.linea }} {{ u.modelo }}</td>
+          <td>{{ u.color }}</td>
+          <td>{{ etiqueta(u.tipo_vehiculo) }}</td>
+          <td>{{ etiqueta(u.linea_negocio) }}</td>
+          <td>
+            <span class="chip" [attr.data-estado]="u.estado">{{ etiqueta(u.estado) }}</span>
+          </td>
+          <td>
+            <button type="button" class="secundario" (click)="ver(u)">Ver ficha</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">No hay unidades que coincidan</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

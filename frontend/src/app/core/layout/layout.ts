@@ -20,7 +20,7 @@ export class Layout {
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Taller' },
-    { etiqueta: 'Unidades' },
+    { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Contabilidad' },
     { etiqueta: 'Reportes' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },

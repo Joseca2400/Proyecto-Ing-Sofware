@@ -1,0 +1,223 @@
+.encabezado {
+  margin-bottom: 24px;
+}
+
+.encabezado h1 {
+  font-size: 28px;
+}
+
+.encabezado p {
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.tarjeta {
+  background: var(--white);
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+}
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.ancho {
+  flex: 1 1 100%;
+}
+
+.corto input {
+  width: 6em;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+button {
+  align-self: flex-end;
+  background: var(--teal);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mensaje {
+  margin-bottom: 16px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filtros input[type='search'] {
+  flex: 1 1 240px;
+}
+
+.tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-light);
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacio,
+small {
+  color: var(--gray);
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.falla {
+  color: var(--error);
+}
+
+.vin input,
+.codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.vin input {
+  width: 19ch;
+  text-transform: uppercase;
+}
+
+.chip[data-estado='en_transito'],
+.chip[data-estado='en_aduana'],
+.chip[data-estado='en_taller'] {
+  background: #fff8e1;
+  color: #8d6e00;
+}
+
+.chip[data-estado='vendida'] {
+  background: #eceff1;
+  color: #455a64;
+}
+
+.chip[data-estado='recuperada'] {
+  background: #fce4ec;
+  color: #ad1457;
+}
+
+.ficha {
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.ficha header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ficha h2 {
+  font-size: 20px;
+}
+
+.ficha h3 {
+  font-size: 16px;
+  margin: 20px 0 8px;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+dt {
+  color: var(--gray);
+}
+
+dd {
+  margin: 0;
+}
+
+.cambio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cambio .ancho {
+  flex: 1 1 240px;
+}
+
+tr.activa {
+  background: #f1f8f7;
+}
+
+td button.secundario {
+  padding: 6px 12px;
+  font-size: 13px;
+}

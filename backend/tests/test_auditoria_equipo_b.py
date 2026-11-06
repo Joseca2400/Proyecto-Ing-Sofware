@@ -65,8 +65,10 @@ def test_tipo_cambio_y_transaccion_usd_se_auditan_sin_actor(cliente):
 
 def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
         db.commit()
+    unidad = {"vin": VIN, "marca": "Honda", "linea": "Accord", "modelo": 2003, "color": "Gris"}
+    assert cliente.post("/api/v1/unidades", json={**unidad, "tipo_vehiculo": "sedan"}).status_code == 201
     desde = _ultimo_registro()
 
     proveedor = cliente.post("/api/v1/compras/proveedores", json=PROVEEDOR)
