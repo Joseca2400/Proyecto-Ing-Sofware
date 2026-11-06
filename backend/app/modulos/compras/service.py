@@ -17,6 +17,8 @@ Pendiente al mezclar HU-1.09 y HU-1.11: exigir sesión y permiso del auxiliar co
 auditoría automática registre el alta.
 """
 
+import re
+
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -98,17 +100,26 @@ def listar_proveedores(
         consulta = consulta.where(Proveedor.rubro == rubro)
     if buscar and buscar.strip():
         texto = buscar.strip()
-        escapado = texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        patron = f"%{escapado}%"
-        nit_buscado = texto.replace("-", "").replace(" ", "").upper().lstrip("0")
+        patron = _patron_contiene(texto)
         condiciones = [
             Proveedor.nombre.ilike(patron, escape="\\"),
             Proveedor.identificacion_fiscal.ilike(patron, escape="\\"),
         ]
+        # El NIT se guarda normalizado: se busca igual, sin guion ni espacios y en mayúsculas, para
+        # que "1669394" encuentre 16693949 y "576937-k" encuentre 576937K. Quitar los ceros a la
+        # izquierda solo amplía los resultados, y así un NIT completo escrito con ceros también se
+        # encuentra.
+        nit_buscado = re.sub(r"[\s-]", "", texto).upper().lstrip("0")
         if nit_buscado:
-            condiciones.append(Proveedor.nit == nit_buscado)
+            condiciones.append(Proveedor.nit.ilike(_patron_contiene(nit_buscado), escape="\\"))
         consulta = consulta.where(or_(*condiciones))
     return list(db.scalars(consulta))
+
+
+def _patron_contiene(texto: str) -> str:
+    """Patrón LIKE "contiene" con los comodines del usuario tratados como texto (escape `\\`)."""
+    escapado = texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escapado}%"
 
 
 def obtener_proveedor(db: Session, proveedor_id: int) -> Proveedor:

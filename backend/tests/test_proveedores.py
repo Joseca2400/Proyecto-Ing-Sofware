@@ -187,10 +187,30 @@ def test_busca_por_nombre_nit_o_identificacion(cliente, buscar, esperado):
     assert [p["nombre"] for p in encontrados] == [esperado]
 
 
-def test_la_busqueda_trata_los_comodines_como_texto(cliente):
+@pytest.mark.parametrize(
+    ("buscar", "esperado"),
+    [
+        ("1669394", ["Agencia Norte"]),  # NIT parcial, sin el verificador
+        ("669394", ["Agencia Norte"]),  # parte central del NIT
+        ("576937k", ["Taller Sur"]),  # verificador K escrito en minúscula
+        ("576937-k", ["Taller Sur"]),  # con guion y K minúscula
+        ("0016693949", ["Agencia Norte"]),  # NIT completo con ceros a la izquierda
+        ("8", []),
+    ],
+)
+def test_busca_por_nit_parcial_o_con_k_minuscula(cliente, buscar, esperado):
+    cliente.post(URL, json={**LOCAL, "nombre": "Agencia Norte", "nit": "16693949"})
+    cliente.post(URL, json={**LOCAL, "nombre": "Taller Sur", "nit": "576937K"})
+
+    encontrados = cliente.get(URL, params={"buscar": buscar}).json()
+    assert [p["nombre"] for p in encontrados] == esperado
+
+
+@pytest.mark.parametrize("comodin", ["%", "_"])
+def test_la_busqueda_trata_los_comodines_como_texto(cliente, comodin):
     cliente.post(URL, json=LOCAL)
 
-    assert cliente.get(URL, params={"buscar": "%"}).json() == []
+    assert cliente.get(URL, params={"buscar": comodin}).json() == []
 
 
 def test_consulta_un_proveedor_por_id(cliente):
