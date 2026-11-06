@@ -20,6 +20,12 @@ export const routes: Routes = [
           import('./features/compras/proveedores').then((m) => m.ProveedoresPantalla),
       },
       {
+        path: 'compras/facturas',
+        title: 'Facturas de compras · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/facturas').then((m) => m.FacturasComprasPantalla),
+      },
+      {
         path: 'configuracion/tipo-cambio',
         title: 'Tipo de cambio · Kilómetro Cero',
         loadComponent: () =>

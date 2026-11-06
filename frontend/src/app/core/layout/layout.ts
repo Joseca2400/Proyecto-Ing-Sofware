@@ -17,6 +17,7 @@ export class Layout {
   protected readonly menu: EntradaMenu[] = [
     { etiqueta: 'Inicio', ruta: '/inicio' },
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
+    { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades' },
     { etiqueta: 'Contabilidad' },

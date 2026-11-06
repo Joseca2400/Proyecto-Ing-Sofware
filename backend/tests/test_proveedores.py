@@ -1,4 +1,5 @@
-"""HU-4.01 (versión delgada): alta y consulta de proveedores locales o del exterior."""
+"""HU-4.01 (versión delgada): alta y consulta de proveedores locales o del exterior, con el
+régimen de IVA del proveedor local que pide HU-4.09."""
 
 import pytest
 from sqlalchemy import text
@@ -11,6 +12,7 @@ LOCAL = {
     "tipo": "local",
     "nombre": "Repuestos El Volante, S.A.",
     "nit": "1234567-9",
+    "regimen": "general",
     "rubro": "repuestos",
     "moneda_habitual": "GTQ",
     "dias_credito": 30,
@@ -31,7 +33,7 @@ EXTERIOR = {
 @pytest.fixture(autouse=True)
 def tabla_vacia():
     with SessionLocal() as db:
-        db.execute(text("DELETE FROM proveedor"))
+        db.execute(text("TRUNCATE proveedor RESTART IDENTITY CASCADE"))
         db.commit()
 
 
@@ -45,6 +47,7 @@ def test_registra_proveedor_local_con_nit_normalizado(cliente):
     assert cuerpo["nit_formateado"] == "1234567-9"
     assert cuerpo["identificacion_fiscal"] is None
     assert cuerpo["pais"] is None
+    assert cuerpo["regimen"] == "general"
     assert cuerpo["rubro"] == "repuestos"
     assert cuerpo["moneda_habitual"] == "GTQ"
     assert cuerpo["dias_credito"] == 30
@@ -62,7 +65,30 @@ def test_registra_proveedor_del_exterior(cliente):
     assert cuerpo["nit_formateado"] is None
     assert cuerpo["identificacion_fiscal"] == "94-2867490"
     assert cuerpo["pais"] == "US"
+    assert cuerpo["regimen"] is None
     assert cuerpo["dias_credito"] == 0  # contado por defecto
+
+
+def test_registra_proveedor_local_pequeno_contribuyente(cliente):
+    respuesta = cliente.post(URL, json={**LOCAL, "regimen": "pequeno_contribuyente"})
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["regimen"] == "pequeno_contribuyente"
+
+
+def test_proveedor_local_exige_regimen(cliente):
+    sin_regimen = {k: v for k, v in LOCAL.items() if k != "regimen"}
+    respuesta = cliente.post(URL, json=sin_regimen)
+
+    assert respuesta.status_code == 400
+    assert "régimen" in respuesta.json()["detail"]
+
+
+def test_proveedor_del_exterior_no_lleva_regimen(cliente):
+    respuesta = cliente.post(URL, json={**EXTERIOR, "regimen": "general"})
+
+    assert respuesta.status_code == 400
+    assert "solo aplica a proveedores locales" in respuesta.json()["detail"]
 
 
 def test_acepta_nit_con_k(cliente):
@@ -144,7 +170,13 @@ def test_rechaza_nombre_vacio(cliente):
 
 @pytest.mark.parametrize(
     ("campo", "valor"),
-    [("rubro", "transporte"), ("moneda_habitual", "EUR"), ("tipo", "otro"), ("dias_credito", -1)],
+    [
+        ("rubro", "transporte"),
+        ("moneda_habitual", "EUR"),
+        ("tipo", "otro"),
+        ("dias_credito", -1),
+        ("regimen", "especial"),
+    ],
 )
 def test_rechaza_valores_fuera_del_catalogo(cliente, campo, valor):
     respuesta = cliente.post(URL, json={**LOCAL, campo: valor})

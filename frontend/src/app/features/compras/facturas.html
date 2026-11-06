@@ -1,0 +1,233 @@
+<section class="encabezado">
+  <h1>Facturas de compras</h1>
+  <p>
+    Captura los DTE recibidos de proveedores locales, en quetzales. El mismo DTE no se registra dos
+    veces para el mismo proveedor, la factura de un pequeño contribuyente no da crédito fiscal y
+    cada factura abre su cuenta por pagar por el total.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label class="ancho">
+    Proveedor
+    <select formControlName="proveedor_id" name="proveedor_id">
+      <option [ngValue]="0" disabled>Selecciona un proveedor local</option>
+      @for (p of proveedores(); track p.id) {
+        <option [ngValue]="p.id">
+          {{ p.nombre }} · NIT {{ p.nit_formateado }} · {{ etiquetaRegimen(p.regimen) }}
+        </option>
+      }
+    </select>
+    @if (formulario.controls.proveedor_id.touched && formulario.controls.proveedor_id.invalid) {
+      <small class="falla">Elige el proveedor</small>
+    }
+  </label>
+
+  <label class="corto">
+    Serie
+    <input type="text" formControlName="serie" name="serie" placeholder="1A2B3C4D" />
+    @if (formulario.controls.serie.touched && formulario.controls.serie.invalid) {
+      <small class="falla">Letras y dígitos</small>
+    }
+  </label>
+
+  <label class="corto">
+    Número
+    <input type="text" inputmode="numeric" formControlName="numero" name="numero" />
+    @if (formulario.controls.numero.touched && formulario.controls.numero.invalid) {
+      <small class="falla">Solo dígitos</small>
+    }
+  </label>
+
+  <label class="autorizacion">
+    Autorización
+    <input
+      type="text"
+      formControlName="autorizacion"
+      name="autorizacion"
+      placeholder="1A2B3C4D-1234-4ABC-9DEF-0123456789AB"
+    />
+    @if (formulario.controls.autorizacion.touched && formulario.controls.autorizacion.invalid) {
+      <small class="falla">UUID de la SAT</small>
+    }
+  </label>
+
+  <label>
+    Fecha de emisión
+    <input type="date" formControlName="fecha" name="fecha" />
+  </label>
+
+  <fieldset class="lineas" formArrayName="lineas">
+    <legend>Líneas</legend>
+    @for (linea of lineas.controls; track linea; let i = $index) {
+      <div class="linea" [formGroupName]="i">
+        <span class="numero-linea">{{ i + 1 }}</span>
+        <label class="descripcion">
+          Descripción
+          <input type="text" formControlName="descripcion" [name]="'descripcion' + i" />
+        </label>
+        <label class="cuenta">
+          Cuenta
+          <input type="text" formControlName="cuenta" [name]="'cuenta' + i" placeholder="5.1.02" />
+          @if (linea.controls.cuenta.touched && linea.controls.cuenta.invalid) {
+            <small class="falla">Código, ej. 5.1.02</small>
+          }
+        </label>
+        <label>
+          Línea de negocio
+          <select formControlName="linea_negocio" [name]="'linea_negocio' + i">
+            @for (l of lineasNegocio; track l.valor) {
+              <option [value]="l.valor">{{ l.etiqueta }}</option>
+            }
+          </select>
+        </label>
+        <label class="vin">
+          VIN (opcional)
+          <input type="text" formControlName="vin" [name]="'vin' + i" maxlength="17" />
+          @if (linea.controls.vin.touched && linea.controls.vin.invalid) {
+            <small class="falla">17 caracteres, sin I, O ni Q</small>
+          }
+        </label>
+        <label class="monto">
+          Base (Q)
+          <input
+            type="text"
+            inputmode="decimal"
+            formControlName="base"
+            [name]="'base' + i"
+            placeholder="1000.00"
+          />
+          @if (linea.controls.base.touched && linea.controls.base.invalid) {
+            <small class="falla">Número positivo</small>
+          }
+        </label>
+        <label class="monto">
+          IVA (Q)
+          <input
+            type="text"
+            inputmode="decimal"
+            formControlName="iva"
+            [name]="'iva' + i"
+            placeholder="120.00"
+          />
+          @if (linea.controls.iva.touched && linea.controls.iva.invalid) {
+            <small class="falla">Número</small>
+          }
+        </label>
+        <button
+          type="button"
+          class="quitar"
+          (click)="quitarLinea(i)"
+          [disabled]="lineas.length === 1"
+          [attr.aria-label]="'Quitar línea ' + (i + 1)"
+        >
+          ×
+        </button>
+      </div>
+    }
+    <button type="button" class="secundario agregar" (click)="agregarLinea()">Agregar línea</button>
+  </fieldset>
+
+  <button type="submit" [disabled]="guardando()">Registrar factura</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (registrada(); as f) {
+  <div class="tarjeta resultado" role="status">
+    <p class="ok">
+      Factura {{ f.serie }}-{{ f.numero }} de {{ f.proveedor.nombre }} registrada. Cuenta por pagar
+      de {{ f.cuenta_por_pagar.monto | monto }} con vencimiento
+      {{ f.cuenta_por_pagar.fecha_vencimiento }}.
+    </p>
+    <dl>
+      <dt>Base</dt>
+      <dd>{{ f.total_base | monto }}</dd>
+      <dt>IVA</dt>
+      <dd>{{ f.total_iva | monto }}</dd>
+      <dt>Crédito fiscal</dt>
+      <dd>{{ f.credito_fiscal | monto }}</dd>
+      <dt>Total</dt>
+      <dd>
+        <strong>{{ f.total | monto }}</strong>
+      </dd>
+    </dl>
+    @if (!f.genera_credito_fiscal) {
+      <small
+        >Pequeño contribuyente: su IVA no genera crédito fiscal y queda como parte del costo.</small
+      >
+    }
+  </div>
+}
+
+<div class="filtros">
+  <select
+    [formControl]="filtroProveedor"
+    name="filtro_proveedor"
+    aria-label="Filtrar por proveedor"
+  >
+    <option [ngValue]="0">Todos los proveedores</option>
+    @for (p of proveedores(); track p.id) {
+      <option [ngValue]="p.id">{{ p.nombre }}</option>
+    }
+  </select>
+</div>
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th>DTE</th>
+        <th>Imputación</th>
+        <th class="numero">Total</th>
+        <th class="numero">Crédito fiscal</th>
+        <th>Cuenta por pagar</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of facturas(); track f.id) {
+        <tr>
+          <td>{{ f.fecha }}</td>
+          <td>
+            {{ f.proveedor.nombre }}
+            <small>NIT {{ f.proveedor.nit_formateado }}</small>
+          </td>
+          <td>
+            {{ f.serie }}-{{ f.numero }}
+            <small class="uuid">{{ f.autorizacion }}</small>
+          </td>
+          <td>
+            @for (l of f.lineas; track l.numero_linea) {
+              <small class="imputacion">
+                {{ l.cuenta }} · {{ etiquetaLinea(l.linea_negocio) }}
+                @if (l.vin) {
+                  · {{ l.vin }}
+                }
+              </small>
+            }
+          </td>
+          <td class="numero">{{ f.total | monto }}</td>
+          <td class="numero">
+            @if (f.genera_credito_fiscal) {
+              {{ f.credito_fiscal | monto }}
+            } @else {
+              <span class="chip pequeno">Sin crédito</span>
+            }
+          </td>
+          <td>
+            {{ f.cuenta_por_pagar.saldo | monto }}
+            <small>vence {{ f.cuenta_por_pagar.fecha_vencimiento }}</small>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">Todavía no hay facturas registradas</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

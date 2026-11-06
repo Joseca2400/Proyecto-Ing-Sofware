@@ -13,6 +13,7 @@ const LOCAL = {
   nit_formateado: '1234567-9',
   identificacion_fiscal: null,
   pais: null,
+  regimen: 'general',
   rubro: 'repuestos',
   moneda_habitual: 'GTQ',
   dias_credito: 30,
@@ -30,6 +31,7 @@ const EXTERIOR = {
   nit_formateado: null,
   identificacion_fiscal: '94-2867490',
   pais: 'US',
+  regimen: null,
   rubro: 'subasta',
   moneda_habitual: 'USD',
   dias_credito: 0,
@@ -75,6 +77,7 @@ describe('ProveedoresPantalla', () => {
     const texto = elemento(fixture).textContent ?? '';
 
     expect(texto).toContain('NIT 1234567-9');
+    expect(elemento(fixture).querySelector('tbody')!.textContent).toMatch(/1234567-9\s+· General/);
     expect(texto).toContain('94-2867490 · US');
     expect(texto).toContain('Subasta');
     expect(texto).toContain('30 días');
@@ -96,6 +99,7 @@ describe('ProveedoresPantalla', () => {
       tipo: 'local',
       nombre: 'Repuestos El Volante, S.A.',
       nit: '1234567-9',
+      regimen: 'general',
       rubro: 'repuestos',
       moneda_habitual: 'GTQ',
       dias_credito: 30,
@@ -108,6 +112,24 @@ describe('ProveedoresPantalla', () => {
     expect(el.textContent).toContain('Proveedor Repuestos El Volante, S.A. registrado');
   });
 
+  it('registra el régimen de pequeño contribuyente de un proveedor local', async () => {
+    const fixture = await crear();
+    const el = elemento(fixture);
+
+    escribir(el, 'nombre', 'Taller Don Chepe');
+    escribir(el, 'nit', '576937-K');
+    escribir(el, 'regimen', 'pequeno_contribuyente');
+    enviar(el);
+
+    const envio = http.expectOne({ method: 'POST', url: URL });
+    expect(envio.request.body.regimen).toBe('pequeno_contribuyente');
+    envio.flush({ ...LOCAL, regimen: 'pequeno_contribuyente' });
+    http.expectOne(URL).flush([{ ...LOCAL, regimen: 'pequeno_contribuyente' }]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('tbody')!.textContent).toContain('· Pequeño contribuyente');
+  });
+
   it('pide identificación fiscal y país a un proveedor del exterior', async () => {
     const fixture = await crear();
     const el = elemento(fixture);
@@ -115,6 +137,7 @@ describe('ProveedoresPantalla', () => {
     el.querySelector<HTMLInputElement>('input[value=exterior]')!.click();
     await fixture.whenStable();
     expect(el.querySelector('[name=nit]')).toBeNull();
+    expect(el.querySelector('[name=regimen]')).toBeNull();
 
     escribir(el, 'nombre', 'Copart Inc.');
     escribir(el, 'identificacion_fiscal', '94-2867490');

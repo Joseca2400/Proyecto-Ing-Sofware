@@ -6,6 +6,8 @@ import {
   ComprasService,
   Proveedor,
   ProveedorEntrada,
+  REGIMENES,
+  RegimenProveedor,
   RUBROS,
   RubroProveedor,
   TipoProveedor,
@@ -13,7 +15,8 @@ import {
 
 // HU-4.01 (Sprint 1): alta y consulta de proveedores locales o del exterior.
 // El dígito verificador del NIT lo valida el servidor; aquí solo se revisa la forma.
-// Diferido: régimen y retenciones del proveedor local.
+// El régimen de IVA del proveedor local decide el crédito fiscal de sus facturas (HU-4.09).
+// Diferido: retenciones del proveedor local.
 @Component({
   selector: 'app-proveedores',
   imports: [ReactiveFormsModule],
@@ -25,6 +28,7 @@ export class ProveedoresPantalla {
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly rubros = RUBROS;
+  protected readonly regimenes = REGIMENES;
   protected readonly proveedores = signal<Proveedor[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly aviso = signal<string | null>(null);
@@ -36,6 +40,7 @@ export class ProveedoresPantalla {
     nit: ['', Validators.pattern(/^\s*\d[\d\s]*-?\s*[\dkK]\s*$/)],
     identificacion_fiscal: [''],
     pais: ['', Validators.pattern(/^[A-Za-z]{2}$/)],
+    regimen: ['general' as RegimenProveedor],
     rubro: ['repuestos' as RubroProveedor],
     moneda_habitual: ['GTQ' as 'GTQ' | 'USD'],
     dias_credito: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
@@ -55,6 +60,10 @@ export class ProveedoresPantalla {
 
   constructor() {
     this.cargar();
+  }
+
+  protected etiquetaRegimen(valor: RegimenProveedor | null): string {
+    return this.regimenes.find((r) => r.valor === valor)?.etiqueta ?? '';
   }
 
   protected etiquetaRubro(valor: RubroProveedor): string {
@@ -99,7 +108,7 @@ export class ProveedoresPantalla {
       banco: opcional(valores.banco),
       cuenta_bancaria: opcional(valores.cuenta_bancaria),
       ...(local
-        ? { nit: valores.nit.trim() }
+        ? { nit: valores.nit.trim(), regimen: valores.regimen }
         : {
             identificacion_fiscal: valores.identificacion_fiscal.trim(),
             pais: valores.pais.trim().toUpperCase(),

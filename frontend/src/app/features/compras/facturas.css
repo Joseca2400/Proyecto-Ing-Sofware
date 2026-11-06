@@ -1,0 +1,237 @@
+.encabezado {
+  margin-bottom: 24px;
+}
+
+.encabezado h1 {
+  font-size: 28px;
+}
+
+.encabezado p {
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.tarjeta {
+  background: var(--white);
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+}
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.ancho {
+  flex: 1 1 100%;
+}
+
+.corto input {
+  width: 6em;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+button {
+  align-self: flex-end;
+  background: var(--teal);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mensaje {
+  margin-bottom: 16px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-light);
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacio,
+small {
+  color: var(--gray);
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.falla {
+  color: var(--error);
+}
+
+.autorizacion {
+  flex: 1 1 340px;
+}
+
+.autorizacion input {
+  font-family: monospace;
+}
+
+fieldset.lineas {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 12px 16px 16px;
+  margin: 0;
+}
+
+fieldset.lineas legend {
+  float: none;
+  padding: 0 4px;
+  font-size: 14px;
+}
+
+.linea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.numero-linea {
+  align-self: center;
+  min-width: 1.5em;
+  color: var(--gray);
+  font-variant-numeric: tabular-nums;
+}
+
+.linea .descripcion {
+  flex: 1 1 220px;
+}
+
+.linea .cuenta input {
+  width: 7em;
+}
+
+.linea .vin input {
+  width: 13em;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.linea .monto input {
+  width: 8em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+button.quitar {
+  align-self: center;
+  background: transparent;
+  color: var(--gray);
+  border: 1px solid var(--gray-light);
+  padding: 6px 12px;
+}
+
+button.agregar {
+  align-self: flex-start;
+}
+
+.resultado {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.resultado dl {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 4px 24px;
+  margin: 12px 0 8px;
+}
+
+.resultado dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+td small {
+  display: block;
+}
+
+.uuid {
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.chip.pequeno {
+  background: #fff3e0;
+  color: #e65100;
+}
