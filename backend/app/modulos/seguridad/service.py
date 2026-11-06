@@ -10,7 +10,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.comun import config
-from app.comun.db import get_db
+from app.comun.auditoria import consultar_bitacora  # noqa: F401  contrato de consulta para el router
+from app.comun.db import fijar_actor, get_db
 from app.comun.errores import ErrorNegocio
 from app.modulos.seguridad.models import Sesion, Usuario
 
@@ -98,6 +99,7 @@ def usuario_actual(
     usuario = db.get(Usuario, sesion.usuario_id)
     if usuario is None or not usuario.activo:
         raise ErrorNegocio("La sesión expiró o no es válida", 401)
+    fijar_actor(db, usuario.id)
     return usuario
 
 
