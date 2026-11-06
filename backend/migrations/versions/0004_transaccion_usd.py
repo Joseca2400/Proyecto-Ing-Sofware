@@ -1,9 +1,5 @@
 """HU-1.07: tabla de transacciones en USD con monto original, tipo de cambio y equivalente.
 
-Usa la revisión 0004 porque la 0002 está reservada para usuarios y sesiones (HU-1.09, equipo A).
-Si la 0002 se mezcla antes que esta, ajustar `down_revision` a "0002" para conservar una sola
-cabeza en el árbol de Alembic.
-
 Revision ID: 0004
 Revises: 0003
 Create Date: 2026-11-05

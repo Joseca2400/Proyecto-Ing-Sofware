@@ -1,10 +1,10 @@
 """HU-1.06: tipo de cambio de referencia por fecha.
 
-Usa la revisión 0003 porque la 0002 es la de usuarios y sesiones (HU-1.09, equipo A).
-Si esa se mezcla antes, cambiar `down_revision` a "0002" para que quede una sola cabeza.
+Cuelga de la bitácora del equipo A (d5f18a6e0c47, HU-1.11) para que quede una sola cadena:
+0001 → 0002 → c0a7e41d9b32 → d5f18a6e0c47 → 0003 → 0004 → 0005 → 0006.
 
 Revision ID: 0003
-Revises: 0001
+Revises: d5f18a6e0c47
 Create Date: 2026-11-05
 """
 
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0003"
-down_revision: str | None = "0001"
+down_revision: str | None = "d5f18a6e0c47"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

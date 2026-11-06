@@ -13,3 +13,7 @@ DATABASE_URL = os.getenv(
 # El sistema solo corre sobre PostgreSQL (NUMERIC exacto, JSONB, transacciones, triggers).
 if not DATABASE_URL.startswith("postgresql"):
     raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL (postgresql+psycopg://...)")
+
+SESION_MINUTOS = int(os.getenv("SESION_MINUTOS", "480"))
+# Contraseña de las cuentas iniciales (`python -m app.modulos.seguridad.semilla`); sin valor por defecto.
+CLAVE_INICIAL = os.getenv("CLAVE_INICIAL")

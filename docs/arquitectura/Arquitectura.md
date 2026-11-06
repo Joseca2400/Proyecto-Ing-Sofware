@@ -237,9 +237,18 @@ Cada decisión de arquitectura se registra aquí con su estado. Una decisión nu
 | ADR-04 | Solo `contabilidad` crea partidas | Aceptada · 30/10/2026 |
 | ADR-05 | Integraciones externas detrás de adaptadores | Aceptada · 30/10/2026 |
 | ADR-06 | Front en Angular, organizado por los mismos módulos que la API | Aceptada · 30/10/2026 |
-| ADR-07 | Auditoría con eventos de SQLAlchemy o con triggers de PostgreSQL | Pendiente · K1 (02/11/2026) |
+| ADR-07 | Auditoría con triggers de PostgreSQL; actor de seguridad local a la transacción y columnas públicas explícitas | Implementada en S1 · 06/11/2026 |
 | ADR-08 | Librería de componentes de Angular (tabla, formulario y árbol) | Pendiente · K1 (02/11/2026) |
 | ADR-09 | Ambiente de pruebas desplegado desde `main` | Pendiente · K1 (02/11/2026) |
 | ADR-10 | Herramienta de prueba de punta a punta en CI | Pendiente · K1 (02/11/2026) |
 
 La migración desde los prototipos anteriores está terminada: ver [Sprint0-HelloWorld.md](Sprint0-HelloWorld.md).
+
+**ADR-07 · HU-1.11:** los triggers cubren escrituras mediante ORM y SQL en la misma
+transacción del documento, sin depender de llamadas manuales desde los servicios.
+La migración `d5f18a6e0c47` cubre usuarios y cuentas; cada nueva tabla de negocio debe registrar
+su trigger y las columnas permitidas antes de recibir escrituras. Seguridad establece
+el actor mediante `set_config` local a la transacción; las operaciones de sistema sin
+actor se identifican con usuario nulo. Las sesiones y los secretos no se copian. La
+bitácora tiene consulta filtrada y no permite actualización, eliminación ni truncado.
+Contrato de integración y alcance actual en [backend/README.md](../../backend/README.md).

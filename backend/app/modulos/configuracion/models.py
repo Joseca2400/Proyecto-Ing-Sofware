@@ -1,17 +1,42 @@
 """Tablas del módulo de configuración.
 
-Equipo B: tipo de cambio (HU-1.06) y transacciones en USD (HU-1.07). El equipo A agrega aquí
-el catálogo, las dimensiones y los bancos; el equipo C, el perfil fiscal.
+Equipo A: catálogo de cuentas y dimensiones analíticas (HU-1.02, HU-1.04).
+Equipo B: tipo de cambio (HU-1.06) y transacciones en USD (HU-1.07).
 """
 
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, String, Text, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
 from app.comun.dinero import MONTO, TIPO_CAMBIO
+
+# ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
+
+
+class Cuenta(Base):
+    """Cuenta contable. Las de detalle reciben movimientos; las de agrupación suman a sus hijas."""
+
+    __tablename__ = "cuentas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(30), unique=True)
+    nombre: Mapped[str] = mapped_column(String(200))
+    tipo: Mapped[str] = mapped_column(String(20))
+    naturaleza: Mapped[str] = mapped_column(String(20))
+    nivel: Mapped[int]
+    padre_id: Mapped[int | None] = mapped_column(ForeignKey("cuentas.id"), index=True)
+    es_detalle: Mapped[bool] = mapped_column(default=True)
+    monetaria_usd: Mapped[bool] = mapped_column(default=False)
+    # Dimensiones analíticas (HU-1.04): solo tienen sentido en cuentas de detalle.
+    linea_obligatoria: Mapped[bool] = mapped_column(default=False)
+    vin: Mapped[str] = mapped_column(String(20), default="no_aplica")
+    linea_defecto: Mapped[str | None] = mapped_column(String(20))
+
+
+# ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
 
 ORIGENES_TIPO_CAMBIO = ("manual", "automatico")
 
@@ -30,6 +55,9 @@ class TipoCambio(Base):
     valor: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
     origen: Mapped[str] = mapped_column(String(10))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── HU-1.07: transacciones en USD ─────────────────────────────────────────────
 
 
 class TransaccionUSD(Base):
