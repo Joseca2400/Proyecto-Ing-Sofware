@@ -35,7 +35,6 @@ RUBROS_PROVEEDOR = (
     "otros",
 )
 REGIMENES_PROVEEDOR = ("general", "pequeno_contribuyente")
-LINEAS_NEGOCIO = ("alquiler", "venta", "taller", "financiamiento", "administracion")
 
 
 class Proveedor(Base):
@@ -138,17 +137,14 @@ class FacturaCompra(Base):
 class LineaFacturaCompra(Base):
     """Línea del DTE con su imputación: cuenta, línea de negocio y, cuando aplique, el VIN.
 
-    Mientras no existan el catálogo (HU-1.02), las dimensiones (HU-1.04) ni las unidades
-    (HU-1.05), la cuenta y el VIN se guardan como texto validado solo en su forma.
+    El VIN es llave foránea a la unidad (HU-1.05) y la línea de negocio la valida el service contra
+    `configuracion` (HU-1.04). Mientras no se conecte el catálogo (HU-1.02), la cuenta se guarda
+    como texto validado solo en su forma.
     """
 
     __tablename__ = "linea_factura_compra"
     __table_args__ = (
         UniqueConstraint("factura_id", "numero_linea", name="uq_linea_factura_compra_numero"),
-        CheckConstraint(
-            "linea_negocio IN ('alquiler', 'venta', 'taller', 'financiamiento', 'administracion')",
-            name="ck_linea_factura_compra_linea_negocio",
-        ),
         CheckConstraint("base > 0 AND iva >= 0", name="ck_linea_factura_compra_montos"),
         CheckConstraint("vin IS NULL OR length(vin) = 17", name="ck_linea_factura_compra_vin"),
     )
@@ -159,7 +155,12 @@ class LineaFacturaCompra(Base):
     descripcion: Mapped[str] = mapped_column(String(300))
     cuenta: Mapped[str] = mapped_column(String(20))
     linea_negocio: Mapped[str] = mapped_column(String(20))
-    vin: Mapped[str | None] = mapped_column(String(17), nullable=True, index=True)
+    vin: Mapped[str | None] = mapped_column(
+        String(17),
+        ForeignKey("unidad.vin", name="fk_linea_factura_compra_vin_unidad"),
+        nullable=True,
+        index=True,
+    )
     base: Mapped[Decimal] = mapped_column(MONTO)
     iva: Mapped[Decimal] = mapped_column(MONTO)
 
