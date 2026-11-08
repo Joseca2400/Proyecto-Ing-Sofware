@@ -1,0 +1,246 @@
+<section class="encabezado">
+  <h1>Partidas de diario</h1>
+  <p>
+    La partida nace en borrador y puede guardarse descuadrada; para enviarla a revisión debe
+    cuadrar. Quien la registra no puede contabilizarla, y recibe el número correlativo al
+    contabilizarse.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  @if (editando(); as id) {
+    <h2>Corregir la partida {{ id }}</h2>
+  }
+  <label>
+    Fecha
+    <input type="date" formControlName="fecha" name="fecha" />
+    @if (formulario.controls.fecha.touched && formulario.controls.fecha.invalid) {
+      <small class="falla">Obligatoria</small>
+    }
+  </label>
+  <label class="crece">
+    Concepto
+    <input type="text" formControlName="concepto" name="concepto" maxlength="300" />
+    @if (formulario.controls.concepto.touched && formulario.controls.concepto.invalid) {
+      <small class="falla">Obligatorio</small>
+    }
+  </label>
+  <label>
+    Documento de soporte
+    <input
+      type="text"
+      formControlName="documento_soporte"
+      name="documento_soporte"
+      maxlength="100"
+    />
+  </label>
+
+  <fieldset class="lineas" formArrayName="lineas">
+    <legend>Líneas</legend>
+    @for (linea of lineas.controls; track linea; let i = $index) {
+      <div class="linea" [formGroupName]="i">
+        <span class="numero-linea">{{ i + 1 }}</span>
+        <label class="crece">
+          Cuenta
+          <select formControlName="cuenta_id" [name]="'cuenta' + i">
+            <option [ngValue]="0" disabled>Selecciona</option>
+            @for (c of cuentas(); track c.id) {
+              <option [ngValue]="c.id">{{ c.codigo }} · {{ c.nombre }}</option>
+            }
+          </select>
+          @if (linea.controls.cuenta_id.touched && linea.controls.cuenta_id.invalid) {
+            <small class="falla">Elige la cuenta</small>
+          }
+        </label>
+        <label>
+          Lado
+          <select formControlName="lado" [name]="'lado' + i">
+            <option value="debe">Debe</option>
+            <option value="haber">Haber</option>
+          </select>
+        </label>
+        <label>
+          Moneda
+          <select formControlName="moneda" [name]="'moneda' + i">
+            <option value="GTQ">GTQ</option>
+            <option value="USD">USD</option>
+          </select>
+        </label>
+        <label class="monto">
+          Monto
+          <input type="text" inputmode="decimal" formControlName="monto" [name]="'monto' + i" />
+          @if (linea.controls.monto.touched && linea.controls.monto.invalid) {
+            <small class="falla">Hasta 6 decimales</small>
+          }
+        </label>
+        <label>
+          Línea de negocio
+          <select formControlName="linea_negocio" [name]="'linea_negocio' + i">
+            <option value="">Por defecto</option>
+            @for (l of lineasNegocio(); track l) {
+              <option [value]="l">{{ etiquetasLinea[l] ?? l }}</option>
+            }
+          </select>
+        </label>
+        <label class="vin">
+          VIN
+          <input type="text" maxlength="17" formControlName="vin" [name]="'vin' + i" />
+          @if (linea.controls.vin.touched && linea.controls.vin.invalid) {
+            <small class="falla">17 caracteres, sin I, O ni Q</small>
+          }
+        </label>
+        <button
+          type="button"
+          class="quitar"
+          [disabled]="lineas.length <= 2"
+          [attr.aria-label]="'Quitar la línea ' + (i + 1)"
+          (click)="quitarLinea(i)"
+        >
+          ×
+        </button>
+      </div>
+    }
+    <button type="button" class="secundario agregar" (click)="agregarLinea()">Agregar línea</button>
+  </fieldset>
+
+  <button type="submit" [disabled]="guardando()">Guardar borrador</button>
+  @if (editando()) {
+    <button type="button" class="secundario" (click)="limpiar()">Cancelar</button>
+  }
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionada(); as p) {
+  <section class="tarjeta ficha" aria-label="Detalle de la partida">
+    <header>
+      <h2>{{ p.numero ? 'Partida No. ' + p.numero : 'Partida ' + p.id }} · {{ p.concepto }}</h2>
+      <span class="chip" [attr.data-estado]="p.estado">{{ estados[p.estado] ?? p.estado }}</span>
+    </header>
+    <p class="datos">
+      {{ p.fecha }}
+      @if (p.documento_soporte; as soporte) {
+        · Soporte: {{ soporte }}
+      }
+    </p>
+    @if (p.comentario; as motivo) {
+      <p class="motivo">Motivo de la devolución: {{ motivo }}</p>
+    }
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th class="numero">Debe</th>
+            <th class="numero">Haber</th>
+            <th class="numero">Monto USD</th>
+            <th class="numero">Tipo de cambio</th>
+            <th>Línea</th>
+            <th>VIN</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of p.lineas; track l.numero_linea) {
+            <tr>
+              <td>{{ cuenta(l.cuenta_id) }}</td>
+              <td class="numero">{{ l.debe === CERO ? '' : (l.debe | monto) }}</td>
+              <td class="numero">{{ l.haber === CERO ? '' : (l.haber | monto) }}</td>
+              <td class="numero">{{ l.monto_usd | monto: 'USD' }}</td>
+              <td class="numero">{{ l.tipo_cambio }}</td>
+              <td>
+                {{ l.linea_negocio ? (etiquetasLinea[l.linea_negocio] ?? l.linea_negocio) : '' }}
+              </td>
+              <td class="codigo">{{ l.vin }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Totales</th>
+            <th class="numero">{{ p.total_debe | monto }}</th>
+            <th class="numero">{{ p.total_haber | monto }}</th>
+            <th colspan="4"></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="acciones">
+      @if (p.estado === 'borrador' || p.estado === 'devuelta') {
+        <button type="button" class="secundario" (click)="editar(p)">Corregir</button>
+        <button type="button" [disabled]="guardando()" (click)="enviar(p)">
+          Enviar a revisión
+        </button>
+      }
+      @if (p.estado === 'en_revision') {
+        <button type="button" [disabled]="guardando()" (click)="contabilizar(p)">
+          Contabilizar
+        </button>
+        <label class="crece">
+          Motivo de la devolución
+          <input type="text" maxlength="300" name="comentario" [formControl]="comentario" />
+          @if (comentario.touched && comentario.invalid) {
+            <small class="falla">Indica el motivo</small>
+          }
+        </label>
+        <button type="button" class="secundario" [disabled]="guardando()" (click)="devolver(p)">
+          Devolver
+        </button>
+      }
+    </div>
+  </section>
+}
+
+<div class="filtros">
+  <label>
+    Estado
+    <select name="filtro_estado" [formControl]="filtro" (change)="cargar()">
+      <option value="">Todas</option>
+      @for (clave of claves; track clave) {
+        <option [value]="clave">{{ estados[clave] }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+        <th>Origen</th>
+        <th class="numero">Total</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of partidas(); track p.id) {
+        <tr [class.activa]="seleccionada()?.id === p.id">
+          <td>{{ p.numero ?? '—' }}</td>
+          <td>{{ p.fecha }}</td>
+          <td>{{ p.concepto }}</td>
+          <td>{{ p.origen === 'manual' ? 'Manual' : 'Automática' }}</td>
+          <td class="numero">{{ p.total_debe | monto }}</td>
+          <td>
+            <span class="chip" [attr.data-estado]="p.estado">{{
+              estados[p.estado] ?? p.estado
+            }}</span>
+          </td>
+          <td><button type="button" class="secundario" (click)="ver(p)">Ver</button></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">No hay partidas en este estado</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
