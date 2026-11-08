@@ -4,13 +4,19 @@ from sqlalchemy.orm import Session
 from app.comun.db import get_db
 from app.modulos.contabilidad import service
 from app.modulos.contabilidad.schemas import DevolucionEntrada, PartidaEntrada, PartidaSalida
-from app.modulos.seguridad.service import AUXILIAR_CONTABLE, CONTADOR, Usuario, requiere_rol, usuario_actual
+from app.modulos.seguridad.service import (
+    AUXILIAR_CONTABLE,
+    CONTADOR,
+    GERENTE_FINANCIERO,
+    Usuario,
+    requiere_rol,
+    usuario_actual,
+)
 
 router = APIRouter(prefix="/contabilidad", tags=["Contabilidad"])
 
-# La separación entre quien registra y quien contabiliza llega con HU-1.10.
 CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
-REVISION = requiere_rol(CONTADOR)
+REVISION = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
 
 
 @router.get("/partidas", response_model=list[PartidaSalida])
@@ -32,9 +38,9 @@ def consultar_partida(partida_id: int, _: Usuario = Depends(usuario_actual), db:
 
 @router.put("/partidas/{partida_id}", response_model=PartidaSalida)
 def corregir_partida(
-    partida_id: int, datos: PartidaEntrada, _: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+    partida_id: int, datos: PartidaEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
 ):
-    return service.corregir(db, partida_id, datos)
+    return service.corregir(db, partida_id, datos, usuario.id)
 
 
 @router.post("/partidas/{partida_id}/enviar-a-revision", response_model=PartidaSalida)
