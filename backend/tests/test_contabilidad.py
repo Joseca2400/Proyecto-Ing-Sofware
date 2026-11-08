@@ -17,7 +17,7 @@ from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
 from app.modulos.seguridad.semilla import CUENTAS, crear_cuentas_iniciales
 
 CLAVE = "Prueba-2026!"
-AUXILIAR, CONTADOR = CUENTAS[0][0], CUENTAS[1][0]
+AUXILIAR, CONTADOR, GERENTE = CUENTAS[0][0], CUENTAS[1][0], CUENTAS[2][0]
 FECHA = date(2026, 1, 15)
 VIN = "1HGCM82633A004352"
 URL = "/api/v1/contabilidad/partidas"
@@ -273,3 +273,48 @@ def test_el_flujo_por_la_api_respeta_los_roles_y_envia_montos_como_texto(cliente
     numerico["lineas"][0]["monto"] = 100.0
     assert cliente.post(URL, json=numerico, headers=auxiliar).status_code == 422
     assert cliente.get(f"{base}", headers=contador).json()["numero"] == final["numero"]
+
+
+# ── HU-1.10: separación de funciones ──────────────────────────────────────────
+
+
+def test_quien_registra_no_contabiliza_y_otro_autorizado_si(cliente):
+    contador, gerente = _entrar(cliente, CONTADOR), _entrar(cliente, GERENTE)
+    base = f"{URL}/{cliente.post(URL, json=_cuerpo(), headers=contador).json()['id']}"
+    cliente.post(f"{base}/enviar-a-revision", headers=contador)
+
+    rechazo = cliente.post(f"{base}/contabilizar", headers=contador)
+    assert rechazo.status_code == 403 and "registraste" in rechazo.json()["detail"]
+    assert cliente.get(base, headers=contador).json()["estado"] == "en_revision"
+
+    final = cliente.post(f"{base}/contabilizar", headers=gerente).json()
+    assert final["estado"] == "contabilizada" and final["contabilizada_por"] != final["creado_por"]
+    assert (final["total_debe"], final["total_haber"]) == ("100.000000", "100.000000")
+
+
+def test_nadie_corrige_la_partida_de_otro_para_aprobarla_despues(cliente):
+    auxiliar, contador = _entrar(cliente, AUXILIAR), _entrar(cliente, CONTADOR)
+    base = f"{URL}/{cliente.post(URL, json=_cuerpo(), headers=auxiliar).json()['id']}"
+
+    assert cliente.put(base, json=_cuerpo("999.00"), headers=contador).status_code == 403
+    assert cliente.get(base, headers=auxiliar).json()["total_debe"] == "100.000000"
+    assert cliente.put(base, json=_cuerpo("120.00"), headers=auxiliar).status_code == 200
+
+
+def test_el_rechazo_deja_motivo_visible_y_usuario_en_la_bitacora(cliente):
+    auxiliar, contador = _entrar(cliente, AUXILIAR), _entrar(cliente, CONTADOR)
+    partida_id = cliente.post(URL, json=_cuerpo(), headers=auxiliar).json()["id"]
+    base = f"{URL}/{partida_id}"
+    cliente.post(f"{base}/enviar-a-revision", headers=auxiliar)
+
+    devuelta = cliente.post(f"{base}/devolver", json={"comentario": "Falta soporte"}, headers=contador)
+    assert (devuelta.json()["estado"], devuelta.json()["comentario"]) == ("devuelta", "Falta soporte")
+
+    yo = cliente.get("/api/v1/seguridad/yo", headers=contador).json()["id"]
+    registros = cliente.get(
+        "/api/v1/seguridad/bitacora", params={"entidad": "partida", "usuario_id": yo}, headers=contador
+    ).json()
+    assert any(
+        r["registro_id"] == str(partida_id) and r["nuevos"]["comentario"] == "Falta soporte"
+        for r in registros
+    )

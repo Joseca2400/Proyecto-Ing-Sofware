@@ -8,8 +8,8 @@ HU-2.01 (incluido): partida manual en borrador, líneas en quetzales o dólares 
 validación de dimensiones contra la cuenta, cuadre al enviar a revisión y correlativo al contabilizar.
 HU-2.02 (incluido): borrador → en revisión → contabilizada, o devuelta con comentario y reenvío.
 HU-2.03 (incluido): partida automática ligada a su documento, una por documento.
-Pendiente: separación de funciones entre quien registra y quien contabiliza (HU-1.10); aprobación
-del gerente financiero en ajustes grandes; lotes; adjuntos; reversión (HU-2.05); período abierto.
+HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro la corrige por él.
+Pendiente: límites monetarios de aprobación; lotes; adjuntos; reversión (HU-2.05); período abierto.
 """
 
 from datetime import UTC, date, datetime
@@ -155,10 +155,13 @@ def crear_borrador(db: Session, datos: PartidaEntrada, usuario_id: int | None = 
     return partida
 
 
-def corregir(db: Session, partida_id: int, datos: PartidaEntrada) -> Partida:
+def corregir(db: Session, partida_id: int, datos: PartidaEntrada, usuario_id: int | None = None) -> Partida:
     """Reemplaza el contenido de un borrador o de una partida devuelta."""
     partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "borrador", "devuelta", accion="editar")
+    # Si otro pudiera editarla, podría escribir el contenido y luego aprobarlo (HU-1.10).
+    if usuario_id is not None and partida.creado_por != usuario_id:
+        raise ErrorNegocio("Solo quien registró la partida puede corregirla", 403)
     nuevas = _lineas(db, datos.fecha, datos.lineas)  # valida todo antes de tocar la partida
     partida.fecha, partida.concepto = datos.fecha, datos.concepto
     partida.documento_soporte = datos.documento_soporte or None
@@ -183,6 +186,8 @@ def enviar_a_revision(db: Session, partida_id: int) -> Partida:
 def contabilizar(db: Session, partida_id: int, usuario_id: int | None = None) -> Partida:
     partida = _obtener(db, partida_id, bloquear=True)
     _exigir_estado(partida, "en_revision", accion="contabilizar")
+    if usuario_id is not None and partida.creado_por == usuario_id:
+        raise ErrorNegocio("No puedes contabilizar una partida que registraste tú", 403)
     _exigir_cuadre(partida)
     _contabilizar(db, partida, usuario_id)
     db.commit()
