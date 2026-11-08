@@ -22,6 +22,7 @@ export class Layout {
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Contabilidad' },
+    { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
     { etiqueta: 'Reportes' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
