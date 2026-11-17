@@ -10,17 +10,32 @@ ligados al VIN en la ficha (criterio 5), cuando exista `contabilidad` (HU-2.01/H
 Pendiente para otras historias:
 - HU-4.02 (compra en EE. UU.): hecho. La compra crea la unidad con `registrar_unidad` y
   `confirmar=False`, en su misma transacción; el documento del alta es la compra.
-- HU-4.07 (etapas de importación): el orden tránsito → aduana → taller → lista se valida allá;
-  aquí solo se impide lo que nunca tiene sentido (ver `_validar_transicion`).
 - HU-1.09: con sesión, el router pasa `usuario.id` como `usuario_id` del cambio de estado.
+
+HU-4.07 (incluido): una unidad en importación avanza solo en orden, en tránsito → en aduana → en
+taller → lista, sin saltarse etapas ni regresar (`_validar_transicion`); cada paso queda en el
+historial y en la bitácora como cualquier cambio de estado. La unidad está "en importación"
+mientras su historial no tenga ningún estado de lista en adelante. Una vez lista no regresa a
+ninguna etapa; ya en flota o en venta no vuelve a tránsito, aduana ni lista, pero sí puede entrar
+al taller (mantenimiento y postventa, que regula HU-5.01). El listado por etapa
+(`etapas_importacion`) da los días que lleva cada unidad en su etapa, desde su último cambio en el
+historial, y su costo acumulado (compra más gastos que suman al costo, calculado por `compras` con
+la misma regla de la ficha), con el total de cada etapa.
+HU-4.07 (diferido):
+- Criterio 2: el paso a "en taller" lo hará la orden de reacondicionamiento al abrirse (HU-5.01),
+  llamando a `cambiar_estado`; mientras no exista, se registra a mano con su documento.
+- Criterio 3: el paso a "lista" exigirá la DUCA registrada (HU-4.06) y que no haya órdenes de
+  reacondicionamiento abiertas (HU-5.01); ver `_validar_paso_a_lista`.
+- Las métricas de la etapa (promedios de días, unidades detenidas) quedan para HU-7.04.
 """
 
 import re
-from datetime import date
+from datetime import UTC, date, datetime
+from decimal import Decimal
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
@@ -170,25 +185,79 @@ def existe_vin(db: Session, vin: str) -> bool:
     return buscar_por_vin(db, vin) is not None
 
 
-def _validar_transicion(actual: str, nuevo: str) -> None:
+# ── HU-4.07: etapas de importación ────────────────────────────────────────────
+
+ETAPAS_IMPORTACION = ("en_transito", "en_aduana", "en_taller", "lista")
+_SIGUIENTE_ETAPA = dict(zip(ETAPAS_IMPORTACION, ETAPAS_IMPORTACION[1:], strict=False))
+# Estados que solo tiene una unidad que ya terminó la importación (o que nunca la tuvo).
+_FUERA_DE_IMPORTACION = tuple(e for e in ESTADOS if e not in ETAPAS_IMPORTACION[:-1])
+_NOMBRE = {
+    "en_transito": "en tránsito",
+    "en_aduana": "en aduana",
+    "en_taller": "en taller",
+    "lista": "lista",
+}
+
+
+def _ya_salio_de_importacion(unidad_id):
+    """Condición SQL: el historial de la unidad tiene algún estado de lista en adelante."""
+    cambio = aliased(CambioEstadoUnidad)  # alias: la consulta de afuera también une el historial
+    return (
+        select(cambio.id)
+        .where(cambio.unidad_id == unidad_id, cambio.estado_nuevo.in_(_FUERA_DE_IMPORTACION))
+        .exists()
+    )
+
+
+def _en_importacion(db: Session, unidad: Unidad) -> bool:
+    if unidad.estado not in _SIGUIENTE_ETAPA:
+        return False
+    return not db.scalar(select(_ya_salio_de_importacion(unidad.id)))
+
+
+def _validar_paso_a_lista(db: Session, unidad: Unidad) -> None:
+    """Diferido (HU-4.07, criterio 3): aquí se exigirá que la DUCA de la unidad esté registrada
+    (service de `compras`, HU-4.06) y que no tenga órdenes de reacondicionamiento abiertas
+    (service de `taller`, HU-5.01). Hoy solo se exige el orden de las etapas."""
+
+
+def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
     if nuevo == actual:
         raise ErrorNegocio(f"La unidad ya está en estado {nuevo}")
     if actual == "vendida" and nuevo != "recuperada":
         raise ErrorNegocio("Una unidad vendida solo puede pasar a recuperada")
     if nuevo == "recuperada" and actual != "vendida":
         raise ErrorNegocio("Solo una unidad vendida puede pasar a recuperada")
+    if en_importacion:
+        siguiente = _SIGUIENTE_ETAPA[actual]
+        if nuevo != siguiente:
+            raise ErrorNegocio(
+                "La importación avanza en orden: en tránsito → en aduana → en taller → lista; "
+                f"una unidad {_NOMBRE[actual]} solo puede pasar a {_NOMBRE[siguiente]}"
+            )
+    elif nuevo in ETAPAS_IMPORTACION and (nuevo != "en_taller" or actual == "lista"):
+        # De lista no se regresa; ya en flota o en venta, el taller es mantenimiento o postventa
+        # (HU-5.01) y sí se permite.
+        raise ErrorNegocio(f"La unidad ya terminó la importación; no puede volver a {_NOMBRE[nuevo]}")
 
 
 def cambiar_estado(
     db: Session, vin: str, estado: str, documento: str, usuario_id: int | None = None
 ) -> Unidad:
-    """Cambia el estado vigente y guarda el cambio en el historial, en la misma transacción."""
+    """Cambia el estado vigente y guarda el cambio en el historial, en la misma transacción.
+
+    Diferido (HU-4.07, criterio 2): la orden de reacondicionamiento (HU-5.01) llamará a esta
+    función al abrirse para pasar la unidad a "en taller"; hoy el paso se registra a mano.
+    """
     if not documento:
         raise ErrorNegocio("Indique el documento que origina el cambio de estado")
     unidad = obtener_por_vin(db, vin)
     # Bloquea la fila: dos cambios simultáneos no dejan el historial desordenado.
     db.refresh(unidad, with_for_update=True)
-    _validar_transicion(unidad.estado, estado)
+    en_importacion = _en_importacion(db, unidad)
+    _validar_transicion(unidad.estado, estado, en_importacion)
+    if en_importacion and estado == "lista":
+        _validar_paso_a_lista(db, unidad)
     db.add(
         CambioEstadoUnidad(
             unidad_id=unidad.id,
@@ -214,6 +283,65 @@ def historial(db: Session, vin: str) -> list[CambioEstadoUnidad]:
             .order_by(CambioEstadoUnidad.id)
         )
     )
+
+
+def etapas_importacion(db: Session, estado: str | None = None) -> dict:
+    """Unidades en importación (y las listas para la flota) con los días en su etapa y su costo.
+
+    Los días cuentan desde el último cambio del historial, que es el que dejó la unidad en su
+    estado actual. Una unidad en taller que ya terminó la importación (mantenimiento) no aparece.
+    """
+    if estado is not None and estado not in ETAPAS_IMPORTACION:
+        raise ErrorNegocio(f"Etapa desconocida: {estado}. Use una de: {', '.join(ETAPAS_IMPORTACION)}")
+    etapas = (estado,) if estado else ETAPAS_IMPORTACION
+    ultimo_cambio = (
+        select(func.max(CambioEstadoUnidad.id).label("id")).group_by(CambioEstadoUnidad.unidad_id).subquery()
+    )
+    salio = _ya_salio_de_importacion(Unidad.id)
+    filas = db.execute(
+        select(Unidad, CambioEstadoUnidad.fecha)
+        .join(CambioEstadoUnidad, CambioEstadoUnidad.unidad_id == Unidad.id)
+        .join(ultimo_cambio, ultimo_cambio.c.id == CambioEstadoUnidad.id)
+        .where(Unidad.estado.in_(etapas), (Unidad.estado == "lista") | ~salio)
+        .order_by(CambioEstadoUnidad.fecha, Unidad.id)
+    ).all()
+
+    # Import diferido: `compras` ya importa este service al cargarse.
+    from app.modulos.compras import service as compras
+
+    costos = compras.costos_de_unidades(db, [unidad.vin for unidad, _ in filas])
+    ahora = datetime.now(UTC)
+    orden = {etapa: i for i, etapa in enumerate(ETAPAS_IMPORTACION)}
+    unidades = sorted(
+        (
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "color": unidad.color,
+                "estado": unidad.estado,
+                "desde": desde,
+                "dias_en_etapa": max((ahora - desde).days, 0),
+                "costo_total_gtq": costos[unidad.vin],
+                "siguiente_etapa": _SIGUIENTE_ETAPA.get(unidad.estado),
+            }
+            for unidad, desde in filas
+        ),
+        # Por etapa y, dentro de cada una, las que llevan más tiempo primero.
+        key=lambda u: orden[u["estado"]],
+    )
+    resumen = [
+        {
+            "estado": etapa,
+            "unidades": sum(1 for u in unidades if u["estado"] == etapa),
+            "costo_total_gtq": sum(
+                (u["costo_total_gtq"] for u in unidades if u["estado"] == etapa), Decimal(0)
+            ),
+        }
+        for etapa in etapas
+    ]
+    return {"etapas": resumen, "unidades": unidades}
 
 
 def catalogos() -> dict[str, list[str]]:

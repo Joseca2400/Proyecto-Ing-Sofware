@@ -489,6 +489,27 @@ def resumen_gastos_unidad(db: Session, vin: str) -> dict:
     }
 
 
+def costos_de_unidades(db: Session, vins: list[str]) -> dict[str, Decimal]:
+    """Costo acumulado en quetzales de varias unidades a la vez, con la misma regla que
+    `resumen_gastos_unidad`: la compra más los gastos que suman al costo (sin el IVA de
+    importación). Lo pide `unidades` para el listado por etapa (HU-4.07); un VIN sin compra ni
+    gastos cuesta cero."""
+    costos = dict.fromkeys(vins, Decimal(0))
+    if not vins:
+        return costos
+    compras = db.execute(
+        select(CompraUnidad.vin, CompraUnidad.total_gtq).where(CompraUnidad.vin.in_(vins))
+    ).all()
+    gastos = db.execute(
+        select(GastoImportacion.vin, func.sum(GastoImportacion.monto_gtq))
+        .where(GastoImportacion.vin.in_(vins), GastoImportacion.tratamiento == "costo")
+        .group_by(GastoImportacion.vin)
+    ).all()
+    for vin, monto in (*compras, *gastos):
+        costos[vin] += monto
+    return costos
+
+
 # ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
 
 DOCUMENTO_COMPRA = "compra_unidad"  # tipo de documento de la partida (HU-2.03)

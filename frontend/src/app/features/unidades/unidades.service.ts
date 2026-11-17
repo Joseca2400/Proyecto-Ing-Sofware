@@ -90,6 +90,36 @@ export interface FiltroUnidades {
   buscar?: string;
 }
 
+// ── HU-4.07: etapas de importación ─────────────────────────────────────────────
+
+export type Etapa = 'en_transito' | 'en_aduana' | 'en_taller' | 'lista';
+
+/** Días y costo los calcula el servidor; el costo llega como texto y solo se formatea. */
+export interface UnidadEnEtapa {
+  vin: string;
+  marca: string;
+  linea: string;
+  modelo: number;
+  color: string;
+  estado: Etapa;
+  desde: string;
+  dias_en_etapa: number;
+  costo_total_gtq: string;
+  /** La única etapa a la que puede pasar; null cuando ya está lista. */
+  siguiente_etapa: Etapa | null;
+}
+
+export interface ResumenEtapa {
+  estado: Etapa;
+  unidades: number;
+  costo_total_gtq: string;
+}
+
+export interface EtapasImportacion {
+  etapas: ResumenEtapa[];
+  unidades: UnidadEnEtapa[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class UnidadesService {
   private readonly http = inject(HttpClient);
@@ -112,6 +142,11 @@ export class UnidadesService {
 
   cambiarEstado(vin: string, estado: EstadoUnidad, documento: string): Observable<Unidad> {
     return this.http.post<Unidad>(`${this.url}/${vin}/estado`, { estado, documento });
+  }
+
+  etapasImportacion(etapa?: Etapa): Observable<EtapasImportacion> {
+    const params: Record<string, string> = etapa ? { etapa } : {};
+    return this.http.get<EtapasImportacion>(`${this.url}/etapas-importacion`, { params });
   }
 
   historial(vin: string): Observable<CambioEstado[]> {
