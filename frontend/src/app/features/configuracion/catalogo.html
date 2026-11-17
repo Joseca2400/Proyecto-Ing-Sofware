@@ -1,0 +1,168 @@
+<section class="encabezado">
+  <h1>Catálogo de cuentas</h1>
+  <p>
+    Solo las cuentas de detalle reciben movimientos; las de agrupación suman a sus hijas. En cada
+    cuenta de detalle se define si exige línea de negocio y unidad (VIN).
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Código
+    <input type="text" formControlName="codigo" name="codigo" placeholder="1.1.01.03" />
+    @if (formulario.controls.codigo.touched && formulario.controls.codigo.invalid) {
+      <small class="falla">Obligatorio</small>
+    }
+  </label>
+  <label class="crece">
+    Nombre
+    <input type="text" formControlName="nombre" name="nombre" />
+    @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+      <small class="falla">Obligatorio</small>
+    }
+  </label>
+  <label>
+    Tipo
+    <select formControlName="tipo" name="tipo">
+      @for (tipo of tipos; track tipo) {
+        <option [value]="tipo">{{ tipo }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Naturaleza
+    <select formControlName="naturaleza" name="naturaleza">
+      <option value="deudora">Deudora</option>
+      <option value="acreedora">Acreedora</option>
+    </select>
+  </label>
+  <label class="crece">
+    Cuenta padre
+    <select formControlName="padre_id" name="padre_id">
+      <option [ngValue]="0">Ninguna (primer nivel)</option>
+      @for (padre of padres(); track padre.id) {
+        <option [ngValue]="padre.id">{{ padre.codigo }} · {{ padre.nombre }}</option>
+      }
+    </select>
+  </label>
+  <label class="casilla">
+    <input type="checkbox" formControlName="es_detalle" name="es_detalle" />
+    Cuenta de detalle
+  </label>
+  <label class="casilla">
+    <input type="checkbox" formControlName="monetaria_usd" name="monetaria_usd" />
+    Monetaria en USD
+  </label>
+
+  @if (formulario.controls.es_detalle.value) {
+    <label class="casilla">
+      <input type="checkbox" formControlName="linea_obligatoria" name="linea_obligatoria" />
+      Exige línea de negocio
+    </label>
+    <label>
+      Línea por defecto
+      <select formControlName="linea_defecto" name="linea_defecto">
+        <option value="">Ninguna</option>
+        @for (linea of lineas(); track linea) {
+          <option [value]="linea">{{ etiquetasLinea[linea] ?? linea }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Unidad (VIN)
+      <select formControlName="vin" name="vin">
+        <option value="no_aplica">No aplica</option>
+        <option value="opcional">Opcional</option>
+        <option value="obligatorio">Obligatorio</option>
+      </select>
+    </label>
+  }
+
+  <button type="submit" [disabled]="guardando()">Crear cuenta</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionada(); as cuenta) {
+  <form
+    class="tarjeta formulario dimensiones"
+    [formGroup]="dimensiones"
+    (ngSubmit)="guardarDimensiones()"
+  >
+    <h2>Dimensiones de {{ cuenta.codigo }} · {{ cuenta.nombre }}</h2>
+    <label class="casilla">
+      <input type="checkbox" formControlName="linea_obligatoria" name="dim_linea_obligatoria" />
+      Exige línea de negocio
+    </label>
+    <label>
+      Línea por defecto
+      <select formControlName="linea_defecto" name="dim_linea_defecto">
+        <option value="">Ninguna</option>
+        @for (linea of lineas(); track linea) {
+          <option [value]="linea">{{ etiquetasLinea[linea] ?? linea }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Unidad (VIN)
+      <select formControlName="vin" name="dim_vin">
+        <option value="no_aplica">No aplica</option>
+        <option value="opcional">Opcional</option>
+        <option value="obligatorio">Obligatorio</option>
+      </select>
+    </label>
+    <button type="submit" [disabled]="guardando()">Guardar dimensiones</button>
+    <button type="button" class="secundario" (click)="seleccionada.set(null)">Cancelar</button>
+  </form>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Cuenta</th>
+        <th>Tipo</th>
+        <th>Naturaleza</th>
+        <th>Moneda</th>
+        <th>Línea de negocio</th>
+        <th>VIN</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of cuentas(); track c.id) {
+        <tr [class.agrupacion]="!c.es_detalle">
+          <td [style.padding-left.px]="16 + (c.nivel - 1) * 20">
+            <span class="codigo">{{ c.codigo }}</span> {{ c.nombre }}
+          </td>
+          <td>{{ c.tipo }}</td>
+          <td>{{ c.naturaleza }}</td>
+          <td>{{ c.monetaria_usd ? 'USD' : 'GTQ' }}</td>
+          <td>
+            @if (c.es_detalle) {
+              {{ c.linea_obligatoria ? 'Obligatoria' : 'Opcional' }}
+              @if (c.linea_defecto; as linea) {
+                · {{ etiquetasLinea[linea] ?? linea }}
+              }
+            }
+          </td>
+          <td>{{ c.es_detalle ? c.vin.replace('_', ' ') : '' }}</td>
+          <td>
+            @if (c.es_detalle) {
+              <button type="button" class="secundario" (click)="editar(c)">Dimensiones</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">No hay cuentas en el catálogo</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -54,6 +54,18 @@ export const routes: Routes = [
           import('./features/unidades/etapas-importacion').then((m) => m.EtapasImportacionPantalla),
       },
       {
+        path: 'contabilidad/partidas',
+        title: 'Partidas · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/contabilidad/partidas').then((m) => m.PartidasPantalla),
+      },
+      {
+        path: 'configuracion/catalogo',
+        title: 'Catálogo de cuentas · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/catalogo').then((m) => m.CatalogoPantalla),
+      },
+      {
         path: 'configuracion/tipo-cambio',
         title: 'Tipo de cambio · Kilómetro Cero',
         loadComponent: () =>

@@ -33,6 +33,7 @@ npx ng test --watch=false --include src/app/shared/pipes/monto.pipe.spec.ts   # 
 npm run build
 npm run lint                                                       # angular-eslint
 npm run format:check                                               # prettier; npm run format para corregir
+npm run tipos:api                                                  # regenera core/api/esquema.d.ts desde el OpenAPI, tras cambiar la API (con el venv del backend activo)
 ```
 
 CI (`.github/workflows/ci.yml`) en cada push y PR: estilo (ruff, prettier, eslint), `pytest` contra un servicio PostgreSQL, `ng test` + `ng build` del front y que `PlanMVP.md` coincida con `sprints.json` (`generar_plan.py --sin-pdf --estricto`).
