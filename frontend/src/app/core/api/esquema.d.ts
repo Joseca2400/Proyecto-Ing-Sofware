@@ -356,6 +356,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/compras-unidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Compras Unidad */
+        get: operations["listar_compras_unidad_api_v1_compras_compras_unidades_get"];
+        put?: never;
+        /** Registrar Compra Unidad */
+        post: operations["registrar_compra_unidad_api_v1_compras_compras_unidades_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/compras-unidades/{compra_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Compra Unidad */
+        get: operations["consultar_compra_unidad_api_v1_compras_compras_unidades__compra_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -603,6 +638,92 @@ export interface components {
             tipos_vehiculo: string[];
             /** Lineas Negocio */
             lineas_negocio: string[];
+        };
+        /**
+         * CompraUnidadEntrada
+         * @description Compra en USD a un proveedor del exterior con los datos de la unidad que crea.
+         *
+         *     Los montos llegan como texto ("8500.00"); los cargos de la subasta son opcionales ("0"). El VIN
+         *     y la ficha los valida `unidades`; el proveedor, los montos y el tipo de cambio, el service.
+         */
+        CompraUnidadEntrada: {
+            /** Proveedor Id */
+            proveedor_id: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Color */
+            color: string;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Linea Negocio */
+            linea_negocio?: string | null;
+            /** Precio Usd */
+            precio_usd: string;
+            /**
+             * Comision Usd
+             * @default 0
+             */
+            comision_usd: string;
+            /**
+             * Documentacion Usd
+             * @default 0
+             */
+            documentacion_usd: string;
+            /**
+             * Arrastre Usd
+             * @default 0
+             */
+            arrastre_usd: string;
+        };
+        /** CompraUnidadSalida */
+        CompraUnidadSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            proveedor: components["schemas"]["ProveedorGasto"];
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Precio Usd */
+            precio_usd: string;
+            /** Comision Usd */
+            comision_usd: string;
+            /** Documentacion Usd */
+            documentacion_usd: string;
+            /** Arrastre Usd */
+            arrastre_usd: string;
+            /** Total Usd */
+            total_usd: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /** Partida Id */
+            partida_id: number;
+            cuenta_por_pagar: components["schemas"]["CuentaPorPagarSalida"];
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
         };
         /** ConceptoGastoSalida */
         ConceptoGastoSalida: {
@@ -1174,7 +1295,10 @@ export interface components {
         };
         /**
          * ResumenGastosUnidad
-         * @description Totales en quetzales que calcula el servidor; el front solo les da formato.
+         * @description Costo de la unidad en quetzales que calcula el servidor; el front solo les da formato.
+         *
+         *     `costo_total_gtq` es la compra (HU-4.02) más los gastos que suman al costo (HU-4.04); el IVA de
+         *     importación es crédito fiscal y queda aparte.
          */
         ResumenGastosUnidad: {
             /** Vin */
@@ -1185,6 +1309,10 @@ export interface components {
             total_costo_gtq: string;
             /** Total Credito Fiscal Gtq */
             total_credito_fiscal_gtq: string;
+            /** Compra Gtq */
+            compra_gtq: string;
+            /** Costo Total Gtq */
+            costo_total_gtq: string;
         };
         /**
          * TipoCambioEntrada
@@ -2137,6 +2265,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GastoImportacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_compras_unidad_api_v1_compras_compras_unidades_get: {
+        parameters: {
+            query?: {
+                vin?: string | null;
+                proveedor_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompraUnidadSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_compra_unidad_api_v1_compras_compras_unidades_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompraUnidadEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompraUnidadSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_compra_unidad_api_v1_compras_compras_unidades__compra_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compra_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompraUnidadSalida"];
                 };
             };
             /** @description Validation Error */
