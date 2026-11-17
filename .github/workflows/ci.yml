@@ -37,6 +37,14 @@ jobs:
           ruff check .
           ruff format --check .
       - run: pytest -q
+      - name: Tipos de TypeScript al día con el OpenAPI
+        working-directory: frontend
+        run: |
+          npm run tipos:api
+          git diff --exit-code src/app/core/api/esquema.d.ts || {
+            echo "esquema.d.ts no está al día: ejecuta npm run tipos:api en frontend/ y commitea el resultado."
+            exit 1
+          }
 
   frontend:
     runs-on: ubuntu-latest
