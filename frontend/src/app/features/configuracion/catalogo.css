@@ -1,0 +1,134 @@
+.encabezado {
+  margin-bottom: 24px;
+}
+
+.encabezado h1 {
+  font-size: 28px;
+}
+
+.encabezado p {
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.tarjeta {
+  background: var(--white);
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+}
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.formulario h2 {
+  flex: 1 1 100%;
+  font-size: 18px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+label.crece {
+  flex: 1 1 220px;
+}
+
+label.casilla {
+  flex-direction: row;
+  align-items: center;
+  align-self: flex-end;
+  padding-bottom: 10px;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+button {
+  align-self: flex-end;
+  background: var(--teal);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+td button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.mensaje {
+  margin-bottom: 16px;
+}
+
+.tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-light);
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+tr.agrupacion {
+  font-weight: 600;
+}
+
+.codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.vacio,
+small {
+  color: var(--gray);
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.falla {
+  color: var(--error);
+}
