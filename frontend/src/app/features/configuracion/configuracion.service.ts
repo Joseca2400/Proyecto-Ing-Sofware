@@ -2,6 +2,21 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../core/api/api';
+import { components } from '../../core/api/esquema';
+
+// ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
+
+export type Cuenta = components['schemas']['CuentaSalida'];
+export type CuentaEntrada = components['schemas']['CuentaEntrada'];
+export type DimensionesEntrada = components['schemas']['DimensionesEntrada'];
+
+export const ETIQUETAS_LINEA: Record<string, string> = {
+  alquiler: 'Alquiler',
+  venta: 'Venta',
+  taller: 'Taller',
+  financiamiento: 'Financiamiento',
+  administracion: 'Administración',
+};
 
 // ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
 
@@ -42,6 +57,23 @@ export class ConfiguracionService {
   private readonly http = inject(HttpClient);
   private readonly urlTipos = `${API_URL}/configuracion/tipos-cambio`;
   private readonly urlTransacciones = `${API_URL}/configuracion/transacciones-usd`;
+  private readonly urlCuentas = `${API_URL}/configuracion/cuentas`;
+
+  cuentas(): Observable<Cuenta[]> {
+    return this.http.get<Cuenta[]>(this.urlCuentas);
+  }
+
+  lineasNegocio(): Observable<string[]> {
+    return this.http.get<string[]>(`${API_URL}/configuracion/lineas-negocio`);
+  }
+
+  crearCuenta(datos: CuentaEntrada): Observable<Cuenta> {
+    return this.http.post<Cuenta>(this.urlCuentas, datos);
+  }
+
+  definirDimensiones(cuentaId: number, datos: DimensionesEntrada): Observable<Cuenta> {
+    return this.http.put<Cuenta>(`${this.urlCuentas}/${cuentaId}/dimensiones`, datos);
+  }
 
   tiposCambio(): Observable<TipoCambio[]> {
     return this.http.get<TipoCambio[]>(this.urlTipos);

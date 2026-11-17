@@ -2,7 +2,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    StringConstraints,
+    computed_field,
+    field_serializer,
+    field_validator,
+)
 
 Texto = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -76,3 +83,14 @@ class PartidaSalida(BaseModel):
     contabilizada_por: int | None
     contabilizada_en: datetime | None
     lineas: list[LineaSalida]
+
+    # El front no suma montos: la bandeja de revisión muestra estos totales.
+    @computed_field
+    @property
+    def total_debe(self) -> str:
+        return f"{sum((linea.debe for linea in self.lineas), Decimal(0)):.6f}"
+
+    @computed_field
+    @property
+    def total_haber(self) -> str:
+        return f"{sum((linea.haber for linea in self.lineas), Decimal(0)):.6f}"
