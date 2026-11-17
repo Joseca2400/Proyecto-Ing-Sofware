@@ -495,6 +495,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/etapas-importacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Etapas Importacion
+         * @description HU-4.07: unidades por etapa con los días en su etapa actual y su costo acumulado.
+         */
+        get: operations["etapas_importacion_api_v1_unidades_etapas_importacion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades": {
         parameters: {
             query?: never;
@@ -885,6 +905,17 @@ export interface components {
             /** Mensaje */
             mensaje: string;
             base_datos: components["schemas"]["EstadoBaseDatos"];
+        };
+        /**
+         * EtapasImportacion
+         * @description Totales por etapa, en orden (tránsito, aduana, taller, lista), y las unidades de cada una
+         *     de la que lleva más días a la que lleva menos.
+         */
+        EtapasImportacion: {
+            /** Etapas */
+            etapas: components["schemas"]["ResumenEtapa"][];
+            /** Unidades */
+            unidades: components["schemas"]["UnidadEnEtapa"][];
         };
         /**
          * FacturaCompraEntrada
@@ -1293,6 +1324,18 @@ export interface components {
              */
             readonly nit_formateado: string | null;
         };
+        /** ResumenEtapa */
+        ResumenEtapa: {
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista";
+            /** Unidades */
+            unidades: number;
+            /** Costo Total Gtq */
+            costo_total_gtq: string;
+        };
         /**
          * ResumenGastosUnidad
          * @description Costo de la unidad en quetzales que calcula el servidor; el front solo les da formato.
@@ -1378,6 +1421,39 @@ export interface components {
             monto_gtq: string;
             /** Justificacion */
             justificacion: string | null;
+        };
+        /**
+         * UnidadEnEtapa
+         * @description Una unidad del listado por etapa. Los días y el costo los calcula el servidor; el costo
+         *     viaja como texto y el front solo le da formato.
+         */
+        UnidadEnEtapa: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Color */
+            color: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista";
+            /**
+             * Desde
+             * Format: date-time
+             */
+            desde: string;
+            /** Dias En Etapa */
+            dias_en_etapa: number;
+            /** Costo Total Gtq */
+            costo_total_gtq: string;
+            /** Siguiente Etapa */
+            siguiente_etapa: ("en_transito" | "en_aduana" | "en_taller" | "lista") | null;
         };
         /**
          * UnidadEntrada
@@ -2631,6 +2707,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Catalogos"];
+                };
+            };
+        };
+    };
+    etapas_importacion_api_v1_unidades_etapas_importacion_get: {
+        parameters: {
+            query?: {
+                etapa?: ("en_transito" | "en_aduana" | "en_taller" | "lista") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapasImportacion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
