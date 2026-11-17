@@ -36,6 +36,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),
       },
       {
+        path: 'configuracion/catalogo',
+        title: 'Catálogo de cuentas · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/catalogo').then((m) => m.CatalogoPantalla),
+      },
+      {
         path: 'configuracion/tipo-cambio',
         title: 'Tipo de cambio · Kilómetro Cero',
         loadComponent: () =>
