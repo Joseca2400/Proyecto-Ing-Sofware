@@ -21,7 +21,7 @@ export class Layout {
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
-    { etiqueta: 'Contabilidad' },
+    { etiqueta: 'Contabilidad', ruta: '/contabilidad/partidas' },
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
     { etiqueta: 'Reportes' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
