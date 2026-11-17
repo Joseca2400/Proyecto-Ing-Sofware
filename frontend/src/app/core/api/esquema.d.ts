@@ -287,6 +287,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/gastos-importacion/conceptos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Conceptos */
+        get: operations["listar_conceptos_api_v1_compras_gastos_importacion_conceptos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/gastos-importacion/unidad/{vin}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resumen Gastos Unidad */
+        get: operations["resumen_gastos_unidad_api_v1_compras_gastos_importacion_unidad__vin__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/gastos-importacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Gastos Importacion */
+        get: operations["listar_gastos_importacion_api_v1_compras_gastos_importacion_get"];
+        put?: never;
+        /** Registrar Gasto Importacion */
+        post: operations["registrar_gasto_importacion_api_v1_compras_gastos_importacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/gastos-importacion/{gasto_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Gasto Importacion */
+        get: operations["consultar_gasto_importacion_api_v1_compras_gastos_importacion__gasto_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -535,6 +604,25 @@ export interface components {
             /** Lineas Negocio */
             lineas_negocio: string[];
         };
+        /** ConceptoGastoSalida */
+        ConceptoGastoSalida: {
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
+            /** Cuenta */
+            cuenta: string;
+            /**
+             * Tratamiento
+             * @enum {string}
+             */
+            tratamiento: "costo" | "credito_fiscal";
+            /**
+             * Suma Al Costo
+             * @description El IVA de importación es crédito fiscal y no suma al costo de la unidad (criterio 3).
+             */
+            readonly suma_al_costo: boolean;
+        };
         /** CuentaEntrada */
         CuentaEntrada: {
             /**
@@ -741,6 +829,82 @@ export interface components {
              */
             readonly genera_credito_fiscal: boolean;
         };
+        /**
+         * GastoImportacionEntrada
+         * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
+         *     `unidades`), el concepto, el proveedor y el tipo de cambio se validan en el service.
+         */
+        GastoImportacionEntrada: {
+            /** Vin */
+            vin: string;
+            /** Concepto */
+            concepto: string;
+            /** Proveedor Id */
+            proveedor_id: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Descripcion */
+            descripcion?: string | null;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+        };
+        /** GastoImportacionSalida */
+        GastoImportacionSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /** Concepto */
+            concepto: string;
+            /** Concepto Nombre */
+            concepto_nombre: string;
+            proveedor: components["schemas"]["ProveedorGasto"];
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Descripcion */
+            descripcion: string | null;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Monto Gtq */
+            monto_gtq: string;
+            /** Cuenta */
+            cuenta: string;
+            /**
+             * Tratamiento
+             * @enum {string}
+             */
+            tratamiento: "costo" | "credito_fiscal";
+            cuenta_por_pagar: components["schemas"]["CuentaPorPagarSalida"];
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Suma Al Costo */
+            readonly suma_al_costo: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -937,6 +1101,18 @@ export interface components {
             /** Cuenta Bancaria */
             cuenta_bancaria?: string | null;
         };
+        /** ProveedorGasto */
+        ProveedorGasto: {
+            /** Id */
+            id: number;
+            /** Nombre */
+            nombre: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "local" | "exterior";
+        };
         /** ProveedorResumen */
         ProveedorResumen: {
             /** Id */
@@ -995,6 +1171,20 @@ export interface components {
              * @description NIT con guion para mostrar ("1234567-9"); `nit` queda normalizado para buscar.
              */
             readonly nit_formateado: string | null;
+        };
+        /**
+         * ResumenGastosUnidad
+         * @description Totales en quetzales que calcula el servidor; el front solo les da formato.
+         */
+        ResumenGastosUnidad: {
+            /** Vin */
+            vin: string;
+            /** Gastos */
+            gastos: number;
+            /** Total Costo Gtq */
+            total_costo_gtq: string;
+            /** Total Credito Fiscal Gtq */
+            total_credito_fiscal_gtq: string;
         };
         /**
          * TipoCambioEntrada
@@ -1800,6 +1990,153 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FacturaCompraSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_conceptos_api_v1_compras_gastos_importacion_conceptos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConceptoGastoSalida"][];
+                };
+            };
+        };
+    };
+    resumen_gastos_unidad_api_v1_compras_gastos_importacion_unidad__vin__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumenGastosUnidad"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_gastos_importacion_api_v1_compras_gastos_importacion_get: {
+        parameters: {
+            query?: {
+                vin?: string | null;
+                proveedor_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GastoImportacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_gasto_importacion_api_v1_compras_gastos_importacion_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GastoImportacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GastoImportacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_gasto_importacion_api_v1_compras_gastos_importacion__gasto_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gasto_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GastoImportacionSalida"];
                 };
             };
             /** @description Validation Error */
