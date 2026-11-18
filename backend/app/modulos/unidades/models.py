@@ -16,6 +16,7 @@ ESTADOS = (
     "en_taller",
     "lista",
     "en_flota",
+    "alquilada",
     "en_venta",
     "vendida",
     "recuperada",

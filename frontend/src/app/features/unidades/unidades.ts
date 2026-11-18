@@ -15,7 +15,8 @@ import {
 } from './unidades.service';
 
 const VIN = /^\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}\s*$/;
-const ESTADOS_FINALES: EstadoUnidad[] = ['vendida', 'recuperada'];
+// "alquilada" solo la pone el contrato de alquiler (HU-3.06).
+const NO_INICIALES: EstadoUnidad[] = ['vendida', 'recuperada', 'alquilada'];
 
 // HU-1.05 (Sprint 1): alta de unidades por VIN con su ficha mínima, estado vigente e historial.
 // Aquí solo se revisa la forma del VIN; el dígito verificador y la unicidad los valida el servidor.
@@ -78,9 +79,9 @@ export class UnidadesPantalla {
     this.cargar();
   }
 
-  /** Estados con los que se puede dar de alta una unidad (no vendida ni recuperada). */
+  /** Estados con los que se puede dar de alta una unidad (no vendida, recuperada ni alquilada). */
   protected estadosIniciales(): EstadoUnidad[] {
-    return this.catalogos().estados.filter((e) => !ESTADOS_FINALES.includes(e));
+    return this.catalogos().estados.filter((e) => !NO_INICIALES.includes(e));
   }
 
   protected cargar(): void {

@@ -1,0 +1,146 @@
+<section class="encabezado no-imprimir">
+  <h1>Contratos de alquiler</h1>
+  <p>
+    El contrato se registra al salir la unidad: copia la tarifa vigente de ese día, la unidad pasa a
+    alquilada y el monto estimado lo calcula el sistema según la tarifa y los días.
+  </p>
+</section>
+
+<form class="tarjeta formulario no-imprimir" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Cliente
+    <select formControlName="cliente_id" name="cliente_id">
+      <option [value]="0" disabled>Seleccione…</option>
+      @for (c of clientes(); track c.id) {
+        <option [value]="c.id">{{ c.nombre }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Unidad en flota
+    <select formControlName="vin" name="vin">
+      <option value="" disabled>Seleccione…</option>
+      @for (u of unidades(); track u.vin) {
+        <option [value]="u.vin">{{ u.vin }} · {{ u.marca }} {{ u.linea }} {{ u.modelo }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Salida
+    <input type="datetime-local" formControlName="salida" name="salida" />
+  </label>
+  <label>
+    Devolución prevista
+    <input type="date" formControlName="devolucion_prevista" name="devolucion_prevista" />
+  </label>
+  <label>
+    Modalidad
+    <select formControlName="modalidad" name="modalidad">
+      @for (m of modalidades; track m) {
+        <option [value]="m">{{ etiquetas[m] }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">Quetzales (GTQ)</option>
+      <option value="USD">Dólares (USD)</option>
+    </select>
+  </label>
+  <label>
+    Kilometraje de salida
+    <input type="number" min="0" formControlName="km_salida" name="km_salida" />
+  </label>
+  <label>
+    Combustible de salida (octavos)
+    <input
+      type="number"
+      min="0"
+      max="8"
+      formControlName="combustible_salida"
+      name="combustible_salida"
+    />
+  </label>
+  <label>
+    Depósito en garantía esperado
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="deposito_esperado"
+      name="deposito_esperado"
+    />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar contrato</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla no-imprimir" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok no-imprimir" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionado(); as c) {
+  <section class="tarjeta impresion">
+    <h2>Contrato de alquiler No. {{ c.numero }}</h2>
+    <dl>
+      <dt>Cliente</dt>
+      <dd>{{ nombreCliente(c.cliente_id) }}</dd>
+      <dt>Unidad (VIN)</dt>
+      <dd>{{ c.vin }}</dd>
+      <dt>Salida</dt>
+      <dd>{{ c.salida | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      <dt>Devolución prevista</dt>
+      <dd>{{ c.devolucion_prevista | date: 'dd/MM/yyyy' }} ({{ c.dias_previstos }} días)</dd>
+      <dt>Tarifa</dt>
+      <dd>
+        {{ etiquetas[c.modalidad] }}, {{ c.tarifa_monto | monto: c.moneda }}; {{ c.km_incluido }} km
+        incluidos, km adicional {{ c.precio_km_adicional | monto: c.moneda }}
+      </dd>
+      <dt>Kilometraje y combustible de salida</dt>
+      <dd>{{ c.km_salida }} km · {{ c.combustible_salida }}/8 de tanque</dd>
+      <dt>Depósito en garantía</dt>
+      <dd>{{ c.deposito_esperado | monto: c.moneda }}</dd>
+      <dt>Monto estimado</dt>
+      <dd>{{ c.monto_estimado | monto: c.moneda }}</dd>
+      <dt>Estado</dt>
+      <dd>{{ c.estado }}</dd>
+    </dl>
+    <button type="button" class="secundario no-imprimir" (click)="imprimir()">Imprimir</button>
+  </section>
+}
+
+<table class="tarjeta no-imprimir">
+  <thead>
+    <tr>
+      <th>No.</th>
+      <th>Cliente</th>
+      <th>VIN</th>
+      <th>Salida</th>
+      <th>Devolución prevista</th>
+      <th class="numero">Monto estimado</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (c of contratos(); track c.id) {
+      <tr>
+        <td>{{ c.numero }}</td>
+        <td>{{ nombreCliente(c.cliente_id) }}</td>
+        <td>{{ c.vin }}</td>
+        <td>{{ c.salida | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ c.devolucion_prevista | date: 'dd/MM/yyyy' }}</td>
+        <td class="numero">{{ c.monto_estimado | monto: c.moneda }}</td>
+        <td>{{ c.estado }}</td>
+        <td><button type="button" class="secundario" (click)="ver(c)">Ver</button></td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="8" class="vacio">No hay contratos registrados</td>
+      </tr>
+    }
+  </tbody>
+</table>

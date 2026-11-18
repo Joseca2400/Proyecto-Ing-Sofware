@@ -72,6 +72,12 @@ export const routes: Routes = [
           import('./features/alquileres/tarifario').then((m) => m.TarifarioPantalla),
       },
       {
+        path: 'alquileres/contratos',
+        title: 'Contratos · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/contratos').then((m) => m.ContratosPantalla),
+      },
+      {
         path: 'unidades',
         title: 'Unidades · Kilómetro Cero',
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),

@@ -5,7 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 Estado = Literal[
-    "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "en_venta", "vendida", "recuperada"
+    "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "alquilada", "en_venta", "vendida",
+    "recuperada",
 ]  # fmt: skip
 
 

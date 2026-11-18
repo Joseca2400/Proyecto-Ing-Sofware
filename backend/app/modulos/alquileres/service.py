@@ -14,20 +14,40 @@ Para otros módulos: `tarifa_vigente` (el contrato, HU-3.06, copia el resultado 
 shortcut: el traslape se revisa en el service sin restricción de exclusión en la base; dos altas
 simultáneas del mismo grupo podrían traslaparse, se cambia a EXCLUDE (btree_gist) si el tarifario
 llega a editarse en paralelo.
+
+HU-3.06 (incluido): contrato con cliente (`facturacion`), unidad (VIN), salida, devolución
+prevista, kilometraje y combustible de salida (octavos de tanque, 0 a 8), depósito esperado y
+número correlativo. Copia los valores de la tarifa vigente el día de salida, así un cambio
+posterior del tarifario no lo altera. El contrato se registra al salir la unidad: la unidad debe
+estar en flota y sin otro contrato abierto (un contrato abierto la retiene hasta su cierre, así que
+se traslapa con cualquier fecha nueva) y pasa a "alquilada" con `unidades.cambiar_estado`, en la
+misma transacción. Monto estimado = periodos × monto de la tarifa (`_periodos`):
+- días = días calendario entre la fecha de salida y la devolución prevista, mínimo 1;
+- diaria: un periodo por día; semanal: semanas iniciadas (días / 7, hacia arriba); mensual: meses
+  de 30 días iniciados; por kilometraje: un solo periodo (el monto cubre los km incluidos y el
+  resto se cobra por km adicional). Los km incluidos de la tarifa son por periodo.
+  Supuesto para el contador: las tres reglas anteriores y que los montos de tarifa incluyen IVA.
+La impresión es la vista de detalle del front.
+HU-3.06 (diferido): quién registra si los usuarios son solo contables (pendiente de la historia);
+reservas a futuro (el contrato no admite salida en un día posterior a hoy).
 """
 
+import math
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.alquileres.models import MODALIDADES, Tarifa
-from app.modulos.alquileres.schemas import TarifaEntrada
+from app.modulos.alquileres.models import MODALIDADES, ContratoAlquiler, Tarifa
+from app.modulos.alquileres.schemas import ContratoEntrada, TarifaEntrada
+from app.modulos.facturacion import service as facturacion
 from app.modulos.unidades import service as unidades
 
 _LIMITE_MONTO = Decimal("1000000000000")
+_BLOQUEO_CONTRATOS = 20261806  # candado de transacción: correlativo y disponibilidad de contratos
 
 
 def _monto(texto: str, campo: str, permite_cero: bool) -> Decimal:
@@ -155,3 +175,100 @@ def catalogos() -> dict[str, list[str]]:
         "monedas": ["GTQ", "USD"],
         "tipos_vehiculo": list(unidades.TIPOS_VEHICULO),
     }
+
+
+# ── HU-3.06: contratos ─────────────────────────────────────────────────────────
+
+
+def _periodos(modalidad: str, dias: int) -> int:
+    """Periodos de la tarifa que cubren `dias` (ver la regla en el docstring del módulo)."""
+    if modalidad == "semanal":
+        return math.ceil(dias / 7)
+    if modalidad == "mensual":
+        return math.ceil(dias / 30)
+    if modalidad == "por_kilometraje":
+        return 1
+    return dias
+
+
+def registrar_contrato(
+    db: Session, datos: ContratoEntrada, usuario_id: int | None = None
+) -> ContratoAlquiler:
+    """Registra el contrato y pasa la unidad a "alquilada" en una transacción, o nada."""
+    cliente = facturacion.obtener_cliente(db, datos.cliente_id)
+    vin = unidades.validar_vin(datos.vin)
+    # Serializa los contratos: correlativo sin repetirse y una sola salida por unidad a la vez.
+    db.execute(text("SELECT pg_advisory_xact_lock(:llave)"), {"llave": _BLOQUEO_CONTRATOS})
+    unidad = unidades.obtener_por_vin(db, vin)
+    salida_dia = datos.salida.date()
+    if salida_dia > date.today():
+        raise ErrorNegocio(
+            "El contrato se registra al salir la unidad: la salida no puede ser en un día futuro"
+        )
+    if datos.devolucion_prevista < salida_dia:
+        raise ErrorNegocio("La devolución prevista no puede ser antes de la salida")
+    deposito = _monto(datos.deposito_esperado, "El depósito esperado", permite_cero=True)
+
+    if unidad.estado != "en_flota":
+        raise ErrorNegocio(f"La unidad {vin} no está disponible: su estado es {unidad.estado}", status=409)
+    abierto = db.scalar(
+        select(ContratoAlquiler.numero).where(
+            ContratoAlquiler.vin == vin, ContratoAlquiler.estado == "abierto"
+        )
+    )
+    if abierto is not None:
+        raise ErrorNegocio(f"La unidad {vin} ya tiene abierto el contrato {abierto}", status=409)
+    tarifa = tarifa_vigente(db, salida_dia, datos.modalidad, datos.moneda, unidad.tipo_vehiculo, vin)
+
+    dias = max((datos.devolucion_prevista - salida_dia).days, 1)
+    contrato = ContratoAlquiler(
+        numero=(db.scalar(select(func.max(ContratoAlquiler.numero))) or 0) + 1,
+        cliente_id=cliente.id,
+        vin=vin,
+        salida=datos.salida,
+        devolucion_prevista=datos.devolucion_prevista,
+        tarifa_id=tarifa.id,
+        modalidad=tarifa.modalidad,
+        moneda=tarifa.moneda,
+        tarifa_monto=tarifa.monto,
+        km_incluido=tarifa.km_incluido,
+        precio_km_adicional=tarifa.precio_km_adicional,
+        km_salida=datos.km_salida,
+        combustible_salida=datos.combustible_salida,
+        deposito_esperado=deposito,
+        dias_previstos=dias,
+        monto_estimado=redondear(tarifa.monto * _periodos(tarifa.modalidad, dias)),
+        estado="abierto",
+        usuario_id=usuario_id,
+    )
+    db.add(contrato)
+    try:
+        db.flush()
+        unidades.cambiar_estado(
+            db, vin, "alquilada", f"Contrato de alquiler {contrato.numero}", usuario_id, confirmar=False
+        )
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+    db.refresh(contrato)
+    return contrato
+
+
+def listar_contratos(
+    db: Session, estado: str | None = None, vin: str | None = None
+) -> list[ContratoAlquiler]:
+    """Contratos del más reciente al más antiguo, opcionalmente por estado o unidad."""
+    consulta = select(ContratoAlquiler).order_by(ContratoAlquiler.numero.desc())
+    if estado:
+        consulta = consulta.where(ContratoAlquiler.estado == estado)
+    if vin:
+        consulta = consulta.where(ContratoAlquiler.vin == vin.strip().upper())
+    return list(db.scalars(consulta))
+
+
+def obtener_contrato(db: Session, contrato_id: int) -> ContratoAlquiler:
+    contrato = db.get(ContratoAlquiler, contrato_id)
+    if contrato is None:
+        raise ErrorNegocio("El contrato no existe", status=404)
+    return contrato

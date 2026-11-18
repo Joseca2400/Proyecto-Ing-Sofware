@@ -59,3 +59,57 @@ class CatalogosTarifas(BaseModel):
     modalidades: list[Modalidad]
     monedas: list[Moneda]
     tipos_vehiculo: list[str]
+
+
+def _texto(valor: object) -> object:
+    if not isinstance(valor, str):
+        raise ValueError('Los montos se envían como texto, por ejemplo "1500.00"')
+    return valor.strip()
+
+
+# ── HU-3.06: contratos ─────────────────────────────────────────────────────────
+
+
+class ContratoEntrada(BaseModel):
+    """Registro del contrato al salir la unidad. La tarifa se toma del tarifario vigente el día de
+    salida para la modalidad y moneda indicadas; el depósito esperado llega como texto."""
+
+    cliente_id: int
+    vin: str = Field(max_length=30)
+    salida: datetime
+    devolucion_prevista: date
+    modalidad: Modalidad
+    moneda: Moneda
+    km_salida: int = Field(ge=0, le=10_000_000)
+    combustible_salida: int = Field(ge=0, le=8, description="Octavos de tanque, de 0 (vacío) a 8 (lleno)")
+    deposito_esperado: str = "0"
+
+    _deposito_texto = field_validator("deposito_esperado", mode="before")(_texto)
+
+
+class ContratoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    numero: int
+    cliente_id: int
+    vin: str
+    salida: datetime
+    devolucion_prevista: date
+    tarifa_id: int
+    modalidad: Modalidad
+    moneda: Moneda
+    tarifa_monto: Decimal
+    km_incluido: int
+    precio_km_adicional: Decimal
+    km_salida: int
+    combustible_salida: int
+    deposito_esperado: Decimal
+    dias_previstos: int
+    monto_estimado: Decimal
+    estado: Literal["abierto", "cerrado"]
+    creado_en: datetime
+
+    @field_serializer("tarifa_monto", "precio_km_adicional", "deposito_esperado", "monto_estimado")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.6f}"

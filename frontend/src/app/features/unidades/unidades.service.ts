@@ -11,6 +11,7 @@ export type EstadoUnidad =
   | 'en_taller'
   | 'lista'
   | 'en_flota'
+  | 'alquilada'
   | 'en_venta'
   | 'vendida'
   | 'recuperada';
@@ -22,6 +23,7 @@ export const ETIQUETAS: Record<string, string> = {
   en_taller: 'En taller',
   lista: 'Lista',
   en_flota: 'En flota',
+  alquilada: 'Alquilada',
   en_venta: 'En venta',
   vendida: 'Vendida',
   recuperada: 'Recuperada',

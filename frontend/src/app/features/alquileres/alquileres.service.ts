@@ -12,6 +12,13 @@ export type TarifaEntrada = components['schemas']['TarifaEntrada'];
 export type Modalidad = Tarifa['modalidad'];
 export type CatalogosTarifas = components['schemas']['CatalogosTarifas'];
 
+// ── HU-3.06: contratos ─────────────────────────────────────────────────────────
+
+export type Contrato = components['schemas']['ContratoSalida'];
+export type ContratoEntrada = components['schemas']['ContratoEntrada'];
+export type ClienteAlquiler = components['schemas']['ClienteSalida'];
+export type UnidadAlquiler = components['schemas']['UnidadSalida'];
+
 export const ETIQUETAS_MODALIDAD: Record<Modalidad, string> = {
   diaria: 'Diaria',
   semanal: 'Semanal',
@@ -34,5 +41,24 @@ export class AlquileresService {
 
   registrarTarifa(entrada: TarifaEntrada): Observable<Tarifa> {
     return this.http.post<Tarifa>(this.url, entrada);
+  }
+
+  contratos(): Observable<Contrato[]> {
+    return this.http.get<Contrato[]>(`${API_URL}/alquileres/contratos`);
+  }
+
+  registrarContrato(entrada: ContratoEntrada): Observable<Contrato> {
+    return this.http.post<Contrato>(`${API_URL}/alquileres/contratos`, entrada);
+  }
+
+  clientes(): Observable<ClienteAlquiler[]> {
+    return this.http.get<ClienteAlquiler[]>(`${API_URL}/facturacion/clientes`);
+  }
+
+  /** Unidades disponibles para alquilar; el servidor vuelve a validar la disponibilidad. */
+  unidadesEnFlota(): Observable<UnidadAlquiler[]> {
+    return this.http.get<UnidadAlquiler[]>(`${API_URL}/unidades`, {
+      params: { estado: 'en_flota' },
+    });
   }
 }

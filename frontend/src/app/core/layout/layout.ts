@@ -49,6 +49,7 @@ export class Layout {
     { etiqueta: 'Gastos de importación', ruta: '/compras/gastos-importacion' },
     { etiqueta: 'Clientes', ruta: '/facturacion/clientes' },
     { etiqueta: 'Tarifario', ruta: '/alquileres/tarifario' },
+    { etiqueta: 'Contratos', ruta: '/alquileres/contratos' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },
