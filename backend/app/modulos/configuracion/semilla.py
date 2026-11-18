@@ -38,7 +38,7 @@ CATALOGO = (
     ("1.1.04", "Inventarios", "activo", D, False, {}),
     ("1.1.04.01", "Vehículos en tránsito", "activo", D, True, _VIN),
     ("1.1.04.02", "Vehículos para la venta", "activo", D, True, {"linea_defecto": "venta", **_VIN}),
-    ("1.1.04.03", "Repuestos e insumos de taller", "activo", D, True, {"linea_defecto": "taller"}),
+    ("1.1.04.03", "Repuestos e insumos de taller", "activo", D, True, {"linea_defecto": "taller", **_OPC}),
     ("1.2", "Activo no corriente", "activo", D, False, {}),
     ("1.2.01", "Vehículos de flota para alquiler", "activo", D, True, {"linea_defecto": "alquiler", **_VIN}),
     ("2", "Pasivo", "pasivo", A, False, {}),

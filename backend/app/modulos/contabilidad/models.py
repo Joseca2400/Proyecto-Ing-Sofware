@@ -94,3 +94,20 @@ class LineaPartida(Base):
     vin: Mapped[str | None] = mapped_column(String(17), index=True)
 
     partida: Mapped[Partida] = relationship(back_populates="lineas")
+
+
+class ReglaContabilizacion(Base):
+    """Cuenta que usa un tipo de documento para un concepto de su partida automática (HU-2.03).
+
+    Guarda el código de la cuenta y no su id: las reglas se siembran en las migraciones, antes de
+    que exista el catálogo, y el contador las ajusta después. Sin cuenta válida no hay documento.
+    """
+
+    __tablename__ = "regla_contabilizacion"
+    __table_args__ = (UniqueConstraint("documento_tipo", "concepto", name="uq_regla_contabilizacion"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    documento_tipo: Mapped[str] = mapped_column(String(30))
+    concepto: Mapped[str] = mapped_column(String(40))
+    descripcion: Mapped[str] = mapped_column(String(200))
+    cuenta_codigo: Mapped[str | None] = mapped_column(String(30))

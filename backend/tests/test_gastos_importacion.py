@@ -1,6 +1,7 @@
 """HU-4.04 (versión delgada): gastos de importación por VIN con IVA separado y cuenta por pagar."""
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from sqlalchemy import select, text
@@ -8,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
+from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
 
 @pytest.fixture
@@ -72,7 +74,9 @@ def _gasto(proveedor_id: int, **cambios) -> dict:
 def datos_base(cliente):
     """Sin gastos ni unidades previas; dos unidades registradas y el tipo de cambio de la fecha."""
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
+        crear_catalogo_inicial(db)
+        # TRUNCATE no dispara los triggers que protegen las partidas: cada prueba empieza sin ellas.
+        db.execute(text("TRUNCATE proveedor, unidad, partida RESTART IDENTITY CASCADE"))
         db.execute(text("DELETE FROM transaccion_usd"))
         db.execute(text("DELETE FROM tipo_cambio"))
         db.commit()
@@ -348,3 +352,75 @@ def test_el_gasto_y_su_cuenta_por_pagar_se_auditan_con_el_vin(cliente, naviera):
     assert alta_cxp.registro_id == str(gasto["cuenta_por_pagar"]["id"])
     assert alta_cxp.nuevos["gasto_importacion_id"] == gasto["id"]
     assert alta_cxp.nuevos["factura_compra_id"] is None
+
+
+def _partida(documento_tipo: str, documento_id: int) -> list[tuple]:
+    """Líneas de la partida del documento: (cuenta, debe, haber, moneda, monto en USD, VIN)."""
+    with SessionLocal() as db:
+        filas = db.execute(
+            text(
+                """
+                SELECT c.codigo, l.debe, l.haber, l.moneda, l.monto_usd, l.vin
+                FROM linea_partida l
+                JOIN partida p ON p.id = l.partida_id
+                JOIN cuentas c ON c.id = l.cuenta_id
+                WHERE p.documento_tipo = :tipo AND p.documento_id = :id AND p.estado = 'contabilizada'
+                ORDER BY l.numero_linea
+                """
+            ),
+            {"tipo": documento_tipo, "id": str(documento_id)},
+        )
+        return [tuple(fila) for fila in filas]
+
+
+# ── Partida del gasto (HU-2.03) ────────────────────────────────────────────────
+
+
+def test_el_gasto_en_quetzales_genera_su_partida_con_el_vin(cliente, sat):
+    gasto = cliente.post(URL, json=_gasto(sat, concepto="dai", monto="3000.00")).json()
+
+    assert _partida("gasto_importacion", gasto["id"]) == [
+        ("1.1.04.01", Decimal("3000"), 0, "GTQ", None, VIN),
+        ("2.1.01.02", 0, Decimal("3000"), "GTQ", None, VIN),
+    ]
+
+
+def test_el_gasto_en_dolares_debe_en_dolares_y_cuadra_en_quetzales(cliente, naviera):
+    gasto = cliente.post(URL, json=_gasto(naviera, moneda="USD", monto="900.00")).json()
+
+    assert _partida("gasto_importacion", gasto["id"]) == [
+        ("1.1.04.01", Decimal("6975"), 0, "GTQ", None, VIN),
+        ("2.1.01.01", 0, Decimal("6975"), "USD", Decimal("900"), VIN),
+    ]
+
+
+def test_el_iva_de_importacion_se_contabiliza_aparte_del_costo(cliente, sat):
+    gasto = cliente.post(URL, json=_gasto(sat, concepto="iva_importacion", monto="1200.00")).json()
+
+    assert [linea[0] for linea in _partida("gasto_importacion", gasto["id"])] == ["1.1.03.02", "2.1.01.02"]
+
+
+def test_sin_regla_de_contabilizacion_no_queda_el_gasto(cliente, sat):
+    with SessionLocal() as db:
+        db.execute(
+            text("UPDATE regla_contabilizacion SET cuenta_codigo = NULL WHERE concepto = 'por_pagar_gtq'")
+        )
+        db.commit()
+    try:
+        respuesta = cliente.post(URL, json=_gasto(sat))
+    finally:
+        with SessionLocal() as db:
+            db.execute(
+                text(
+                    "UPDATE regla_contabilizacion SET cuenta_codigo = '2.1.01.02' "
+                    "WHERE concepto = 'por_pagar_gtq'"
+                )
+            )
+            db.commit()
+
+    assert respuesta.status_code == 409
+    assert (
+        "Falta la regla de contabilización «gasto_importacion · por_pagar_gtq»" in respuesta.json()["detail"]
+    )
+    assert _cuantos_gastos() == 0
+    assert _cuantas_cuentas_por_pagar() == 0

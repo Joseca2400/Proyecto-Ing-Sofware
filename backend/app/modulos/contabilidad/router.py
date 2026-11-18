@@ -3,7 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.comun.db import get_db
 from app.modulos.contabilidad import service
-from app.modulos.contabilidad.schemas import DevolucionEntrada, PartidaEntrada, PartidaSalida
+from app.modulos.contabilidad.schemas import (
+    DevolucionEntrada,
+    PartidaEntrada,
+    PartidaSalida,
+    ReglaEntrada,
+    ReglaSalida,
+)
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
     CONTADOR,
@@ -58,3 +64,21 @@ def devolver(
     partida_id: int, datos: DevolucionEntrada, _: Usuario = Depends(REVISION), db: Session = Depends(get_db)
 ):
     return service.devolver(db, partida_id, datos.comentario)
+
+
+# ── HU-2.03: reglas de contabilización ────────────────────────────────────────
+
+
+@router.get("/reglas", response_model=list[ReglaSalida])
+def listar_reglas(_: Usuario = Depends(REVISION), db: Session = Depends(get_db)):
+    return service.listar_reglas(db)
+
+
+@router.put("/reglas/{regla_id}", response_model=ReglaSalida)
+def definir_regla(
+    regla_id: int,
+    datos: ReglaEntrada,
+    _: Usuario = Depends(requiere_rol(CONTADOR)),
+    db: Session = Depends(get_db),
+):
+    return service.definir_regla(db, regla_id, datos.cuenta_codigo)

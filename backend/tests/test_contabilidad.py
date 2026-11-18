@@ -318,3 +318,30 @@ def test_el_rechazo_deja_motivo_visible_y_usuario_en_la_bitacora(cliente):
         r["registro_id"] == str(partida_id) and r["nuevos"]["comentario"] == "Falta soporte"
         for r in registros
     )
+
+
+# ── HU-2.03: reglas de contabilización ─────────────────────────────────────────
+
+
+def test_el_contador_cambia_la_cuenta_de_una_regla_y_los_demas_no(cliente):
+    reglas = cliente.get("/api/v1/contabilidad/reglas", headers=_entrar(cliente, CONTADOR)).json()
+    regla = next(
+        r for r in reglas if (r["documento_tipo"], r["concepto"]) == ("factura_compra", "por_pagar_gtq")
+    )
+    assert regla["cuenta_codigo"] == "2.1.01.02"
+    url = f"/api/v1/contabilidad/reglas/{regla['id']}"
+
+    gerente = cliente.put(url, json={"cuenta_codigo": "2.1.01.02"}, headers=_entrar(cliente, GERENTE))
+    assert gerente.status_code == 403
+    for invalida in ("9.9.99", "2.1.01"):  # no existe; no es de detalle
+        rechazo = cliente.put(url, json={"cuenta_codigo": invalida}, headers=_entrar(cliente, CONTADOR))
+        assert rechazo.status_code == 400
+    cambio = cliente.put(url, json={"cuenta_codigo": "2.1.01.02"}, headers=_entrar(cliente, CONTADOR))
+    assert cambio.status_code == 200
+    assert cambio.json()["cuenta_codigo"] == "2.1.01.02"
+
+
+def test_una_regla_sin_cuenta_avisa_cual_falta(db):
+    with pytest.raises(ErrorNegocio, match="Falta la regla de contabilización «factura_compra · no_existe»"):
+        service.cuenta_regla(db, "factura_compra", "no_existe")
+    assert service.cuenta_regla(db, "factura_compra", "por_pagar_gtq") == _id("2.1.01.02")

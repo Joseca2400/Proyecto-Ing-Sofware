@@ -69,9 +69,9 @@ def listar_facturas(
 
 @router.post("/facturas", response_model=FacturaCompraSalida, status_code=201)
 def registrar_factura(
-    datos: FacturaCompraEntrada, _: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
+    datos: FacturaCompraEntrada, usuario: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
 ) -> FacturaCompraSalida:
-    return FacturaCompraSalida.model_validate(service.registrar_factura(db, datos))
+    return FacturaCompraSalida.model_validate(service.registrar_factura(db, datos, usuario.id))
 
 
 @router.get("/facturas/{factura_id}", response_model=FacturaCompraSalida)
@@ -102,9 +102,9 @@ def listar_gastos_importacion(
 
 @router.post("/gastos-importacion", response_model=GastoImportacionSalida, status_code=201)
 def registrar_gasto_importacion(
-    datos: GastoImportacionEntrada, _: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+    datos: GastoImportacionEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
 ) -> GastoImportacionSalida:
-    return GastoImportacionSalida.model_validate(service.registrar_gasto_importacion(db, datos))
+    return GastoImportacionSalida.model_validate(service.registrar_gasto_importacion(db, datos, usuario.id))
 
 
 @router.get("/gastos-importacion/{gasto_id}", response_model=GastoImportacionSalida)

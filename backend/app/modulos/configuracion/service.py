@@ -52,6 +52,11 @@ def obtener_cuenta(db: Session, cuenta_id: int) -> Cuenta:
     return _cuenta(db, cuenta_id)
 
 
+def buscar_cuenta(db: Session, codigo: str) -> Cuenta | None:
+    """Cuenta por código, o None; para los módulos que guardan el código (reglas, conceptos)."""
+    return db.scalar(select(Cuenta).where(Cuenta.codigo == codigo))
+
+
 def _fijar_dimensiones(cuenta: Cuenta, linea_obligatoria: bool, vin: str, linea_defecto: str | None) -> None:
     if vin not in MODOS_VIN:
         raise ErrorNegocio(f"VIN debe ser uno de: {', '.join(MODOS_VIN)}")

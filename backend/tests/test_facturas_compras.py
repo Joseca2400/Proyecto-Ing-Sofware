@@ -1,11 +1,13 @@
 """HU-4.09 (versión delgada): facturas de compras y gastos locales con su cuenta por pagar."""
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from sqlalchemy import text
 
 from app.comun.db import SessionLocal
+from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
 
 @pytest.fixture
@@ -59,7 +61,7 @@ AUTORIZACION = "1A2B3C4D-1234-4ABC-9DEF-0123456789AB"
 def _linea(**cambios) -> dict:
     return {
         "descripcion": "Juego de pastillas de freno",
-        "cuenta": "5.1.02",
+        "cuenta": "1.1.04.03",
         "linea_negocio": "taller",
         "vin": None,
         "base": "1000.00",
@@ -84,7 +86,9 @@ def _factura(proveedor_id: int, **cambios) -> dict:
 def tablas_vacias(cliente):
     """Sin facturas ni unidades previas; solo existe la unidad con VIN que usan las líneas (HU-1.05)."""
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
+        crear_catalogo_inicial(db)
+        # TRUNCATE no dispara los triggers que protegen las partidas: cada prueba empieza sin ellas.
+        db.execute(text("TRUNCATE proveedor, unidad, partida RESTART IDENTITY CASCADE"))
         db.commit()
     assert cliente.post(URL_UNIDADES, json=UNIDAD).status_code == 201
 
@@ -104,12 +108,31 @@ def _cuantas_facturas() -> int:
         return db.scalar(text("SELECT count(*) FROM factura_compra"))
 
 
+def _partida(documento_tipo: str, documento_id: int) -> list[tuple]:
+    """Líneas de la partida del documento: (cuenta, debe, haber, moneda, monto en USD, VIN)."""
+    with SessionLocal() as db:
+        filas = db.execute(
+            text(
+                """
+                SELECT c.codigo, l.debe, l.haber, l.moneda, l.monto_usd, l.vin
+                FROM linea_partida l
+                JOIN partida p ON p.id = l.partida_id
+                JOIN cuentas c ON c.id = l.cuenta_id
+                WHERE p.documento_tipo = :tipo AND p.documento_id = :id AND p.estado = 'contabilizada'
+                ORDER BY l.numero_linea
+                """
+            ),
+            {"tipo": documento_tipo, "id": str(documento_id)},
+        )
+        return [tuple(fila) for fila in filas]
+
+
 def test_registra_factura_con_credito_fiscal_y_cuenta_por_pagar(cliente, general):
     lineas = [
         _linea(),
         _linea(
             descripcion="Pintura de puerta",
-            cuenta="5.1.03",
+            cuenta="1.1.04.01",
             vin=" 1hgcm82633a004352 ",
             base="250.50",
             iva="30.06",
@@ -134,7 +157,7 @@ def test_registra_factura_con_credito_fiscal_y_cuenta_por_pagar(cliente, general
     assert [linea["numero_linea"] for linea in cuerpo["lineas"]] == [1, 2]
     segunda = cuerpo["lineas"][1]
     assert segunda["vin"] == "1HGCM82633A004352"
-    assert segunda["cuenta"] == "5.1.03"
+    assert segunda["cuenta"] == "1.1.04.01"
     assert segunda["linea_negocio"] == "taller"
     assert segunda["base"] == "250.500000"
     assert segunda["iva"] == "30.060000"
@@ -303,3 +326,46 @@ def test_la_base_liga_la_linea_a_una_unidad_existente(cliente, general):
             text("UPDATE linea_factura_compra SET vin = '1FTFW1ET9DFC10312' WHERE factura_id = :id"),
             {"id": factura["id"]},
         )
+
+
+# ── Partida de la factura (HU-2.03) ────────────────────────────────────────────
+
+
+def test_la_factura_genera_su_partida_con_el_iva_como_credito_fiscal(cliente, general):
+    lineas = [_linea(), _linea(cuenta="1.1.04.01", vin=VIN, base="250.50", iva="30.06")]
+    factura = cliente.post(URL, json=_factura(general, lineas=lineas)).json()
+
+    assert _partida("factura_compra", factura["id"]) == [
+        ("1.1.04.03", Decimal("1000"), 0, "GTQ", None, None),
+        ("1.1.04.01", Decimal("250.50"), 0, "GTQ", None, VIN),
+        ("1.1.03.01", Decimal("150.06"), 0, "GTQ", None, None),
+        ("2.1.01.02", 0, Decimal("1400.56"), "GTQ", None, None),
+    ]
+
+
+def test_sin_credito_fiscal_el_iva_va_al_costo_de_la_linea(cliente, pequeno):
+    factura = cliente.post(URL, json=_factura(pequeno)).json()
+
+    assert _partida("factura_compra", factura["id"]) == [
+        ("1.1.04.03", Decimal("1120"), 0, "GTQ", None, None),
+        ("2.1.01.02", 0, Decimal("1120"), "GTQ", None, None),
+    ]
+
+
+def test_si_la_partida_no_se_puede_generar_no_queda_la_factura(cliente, general):
+    # Vehículos en tránsito exige VIN: el motor rechaza la línea y no se guarda nada.
+    respuesta = cliente.post(URL, json=_factura(general, lineas=[_linea(cuenta="1.1.04.01")]))
+
+    assert respuesta.status_code == 400
+    assert "Línea 1" in respuesta.json()["detail"]
+    assert _cuantas_facturas() == 0
+    with SessionLocal() as db:
+        assert db.scalar(text("SELECT count(*) FROM cuenta_por_pagar")) == 0
+        assert db.scalar(text("SELECT count(*) FROM partida")) == 0
+
+
+def test_la_cuenta_de_la_linea_debe_ser_de_detalle_del_catalogo(cliente, general):
+    for cuenta in ("9.9.99", "1.1.04"):
+        respuesta = cliente.post(URL, json=_factura(general, lineas=[_linea(cuenta=cuenta)]))
+        assert respuesta.status_code == 400
+        assert "no es una cuenta de detalle" in respuesta.json()["detail"]

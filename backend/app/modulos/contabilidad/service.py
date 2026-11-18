@@ -7,7 +7,8 @@ el documento y su partida se confirman juntos, o ninguno (regla 3 de la arquitec
 HU-2.01 (incluido): partida manual en borrador, líneas en quetzales o dólares con su equivalente,
 validación de dimensiones contra la cuenta, cuadre al enviar a revisión y correlativo al contabilizar.
 HU-2.02 (incluido): borrador → en revisión → contabilizada, o devuelta con comentario y reenvío.
-HU-2.03 (incluido): partida automática ligada a su documento, una por documento.
+HU-2.03 (incluido): partida automática ligada a su documento, una por documento; cada tipo de
+documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida.
 HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro la corrige por él.
 Pendiente: límites monetarios de aprobación; lotes; adjuntos; reversión (HU-2.05); período abierto.
 """
@@ -22,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
-from app.modulos.contabilidad.models import LineaPartida, Partida
+from app.modulos.contabilidad.models import LineaPartida, Partida, ReglaContabilizacion
 from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
 
 DECIMALES = 6
@@ -267,3 +268,50 @@ def registrar_automatica(
             ) from error
         raise
     return partida
+
+
+# ── HU-2.03: reglas de contabilización ────────────────────────────────────────
+
+
+def cuenta_regla(db: Session, documento_tipo: str, concepto: str) -> int:
+    """Id de la cuenta que la regla asigna a `concepto` del documento.
+
+    La llama el módulo dueño del documento antes de pedir su partida. Si la regla no tiene una
+    cuenta de detalle del catálogo, avisa cuál falta y el documento no se registra (criterio 3).
+    """
+    codigo = db.scalar(
+        select(ReglaContabilizacion.cuenta_codigo).where(
+            ReglaContabilizacion.documento_tipo == documento_tipo,
+            ReglaContabilizacion.concepto == concepto,
+        )
+    )
+    cuenta = configuracion.buscar_cuenta(db, codigo) if codigo else None
+    if cuenta is None or not cuenta.es_detalle:
+        raise ErrorNegocio(
+            f"Falta la regla de contabilización «{documento_tipo} · {concepto}»: "
+            "asígnele una cuenta de detalle del catálogo antes de registrar el documento",
+            409,
+        )
+    return cuenta.id
+
+
+def listar_reglas(db: Session) -> list[ReglaContabilizacion]:
+    return list(
+        db.scalars(
+            select(ReglaContabilizacion).order_by(
+                ReglaContabilizacion.documento_tipo, ReglaContabilizacion.concepto
+            )
+        )
+    )
+
+
+def definir_regla(db: Session, regla_id: int, cuenta_codigo: str) -> ReglaContabilizacion:
+    regla = db.get(ReglaContabilizacion, regla_id)
+    if regla is None:
+        raise ErrorNegocio("La regla de contabilización no existe", 404)
+    cuenta = configuracion.buscar_cuenta(db, cuenta_codigo)
+    if cuenta is None or not cuenta.es_detalle:
+        raise ErrorNegocio(f"La cuenta {cuenta_codigo} no es una cuenta de detalle del catálogo")
+    regla.cuenta_codigo = cuenta.codigo
+    db.commit()
+    return regla

@@ -40,6 +40,20 @@ class PartidaEntrada(BaseModel):
     lineas: list[LineaEntrada]
 
 
+class ReglaEntrada(BaseModel):
+    cuenta_codigo: Texto
+
+
+class ReglaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    documento_tipo: str
+    concepto: str
+    descripcion: str
+    cuenta_codigo: str | None
+
+
 class DevolucionEntrada(BaseModel):
     comentario: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 

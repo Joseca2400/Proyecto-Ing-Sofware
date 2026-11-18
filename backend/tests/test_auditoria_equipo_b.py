@@ -5,6 +5,7 @@ from sqlalchemy import select, text
 
 from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
+from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
 
 @pytest.fixture
@@ -72,7 +73,8 @@ def test_tipo_cambio_y_transaccion_usd_se_auditan_con_su_actor(cliente):
 
 def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
+        crear_catalogo_inicial(db)
+        db.execute(text("TRUNCATE proveedor, unidad, partida RESTART IDENTITY CASCADE"))
         db.commit()
     unidad = {"vin": VIN, "marca": "Honda", "linea": "Accord", "modelo": 2003, "color": "Gris"}
     assert cliente.post("/api/v1/unidades", json={**unidad, "tipo_vehiculo": "sedan"}).status_code == 201
@@ -91,7 +93,7 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
             "lineas": [
                 {
                     "descripcion": "Juego de pastillas de freno",
-                    "cuenta": "5.1.02",
+                    "cuenta": "1.1.04.03",
                     "linea_negocio": "taller",
                     "vin": VIN,
                     "base": "1000.00",
