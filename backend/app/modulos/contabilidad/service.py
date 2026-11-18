@@ -10,13 +10,16 @@ HU-2.02 (incluido): borrador → en revisión → contabilizada, o devuelta con 
 HU-2.03 (incluido): partida automática ligada a su documento, una por documento; cada tipo de
 documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida.
 HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro la corrige por él.
+HU-2.16 (incluido): balance de comprobación y mayor sobre partidas contabilizadas, con filtros de
+fechas, línea de negocio y VIN; `saldo_cuenta` para que otros módulos concilien contra el mayor.
+Pendiente: exportar el balance y el mayor (Sprint 5, con HU-7.09).
 Pendiente: límites monetarios de aprobación; lotes; adjuntos; reversión (HU-2.05); período abierto.
 """
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -315,3 +318,158 @@ def definir_regla(db: Session, regla_id: int, cuenta_codigo: str) -> ReglaContab
     regla.cuenta_codigo = cuenta.codigo
     db.commit()
     return regla
+
+
+# ── HU-2.16: balance de comprobación y mayor (solo partidas contabilizadas) ───
+
+
+def _contabilizadas(consulta, hasta: date | None, linea_negocio: str | None, vin: str | None):
+    consulta = consulta.join(Partida, LineaPartida.partida_id == Partida.id).where(
+        Partida.estado == "contabilizada"
+    )
+    if hasta is not None:
+        consulta = consulta.where(Partida.fecha <= hasta)
+    if linea_negocio:
+        consulta = consulta.where(LineaPartida.linea_negocio == linea_negocio)
+    if vin and vin.strip():
+        consulta = consulta.where(LineaPartida.vin == vin.strip().upper())
+    return consulta
+
+
+def _signo(naturaleza: str) -> int:
+    """Saldo positivo en el lado normal de la cuenta: débito en deudoras, crédito en acreedoras."""
+    return 1 if naturaleza == "deudora" else -1
+
+
+def saldo_cuenta(
+    db: Session,
+    cuenta_id: int,
+    hasta: date | None = None,
+    vin: str | None = None,
+    linea_negocio: str | None = None,
+) -> Decimal:
+    """Saldo en quetzales de una cuenta según el mayor, para que otros módulos concilien.
+
+    Positivo en el lado normal de la cuenta (débito en deudoras, crédito en acreedoras). Ejemplo:
+    la hoja de costo de una unidad (HU-4.08) compara su total con el saldo de unidades en proceso
+    para su VIN.
+    """
+    cuenta = configuracion.obtener_cuenta(db, cuenta_id)
+    neto = db.scalar(
+        _contabilizadas(
+            select(func.coalesce(func.sum(LineaPartida.debe - LineaPartida.haber), 0)).where(
+                LineaPartida.cuenta_id == cuenta_id
+            ),
+            hasta,
+            linea_negocio,
+            vin,
+        )
+    )
+    return Decimal(neto) * _signo(cuenta.naturaleza)
+
+
+def balance_comprobacion(
+    db: Session,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> dict:
+    """Por cuenta: saldo inicial (antes de `desde`), débitos y créditos del rango y saldo final.
+
+    Los saldos van con el signo de la naturaleza de la cuenta; los totales del rango los suma el
+    servidor (el front no suma).
+    """
+    antes = Partida.fecha < (desde or date.min)
+    cero = Decimal(0)
+    filas = db.execute(
+        _contabilizadas(
+            select(
+                LineaPartida.cuenta_id,
+                func.sum(case((antes, LineaPartida.debe - LineaPartida.haber), else_=cero)),
+                func.sum(case((antes, cero), else_=LineaPartida.debe)),
+                func.sum(case((antes, cero), else_=LineaPartida.haber)),
+            ),
+            hasta,
+            linea_negocio,
+            vin,
+        ).group_by(LineaPartida.cuenta_id)
+    ).all()
+    cuentas = {cuenta.id: cuenta for cuenta in configuracion.listar_cuentas(db, solo_detalle=True)}
+    resultado = []
+    for cuenta_id, previo, debe, haber in filas:
+        cuenta = cuentas[cuenta_id]
+        signo = _signo(cuenta.naturaleza)
+        resultado.append(
+            {
+                "cuenta_id": cuenta_id,
+                "codigo": cuenta.codigo,
+                "nombre": cuenta.nombre,
+                "naturaleza": cuenta.naturaleza,
+                "saldo_inicial": previo * signo,
+                "debe": debe,
+                "haber": haber,
+                "saldo_final": (previo + debe - haber) * signo,
+            }
+        )
+    resultado.sort(key=lambda fila: fila["codigo"])
+    return {
+        "filas": resultado,
+        "total_debe": sum((fila["debe"] for fila in resultado), cero),
+        "total_haber": sum((fila["haber"] for fila in resultado), cero),
+    }
+
+
+def mayor(
+    db: Session,
+    cuenta_id: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> dict:
+    """Mayor de una cuenta: saldo inicial, cada movimiento con su saldo acumulado y saldo final."""
+    cuenta = configuracion.obtener_cuenta(db, cuenta_id)
+    signo = _signo(cuenta.naturaleza)
+    inicial = (
+        saldo_cuenta(db, cuenta_id, desde - timedelta(days=1), vin, linea_negocio) if desde else Decimal(0)
+    )
+    consulta = _contabilizadas(
+        select(LineaPartida, Partida).where(LineaPartida.cuenta_id == cuenta_id), hasta, linea_negocio, vin
+    )
+    if desde is not None:
+        consulta = consulta.where(Partida.fecha >= desde)
+    saldo = inicial
+    movimientos = []
+    for linea, partida in db.execute(
+        consulta.order_by(Partida.fecha, Partida.numero, LineaPartida.numero_linea)
+    ).all():
+        saldo += (linea.debe - linea.haber) * signo
+        movimientos.append(
+            {
+                "fecha": partida.fecha,
+                "partida_id": partida.id,
+                "numero": partida.numero,
+                "concepto": partida.concepto,
+                "documento_tipo": partida.documento_tipo,
+                "documento_id": partida.documento_id,
+                "debe": linea.debe,
+                "haber": linea.haber,
+                "saldo": saldo,
+                "moneda": linea.moneda,
+                "monto_usd": linea.monto_usd,
+                "tipo_cambio": linea.tipo_cambio,
+                "linea_negocio": linea.linea_negocio,
+                "vin": linea.vin,
+            }
+        )
+    return {
+        "cuenta_id": cuenta.id,
+        "codigo": cuenta.codigo,
+        "nombre": cuenta.nombre,
+        "naturaleza": cuenta.naturaleza,
+        "monetaria_usd": cuenta.monetaria_usd,
+        "saldo_inicial": inicial,
+        "movimientos": movimientos,
+        "saldo_final": saldo,
+    }

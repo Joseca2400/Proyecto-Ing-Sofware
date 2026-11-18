@@ -1,10 +1,14 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.comun.db import get_db
 from app.modulos.contabilidad import service
 from app.modulos.contabilidad.schemas import (
+    BalanceSalida,
     DevolucionEntrada,
+    MayorSalida,
     PartidaEntrada,
     PartidaSalida,
     ReglaEntrada,
@@ -13,6 +17,7 @@ from app.modulos.contabilidad.schemas import (
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
     CONTADOR,
+    GERENCIA,
     GERENTE_FINANCIERO,
     Usuario,
     requiere_rol,
@@ -23,6 +28,7 @@ router = APIRouter(prefix="/contabilidad", tags=["Contabilidad"])
 
 CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
 REVISION = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
+CONSULTA = requiere_rol(CONTADOR, GERENTE_FINANCIERO, GERENCIA)
 
 
 @router.get("/partidas", response_model=list[PartidaSalida])
@@ -82,3 +88,31 @@ def definir_regla(
     db: Session = Depends(get_db),
 ):
     return service.definir_regla(db, regla_id, datos.cuenta_codigo)
+
+
+# ── HU-2.16: balance de comprobación y mayor ──────────────────────────────────
+
+
+@router.get("/balance", response_model=BalanceSalida)
+def balance_comprobacion(
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+    _: Usuario = Depends(CONSULTA),
+    db: Session = Depends(get_db),
+):
+    return service.balance_comprobacion(db, desde, hasta, linea_negocio, vin)
+
+
+@router.get("/mayor/{cuenta_id}", response_model=MayorSalida)
+def mayor(
+    cuenta_id: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+    _: Usuario = Depends(CONSULTA),
+    db: Session = Depends(get_db),
+):
+    return service.mayor(db, cuenta_id, desde, hasta, linea_negocio, vin)

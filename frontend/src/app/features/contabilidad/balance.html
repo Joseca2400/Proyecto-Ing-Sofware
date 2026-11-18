@@ -1,0 +1,78 @@
+<section class="encabezado">
+  <h1>Balance de comprobación</h1>
+  <p>
+    Saldos por cuenta de las partidas contabilizadas. El saldo es positivo en el lado normal de la
+    cuenta (débito en las deudoras, crédito en las acreedoras).
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="filtros" (ngSubmit)="consultar()">
+  <label>
+    Desde
+    <input type="date" formControlName="desde" name="desde" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="hasta" name="hasta" />
+  </label>
+  <label>
+    Línea de negocio
+    <select formControlName="linea_negocio" name="linea_negocio">
+      <option value="">Todas</option>
+      @for (l of lineasNegocio(); track l) {
+        <option [value]="l">{{ etiquetasLinea[l] ?? l }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    VIN
+    <input type="text" maxlength="17" formControlName="vin" name="vin" />
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (balance(); as b) {
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Cuenta</th>
+        <th class="numero">Saldo inicial</th>
+        <th class="numero">Debe</th>
+        <th class="numero">Haber</th>
+        <th class="numero">Saldo final</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of b.filas; track f.cuenta_id) {
+        <tr>
+          <td>{{ f.codigo }} · {{ f.nombre }}</td>
+          <td class="numero">{{ f.saldo_inicial | monto }}</td>
+          <td class="numero">{{ f.debe | monto }}</td>
+          <td class="numero">{{ f.haber | monto }}</td>
+          <td class="numero">{{ f.saldo_final | monto }}</td>
+          <td>
+            <a routerLink="/contabilidad/mayor" [queryParams]="{ cuenta: f.cuenta_id }">Mayor</a>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="vacio">No hay movimientos con estos filtros</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>Totales</th>
+        <th></th>
+        <th class="numero">{{ b.total_debe | monto }}</th>
+        <th class="numero">{{ b.total_haber | monto }}</th>
+        <th colspan="2"></th>
+      </tr>
+    </tfoot>
+  </table>
+}

@@ -71,6 +71,19 @@ export const routes: Routes = [
           import('./features/contabilidad/partidas').then((m) => m.PartidasPantalla),
       },
       {
+        path: 'contabilidad/balance',
+        title: 'Balance de comprobación · Kilómetro Cero',
+        data: soloRoles('contador', 'gerente_financiero', 'gerencia'),
+        loadComponent: () =>
+          import('./features/contabilidad/balance').then((m) => m.BalancePantalla),
+      },
+      {
+        path: 'contabilidad/mayor',
+        title: 'Mayor · Kilómetro Cero',
+        data: soloRoles('contador', 'gerente_financiero', 'gerencia'),
+        loadComponent: () => import('./features/contabilidad/mayor').then((m) => m.MayorPantalla),
+      },
+      {
         path: 'configuracion/catalogo',
         title: 'Catálogo de cuentas · Kilómetro Cero',
         loadComponent: () =>

@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { PartidasPantalla } from './partidas';
 
 const URL = '/api/v1/contabilidad/partidas';
@@ -53,7 +54,7 @@ describe('PartidasPantalla', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [PartidasPantalla],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     http = TestBed.inject(HttpTestingController);
   });
@@ -254,6 +255,27 @@ describe('PartidasPantalla', () => {
     );
     await fixture.whenStable();
     expect(el.querySelector('[role=alert]')!.textContent).toContain('diferencia 7.000000');
+  });
+
+  it('abre la partida que llega desde el mayor', async () => {
+    TestBed.resetTestingModule().configureTestingModule({
+      imports: [PartidasPantalla],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ partida: '7' }) } },
+        },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    const fixture = await crear();
+    http
+      .expectOne({ method: 'GET', url: `${URL}/7` })
+      .flush({ ...PARTIDA, estado: 'contabilizada', numero: 3 });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.ficha').textContent).toContain('Partida No. 3');
   });
 
   it('filtra la bandeja por estado', async () => {

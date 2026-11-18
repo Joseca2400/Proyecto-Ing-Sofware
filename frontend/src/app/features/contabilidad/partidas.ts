@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { MontoPipe } from '../../shared/pipes/monto.pipe';
 import { ETIQUETAS_LINEA } from '../configuracion/configuracion.service';
@@ -61,6 +62,14 @@ export class PartidasPantalla {
       error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar las líneas de negocio'),
     });
     this.cargar();
+    // Desde el mayor (HU-2.16) se llega con ?partida=<id> para abrir esa partida.
+    const id = Number(inject(ActivatedRoute).snapshot.queryParamMap.get('partida'));
+    if (id) {
+      this.servicio.partida(id).subscribe({
+        next: (p) => this.ver(p),
+        error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar la partida'),
+      });
+    }
   }
 
   protected get lineas() {
