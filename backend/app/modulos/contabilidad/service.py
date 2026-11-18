@@ -538,6 +538,24 @@ def saldo_cuenta(
     return Decimal(neto) * _signo(cuenta.naturaleza)
 
 
+def saldo_cuenta_usd(db: Session, cuenta_id: int, hasta: date | None = None) -> Decimal:
+    """Saldo en dólares (montos originales) de una cuenta monetaria en USD, con el signo de
+    `saldo_cuenta`. Para conciliar un auxiliar que se lleva en dólares, como los depósitos."""
+    cuenta = configuracion.obtener_cuenta(db, cuenta_id)
+    signo = case((LineaPartida.debe > 0, 1), else_=-1)
+    neto = db.scalar(
+        _contabilizadas(
+            select(func.coalesce(func.sum(LineaPartida.monto_usd * signo), 0)).where(
+                LineaPartida.cuenta_id == cuenta_id, LineaPartida.moneda == "USD"
+            ),
+            hasta,
+            None,
+            None,
+        )
+    )
+    return Decimal(neto) * _signo(cuenta.naturaleza)
+
+
 def balance_comprobacion(
     db: Session,
     desde: date | None = None,

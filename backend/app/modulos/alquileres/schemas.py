@@ -187,9 +187,13 @@ class DepositoSalida(BaseModel):
 
 
 class DepositosVigentes(BaseModel):
+    """`totales` es el saldo de los depósitos y `mayor` el de sus cuentas de pasivo: deben cuadrar."""
+
     depositos: list[DepositoSalida]
     totales: dict[Moneda, Decimal]
+    mayor: dict[Moneda, Decimal]
+    cuadra: bool
 
-    @field_serializer("totales")
+    @field_serializer("totales", "mayor")
     def totales_a_texto(self, valores: dict[str, Decimal]) -> dict[str, str]:
         return {moneda: f"{valor:.6f}" for moneda, valor in valores.items()}

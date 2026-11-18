@@ -21,6 +21,7 @@ from app.modulos.alquileres.schemas import (
     TarifaEntrada,
     TarifaSalida,
 )
+from app.modulos.facturacion.schemas import FacturaSalida
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
     CONTADOR,
@@ -111,6 +112,14 @@ def cerrar_contrato(
     return ContratoSalida.model_validate(service.cerrar_contrato(db, contrato_id, datos, usuario.id))
 
 
+@router.post("/contratos/{contrato_id}/factura", response_model=FacturaSalida, status_code=201)
+def facturar_contrato(
+    contrato_id: int, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+) -> FacturaSalida:
+    """HU-6.02: factura FEL del cobro del contrato cerrado."""
+    return FacturaSalida.model_validate(service.facturar_contrato(db, contrato_id, usuario.id))
+
+
 # ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
 
 
@@ -131,9 +140,12 @@ def recibir_deposito(
 
 @router.get("/depositos", response_model=DepositosVigentes)
 def depositos_vigentes(db: Session = Depends(get_db)) -> DepositosVigentes:
+    totales, mayor = service.saldo_depositos(db), service.saldo_depositos_en_mayor(db)
     return DepositosVigentes(
         depositos=[DepositoSalida.model_validate(d) for d in service.depositos_vigentes(db)],
-        totales=service.saldo_depositos(db),
+        totales=totales,
+        mayor=mayor,
+        cuadra=totales == mayor,
     )
 
 

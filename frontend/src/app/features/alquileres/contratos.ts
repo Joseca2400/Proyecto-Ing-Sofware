@@ -106,6 +106,26 @@ export class ContratosPantalla {
     };
   }
 
+  protected facturar(contrato: Contrato): void {
+    this.guardando.set(true);
+    this.error.set(null);
+    this.aviso.set(null);
+    this.servicio.facturarContrato(contrato.id).subscribe({
+      next: (factura) => {
+        this.guardando.set(false);
+        if (factura.estado === 'certificada') {
+          this.aviso.set(`Factura ${factura.serie}-${factura.numero} certificada`);
+        } else {
+          this.error.set(`El certificador rechazó la factura: ${factura.motivo_rechazo ?? ''}`);
+        }
+      },
+      error: (respuesta: HttpErrorResponse) => {
+        this.guardando.set(false);
+        this.fallo('No se pudo facturar el contrato')(respuesta);
+      },
+    });
+  }
+
   private cargarDepositos(contrato: Contrato): void {
     this.servicio.depositosDeContrato(contrato.id).subscribe((lista) => this.depositos.set(lista));
   }

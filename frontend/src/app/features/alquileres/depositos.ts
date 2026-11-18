@@ -14,7 +14,12 @@ import { AlquileresService, DepositosVigentes } from './alquileres.service';
 export class DepositosPantalla {
   private readonly servicio = inject(AlquileresService);
 
-  protected readonly vigentes = signal<DepositosVigentes>({ depositos: [], totales: {} });
+  protected readonly vigentes = signal<DepositosVigentes>({
+    depositos: [],
+    totales: {},
+    mayor: {},
+    cuadra: true,
+  });
   protected readonly error = signal<string | null>(null);
 
   constructor() {

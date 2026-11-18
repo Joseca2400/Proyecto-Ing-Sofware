@@ -366,8 +366,50 @@ def test_depositos_vigentes_y_total_por_moneda(cliente, datos_base, contrato_id)
 
     assert len(vigentes["depositos"]) == 3
     assert vigentes["totales"] == {"GTQ": "2500.000000", "USD": "200.000000"}
+    # El saldo de los depósitos cuadra con el de sus cuentas de pasivo en el mayor (criterio 5).
+    assert vigentes["mayor"] == vigentes["totales"]
+    assert vigentes["cuadra"] is True
     with SessionLocal() as db:
         assert service.saldo_depositos(db) == {"GTQ": Decimal("2500"), "USD": Decimal("200")}
+
+
+# ── Factura del contrato cerrado (HU-6.02) ─────────────────────────────────────
+
+PERFIL = {
+    "vigente_desde": "2026-01-01",
+    "razon_social": "Kilómetro Cero, S. A.",
+    "nombre_comercial": "Kilómetro Cero",
+    "nit": "1234567-9",
+    "direccion_fiscal": "Zona 10, Ciudad de Guatemala",
+    "establecimiento": "1",
+    "regimen_isr": "utilidades",
+}
+
+
+def test_el_contrato_cerrado_se_factura_una_sola_vez(cliente, datos_base, contrato_id):
+    with SessionLocal() as db:
+        db.execute(text("DELETE FROM perfil_fiscal"))
+        db.commit()
+    assert cliente.post(f"{API}/configuracion/perfil-fiscal", json=PERFIL).status_code == 201
+    url = f"{URL_CONTRATOS}/{contrato_id}/factura"
+
+    abierto = cliente.post(url)
+    assert abierto.status_code == 409
+    assert "no está cerrado" in abierto.json()["detail"]
+
+    _cerrar(cliente, contrato_id)
+    contrato = cliente.get(f"{URL_CONTRATOS}/{contrato_id}").json()
+    respuesta = cliente.post(url)
+    assert respuesta.status_code == 201, respuesta.text
+    factura = respuesta.json()
+    assert factura["estado"] == "certificada"
+    assert (factura["origen_tipo"], factura["origen_id"]) == ("contrato", contrato_id)
+    assert Decimal(factura["total"]) == Decimal(contrato["monto_final"])
+    assert factura["partida_id"] is not None
+
+    repetida = cliente.post(url)
+    assert repetida.status_code == 409
+    assert f"ya tiene su factura ({factura['serie']}-{factura['numero']})" in repetida.json()["detail"]
 
 
 # ── Permisos ──────────────────────────────────────────────────────────────────

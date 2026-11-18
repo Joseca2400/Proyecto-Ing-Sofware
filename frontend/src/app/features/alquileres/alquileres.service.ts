@@ -27,6 +27,7 @@ export type DepositoEntrada = components['schemas']['DepositoEntrada'];
 export type AplicacionEntrada = components['schemas']['AplicacionEntrada'];
 export type DevolucionEntrada = components['schemas']['DevolucionDepositoEntrada'];
 export type DepositosVigentes = components['schemas']['DepositosVigentes'];
+export type FacturaContrato = components['schemas']['FacturaSalida'];
 export type CuentaBancaria = components['schemas']['CuentaBancariaSalida'];
 
 export const ETIQUETAS_MODALIDAD: Record<Modalidad, string> = {
@@ -63,6 +64,11 @@ export class AlquileresService {
 
   cerrarContrato(id: number, entrada: CierreContratoEntrada): Observable<Contrato> {
     return this.http.post<Contrato>(`${API_URL}/alquileres/contratos/${id}/cierre`, entrada);
+  }
+
+  /** HU-6.02: emite la factura FEL del cobro de un contrato cerrado. */
+  facturarContrato(id: number): Observable<FacturaContrato> {
+    return this.http.post<FacturaContrato>(`${API_URL}/alquileres/contratos/${id}/factura`, {});
   }
 
   depositosDeContrato(id: number): Observable<Deposito[]> {

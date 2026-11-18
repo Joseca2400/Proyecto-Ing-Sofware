@@ -265,6 +265,34 @@ describe('ContratosPantalla', () => {
     expect(boton('Devolver')).toBeUndefined();
   });
 
+  it('factura el contrato cerrado y muestra el resultado del certificador', async () => {
+    const fixture = await crear([CERRADO]);
+    const el = elemento(fixture);
+    await ver(fixture, []);
+    const facturar = () =>
+      [...el.querySelectorAll<HTMLButtonElement>('button')]
+        .find((b) => b.textContent!.includes('Facturar'))!
+        .click();
+    const url = `${URL}/${CERRADO.id}/factura`;
+
+    facturar();
+    http
+      .expectOne({ method: 'POST', url })
+      .flush({ estado: 'certificada', serie: 'SIM', numero: '42', motivo_rechazo: null });
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Factura SIM-42 certificada');
+
+    facturar();
+    http
+      .expectOne({ method: 'POST', url })
+      .flush(
+        { detail: 'El contrato ya tiene su factura (SIM-42)' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    expect(el.textContent).toContain('ya tiene su factura (SIM-42)');
+  });
+
   it('muestra el rechazo del servidor por unidad no disponible', async () => {
     const fixture = await crear();
     const el = elemento(fixture);

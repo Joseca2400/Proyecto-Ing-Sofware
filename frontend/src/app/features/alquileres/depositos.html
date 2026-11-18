@@ -44,5 +44,21 @@
       <th colspan="4">Total en dólares</th>
       <th class="numero">{{ vigentes().totales['USD'] ?? '0' | monto: 'USD' }}</th>
     </tr>
+    <tr>
+      <th colspan="4">Saldo de la cuenta de depósitos en el mayor (quetzales)</th>
+      <th class="numero">{{ vigentes().mayor['GTQ'] ?? '0' | monto: 'GTQ' }}</th>
+    </tr>
+    <tr>
+      <th colspan="4">Saldo de la cuenta de depósitos en el mayor (dólares)</th>
+      <th class="numero">{{ vigentes().mayor['USD'] ?? '0' | monto: 'USD' }}</th>
+    </tr>
   </tfoot>
 </table>
+
+@if (vigentes().cuadra) {
+  <p class="mensaje ok" role="status">Los depósitos cuadran con el mayor</p>
+} @else {
+  <p class="mensaje falla" role="alert">
+    Los depósitos no cuadran con el mayor: revise las partidas de las cuentas de depósitos
+  </p>
+}

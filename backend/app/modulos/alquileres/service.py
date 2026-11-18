@@ -89,6 +89,7 @@ from app.modulos.configuracion import service as configuracion
 from app.modulos.contabilidad import service as contabilidad
 from app.modulos.contabilidad.schemas import LineaEntrada
 from app.modulos.facturacion import service as facturacion
+from app.modulos.facturacion.schemas import FacturaEntrada, LineaFacturaFelEntrada
 from app.modulos.unidades import service as unidades
 
 _LIMITE_MONTO = Decimal("1000000000000")
@@ -426,6 +427,40 @@ def resumen_para_facturar(db: Session, contrato_id: int) -> dict:
     }
 
 
+def facturar_contrato(db: Session, contrato_id: int, usuario_id: int | None = None):
+    """Emite la factura FEL (HU-6.02) del cobro de un contrato cerrado, una sola vez.
+
+    `facturacion.emitir_factura` confirma por su cuenta. Una factura rechazada no tiene efecto,
+    así que no impide volver a intentarlo.
+    """
+    resumen = resumen_para_facturar(db, contrato_id)
+    vigente = next(
+        (f for f in facturacion.facturas_de_origen(db, "contrato", contrato_id) if f.estado != "rechazada"),
+        None,
+    )
+    if vigente is not None:
+        numero = f" ({vigente.serie}-{vigente.numero})" if vigente.numero else ""
+        raise ErrorNegocio(f"El contrato ya tiene su factura{numero}", 409)
+    datos = FacturaEntrada(
+        cliente_id=resumen["cliente_id"],
+        fecha=date.today(),
+        moneda=resumen["moneda"],
+        origen_tipo="contrato",
+        origen_id=contrato_id,
+        lineas=[
+            LineaFacturaFelEntrada(
+                descripcion=linea["descripcion"],
+                cantidad=f"{linea['cantidad']:f}",
+                precio_unitario=f"{linea['precio_unitario']:f}",
+                linea_negocio=resumen["linea_negocio"],
+                vin=resumen["vin"],
+            )
+            for linea in resumen["lineas"]
+        ],
+    )
+    return facturacion.emitir_factura(db, datos, usuario_id)
+
+
 # ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
 
 
@@ -653,12 +688,17 @@ def depositos_vigentes(db: Session) -> list[DepositoGarantia]:
     )
 
 
-def saldo_depositos(db: Session) -> dict[str, Decimal]:
-    """Para el cuadre con el mayor: saldo total de los depósitos vigentes por moneda.
+def saldo_depositos_en_mayor(db: Session) -> dict[str, Decimal]:
+    """Saldo de las cuentas de pasivo de los depósitos según el mayor (HU-2.16), por moneda: en
+    quetzales la cuenta en GTQ y en dólares la cuenta en USD. Debe cuadrar con `saldo_depositos`."""
+    return {
+        "GTQ": contabilidad.saldo_cuenta(db, _pasivo(db, "GTQ")),
+        "USD": contabilidad.saldo_cuenta_usd(db, _pasivo(db, "USD")),
+    }
 
-    Pendiente (coordinador, con HU-2.16): comparar cada total con el saldo de su cuenta de pasivo
-    (reglas `deposito_garantia`) en el mayor; en USD, contra el saldo en dólares de la cuenta.
-    """
+
+def saldo_depositos(db: Session) -> dict[str, Decimal]:
+    """Para el cuadre con el mayor: saldo total de los depósitos vigentes por moneda."""
     totales = dict(
         db.execute(
             select(DepositoGarantia.moneda, func.sum(DepositoGarantia.saldo))

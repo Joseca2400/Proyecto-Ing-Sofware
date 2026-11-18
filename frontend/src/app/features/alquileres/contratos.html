@@ -129,6 +129,11 @@
       }
     </dl>
     <button type="button" class="secundario no-imprimir" (click)="imprimir()">Imprimir</button>
+    @if (c.estado === 'cerrado') {
+      <button type="button" class="no-imprimir" [disabled]="guardando()" (click)="facturar(c)">
+        Facturar
+      </button>
+    }
   </section>
 
   @if (c.estado === 'abierto') {

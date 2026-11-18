@@ -39,12 +39,15 @@ describe('DepositosPantalla', () => {
     http.expectOne(URL).flush({
       depositos: [DEPOSITO],
       totales: { GTQ: '575.000000', USD: '200.000000' },
+      mayor: { GTQ: '575.000000', USD: '150.000000' },
+      cuadra: false,
     });
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
 
     expect(el.querySelector('tbody')!.textContent).toContain('7');
     expect(el.querySelector('tbody')!.textContent).toMatch(/575\.00/);
+    expect(el.textContent).toContain('no cuadran con el mayor');
     const pie = el.querySelector('tfoot')!.textContent ?? '';
     expect(pie).toMatch(/575\.00/);
     expect(pie).toMatch(/200\.00/);
@@ -52,7 +55,8 @@ describe('DepositosPantalla', () => {
 
   it('avisa si no hay depósitos vigentes', async () => {
     const fixture = TestBed.createComponent(DepositosPantalla);
-    http.expectOne(URL).flush({ depositos: [], totales: { GTQ: '0.000000', USD: '0.000000' } });
+    const ceros = { GTQ: '0.000000', USD: '0.000000' };
+    http.expectOne(URL).flush({ depositos: [], totales: ceros, mayor: ceros, cuadra: true });
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(

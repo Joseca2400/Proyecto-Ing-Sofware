@@ -973,6 +973,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alquileres/contratos/{contrato_id}/factura": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Facturar Contrato
+         * @description HU-6.02: factura FEL del cobro del contrato cerrado.
+         */
+        post: operations["facturar_contrato_api_v1_alquileres_contratos__contrato_id__factura_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/alquileres/contratos/{contrato_id}/depositos": {
         parameters: {
             query?: never;
@@ -1801,7 +1821,10 @@ export interface components {
              */
             creado_en: string;
         };
-        /** DepositosVigentes */
+        /**
+         * DepositosVigentes
+         * @description `totales` es el saldo de los depósitos y `mayor` el de sus cuentas de pasivo: deben cuadrar.
+         */
         DepositosVigentes: {
             /** Depositos */
             depositos: components["schemas"]["DepositoSalida"][];
@@ -1809,6 +1832,12 @@ export interface components {
             totales: {
                 [key: string]: string;
             };
+            /** Mayor */
+            mayor: {
+                [key: string]: string;
+            };
+            /** Cuadra */
+            cuadra: boolean;
         };
         /** DevolucionDepositoEntrada */
         DevolucionDepositoEntrada: {
@@ -5389,6 +5418,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    facturar_contrato_api_v1_alquileres_contratos__contrato_id__factura_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
                 };
             };
             /** @description Validation Error */
