@@ -17,3 +17,6 @@ if not DATABASE_URL.startswith("postgresql"):
 SESION_MINUTOS = int(os.getenv("SESION_MINUTOS", "480"))
 # Contraseña de las cuentas iniciales (`python -m app.modulos.seguridad.semilla`); sin valor por defecto.
 CLAVE_INICIAL = os.getenv("CLAVE_INICIAL")
+
+# Certificador FEL (`comun/fel.py`): "simulado" hasta que se contrate el real (Sprint 3).
+FEL_CERTIFICADOR = os.getenv("FEL_CERTIFICADOR", "simulado")
