@@ -29,6 +29,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
       {
+        path: 'seguridad/bitacora',
+        title: 'Bitácora · Kilómetro Cero',
+        data: soloRoles('contador', 'gerente_financiero'),
+        loadComponent: () =>
+          import('./features/seguridad/bitacora').then((m) => m.BitacoraPantalla),
+      },
+      {
         path: 'compras/proveedores',
         title: 'Proveedores · Kilómetro Cero',
         loadComponent: () =>

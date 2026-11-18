@@ -41,6 +41,7 @@ export class Layout {
   // Los módulos sin ruta se muestran deshabilitados hasta que se construyan.
   private readonly entradas: EntradaMenu[] = [
     { etiqueta: 'Inicio', ruta: '/inicio' },
+    { etiqueta: 'Bitácora', ruta: '/seguridad/bitacora' },
     { etiqueta: 'Mockup del proyecto', ruta: '/mockup' },
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
