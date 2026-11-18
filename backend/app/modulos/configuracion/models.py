@@ -7,7 +7,7 @@ Equipo B: tipo de cambio (HU-1.06) y transacciones en USD (HU-1.07).
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
@@ -80,4 +80,30 @@ class TransaccionUSD(Base):
     tipo_cambio_aplicado: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
     monto_gtq: Mapped[Decimal] = mapped_column(MONTO)
     justificacion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+REGIMENES_ISR = ("utilidades", "simplificado")
+
+
+class PerfilFiscal(Base):
+    """Una versión del perfil fiscal. Un cambio no sobrescribe: agrega otra versión con su vigencia."""
+
+    __tablename__ = "perfil_fiscal"
+    __table_args__ = (
+        CheckConstraint("regimen_isr IN ('utilidades', 'simplificado')", name="ck_perfil_fiscal_regimen"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vigente_desde: Mapped[date] = mapped_column(Date, unique=True)
+    razon_social: Mapped[str] = mapped_column(String(200))
+    nombre_comercial: Mapped[str] = mapped_column(String(200))
+    nit: Mapped[str] = mapped_column(String(13))
+    direccion_fiscal: Mapped[str] = mapped_column(String(300))
+    establecimiento: Mapped[str] = mapped_column(String(100))
+    regimen_isr: Mapped[str] = mapped_column(String(20))
+    agente_retencion_iva: Mapped[bool] = mapped_column(Boolean, default=False)
+    agente_retencion_isr: Mapped[bool] = mapped_column(Boolean, default=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

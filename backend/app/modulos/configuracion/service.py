@@ -10,18 +10,31 @@ aprobación del gerente financiero.
 HU-1.07 (incluido): registro de transacciones en USD con monto original, tipo de cambio aplicado
 y equivalente en quetzales; tipo personalizado positivo con justificación obligatoria.
 HU-1.07 (diferido): reportes de saldos en USD.
+
+Equipo C — perfil fiscal de la empresa (HU-1.01, Sprint 2): datos fiscales con NIT validado, régimen
+de ISR y calidad de agente de retención; cada cambio es una versión nueva con su `vigente_desde`.
+`perfil_fiscal_vigente` es lo que usará facturación para tomar el perfil de la fecha de cada documento.
+Pendiente: confirmar con el contador el régimen de ISR exacto, la calidad de agente de retención y si
+existe una o dos sociedades (Sprint 2, preguntas 2 y 3 de las épicas).
 """
 
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.configuracion.models import Cuenta, TipoCambio, TransaccionUSD
+from app.comun.nit import NITInvalido, normalizar_nit
+from app.modulos.configuracion.models import (
+    REGIMENES_ISR,
+    Cuenta,
+    PerfilFiscal,
+    TipoCambio,
+    TransaccionUSD,
+)
 
 # ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
 
@@ -272,3 +285,62 @@ def listar_transacciones_usd(
     if hasta:
         consulta = consulta.where(TransaccionUSD.fecha <= hasta)
     return list(db.scalars(consulta))
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+
+def perfil_fiscal_vigente(db: Session, fecha: date | None = None) -> PerfilFiscal | None:
+    """Versión del perfil que regía en `fecha` (hoy si no se indica); None si aún no hay ninguna."""
+    return db.scalar(
+        select(PerfilFiscal)
+        .where(PerfilFiscal.vigente_desde <= (fecha or date.today()))
+        .order_by(PerfilFiscal.vigente_desde.desc())
+        .limit(1)
+    )
+
+
+def historial_perfil_fiscal(db: Session) -> list[PerfilFiscal]:
+    return list(db.scalars(select(PerfilFiscal).order_by(PerfilFiscal.vigente_desde.desc())))
+
+
+def registrar_perfil_fiscal(
+    db: Session,
+    vigente_desde: date,
+    razon_social: str,
+    nombre_comercial: str,
+    nit: str,
+    direccion_fiscal: str,
+    establecimiento: str,
+    regimen_isr: str,
+    agente_retencion_iva: bool = False,
+    agente_retencion_isr: bool = False,
+) -> PerfilFiscal:
+    """Agrega una versión del perfil; nunca modifica las anteriores (criterio 4 de HU-1.01)."""
+    campos = [razon_social, nombre_comercial, direccion_fiscal, establecimiento]
+    campos = [c.strip() for c in campos]
+    if not all(campos):
+        raise ErrorNegocio(
+            "Razón social, nombre comercial, dirección fiscal y establecimiento son obligatorios"
+        )
+    if regimen_isr not in REGIMENES_ISR:
+        raise ErrorNegocio(f"El régimen de ISR debe ser uno de: {', '.join(REGIMENES_ISR)}")
+    try:
+        nit = normalizar_nit(nit)
+    except NITInvalido as exc:
+        raise ErrorNegocio(str(exc)) from None
+    ultima = db.scalar(select(func.max(PerfilFiscal.vigente_desde)))
+    if ultima is not None and vigente_desde <= ultima:
+        raise ErrorNegocio(
+            f"La vigencia debe ser posterior al {ultima:%d/%m/%Y}, fecha del último perfil registrado",
+            status=409,
+        )
+    perfil = PerfilFiscal(
+        vigente_desde=vigente_desde, razon_social=campos[0], nombre_comercial=campos[1], nit=nit,
+        direccion_fiscal=campos[2], establecimiento=campos[3], regimen_isr=regimen_isr,
+        agente_retencion_iva=agente_retencion_iva, agente_retencion_isr=agente_retencion_isr,
+    )  # fmt: skip
+    db.add(perfil)
+    db.commit()
+    db.refresh(perfil)
+    return perfil

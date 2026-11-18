@@ -88,6 +88,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/transaccion-usd').then((m) => m.TransaccionUSDPantalla),
       },
+      {
+        path: 'configuracion/perfil-fiscal',
+        title: 'Perfil fiscal · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/perfil-fiscal').then((m) => m.PerfilFiscalPantalla),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

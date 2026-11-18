@@ -10,6 +10,8 @@ from app.modulos.configuracion.schemas import (
     CuentaEntrada,
     CuentaSalida,
     DimensionesEntrada,
+    PerfilFiscalEntrada,
+    PerfilFiscalSalida,
     TipoCambioEntrada,
     TipoCambioSalida,
     TransaccionUSDEntrada,
@@ -117,3 +119,30 @@ def registrar_transaccion_usd(
             datos.justificacion,
         )
     )
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+
+@router.get("/perfil-fiscal", response_model=PerfilFiscalSalida)
+def perfil_fiscal_vigente(
+    fecha: date | None = None, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    perfil = service.perfil_fiscal_vigente(db, fecha)
+    if perfil is None:
+        raise ErrorNegocio("Todavía no hay un perfil fiscal registrado", status=404)
+    return PerfilFiscalSalida.model_validate(perfil)
+
+
+@router.get("/perfil-fiscal/historial", response_model=list[PerfilFiscalSalida])
+def historial_perfil_fiscal(
+    _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> list[PerfilFiscalSalida]:
+    return [PerfilFiscalSalida.model_validate(p) for p in service.historial_perfil_fiscal(db)]
+
+
+@router.post("/perfil-fiscal", response_model=PerfilFiscalSalida, status_code=201)
+def registrar_perfil_fiscal(
+    datos: PerfilFiscalEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    return PerfilFiscalSalida.model_validate(service.registrar_perfil_fiscal(db, **datos.model_dump()))
