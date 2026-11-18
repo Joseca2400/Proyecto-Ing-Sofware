@@ -741,6 +741,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/alta-flota/candidatas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Candidatas Alta
+         * @description HU-3.01: unidades listas con el costo de su hoja de costo y su cuadre con el mayor.
+         */
+        get: operations["candidatas_alta_api_v1_unidades_alta_flota_candidatas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades": {
         parameters: {
             query?: never;
@@ -804,6 +824,23 @@ export interface paths {
         get: operations["historial_api_v1_unidades__vin__historial_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/alta-flota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dar De Alta */
+        post: operations["dar_de_alta_api_v1_unidades__vin__alta_flota_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1151,6 +1188,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AltaFlotaEntrada */
+        AltaFlotaEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+        };
+        /** AltaFlotaSalida */
+        AltaFlotaSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Costo */
+            costo: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
         /** AplicacionEntrada */
         AplicacionEntrada: {
             /**
@@ -1228,6 +1296,30 @@ export interface components {
              * Format: date-time
              */
             fecha: string;
+        };
+        /**
+         * CandidataAltaFlota
+         * @description Unidad lista con el costo de su hoja de costo y si se puede dar de alta (cuadra, sin orden).
+         */
+        CandidataAltaFlota: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Costo */
+            costo: string;
+            /** Cuadra */
+            cuadra: boolean;
+            /** Diferencia */
+            diferencia: string;
+            /** Orden Abierta */
+            orden_abierta: boolean;
         };
         /**
          * Catalogos
@@ -4926,6 +5018,37 @@ export interface operations {
             };
         };
     };
+    candidatas_alta_api_v1_unidades_alta_flota_candidatas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidataAltaFlota"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_unidades_api_v1_unidades_get: {
         parameters: {
             query?: {
@@ -5085,6 +5208,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CambioEstadoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dar_de_alta_api_v1_unidades__vin__alta_flota_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AltaFlotaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AltaFlotaSalida"];
                 };
             };
             /** @description Validation Error */

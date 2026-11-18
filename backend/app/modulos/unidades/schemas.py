@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -136,3 +136,44 @@ class EtapasImportacion(BaseModel):
 
     etapas: list[ResumenEtapa]
     unidades: list[UnidadEnEtapa]
+
+
+# ── HU-3.01: alta en flota ────────────────────────────────────────────────────
+
+
+class CandidataAltaFlota(BaseModel):
+    """Unidad lista con el costo de su hoja de costo y si se puede dar de alta (cuadra, sin orden)."""
+
+    vin: str
+    marca: str
+    linea: str
+    modelo: int
+    tipo_vehiculo: str
+    costo: Decimal
+    cuadra: bool
+    diferencia: Decimal
+    orden_abierta: bool
+
+    @field_serializer("costo", "diferencia")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class AltaFlotaEntrada(BaseModel):
+    fecha: date
+
+
+class AltaFlotaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vin: str
+    fecha: date
+    costo: Decimal
+    partida_id: int
+    usuario_id: int | None
+    creado_en: datetime
+
+    @field_serializer("costo")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)

@@ -669,8 +669,9 @@ def hoja_de_costo(db: Session, vin: str) -> dict:
     )
     total = compra_gtq + importacion_gtq + reacondicionamiento_gtq
 
-    costo_alta = None
-    saldo_mayor = contabilidad.saldo_cuenta(db, _cuenta_en_proceso(db), vin=unidad.vin)
+    costo_alta = unidades.costo_de_alta(db, unidad.vin)
+    saldo = contabilidad.saldo_cuenta(db, _cuenta_en_proceso(db), vin=unidad.vin)
+    saldo_mayor = saldo + (costo_alta or 0)
     return {
         "vin": unidad.vin,
         "marca": unidad.marca,

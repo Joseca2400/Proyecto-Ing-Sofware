@@ -13,8 +13,11 @@ from app.modulos.seguridad.service import (
 )
 from app.modulos.unidades import service
 from app.modulos.unidades.schemas import (
+    AltaFlotaEntrada,
+    AltaFlotaSalida,
     CambioEstadoEntrada,
     CambioEstadoSalida,
+    CandidataAltaFlota,
     Catalogos,
     Estado,
     Etapa,
@@ -28,6 +31,8 @@ from app.modulos.unidades.schemas import (
 ALTA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
 CAMBIO_ESTADO = requiere_rol(AUXILIAR_CONTABLE, CONTADOR, GERENTE_FINANCIERO)
 ETAPAS = requiere_rol(GERENTE_FINANCIERO, CONTADOR, GERENCIA)
+# HU-3.01: solo el contador registra el alta en flota (la aprobación del auxiliar, Sprint 5).
+CONTADOR_ = requiere_rol(CONTADOR)
 
 router = APIRouter(prefix="/unidades", tags=["Unidades"], dependencies=[Depends(usuario_actual)])
 
@@ -43,6 +48,12 @@ def etapas_importacion(
 ) -> EtapasImportacion:
     """HU-4.07: unidades por etapa con los días en su etapa actual y su costo acumulado."""
     return EtapasImportacion(**service.etapas_importacion(db, etapa))
+
+
+@router.get("/alta-flota/candidatas", response_model=list[CandidataAltaFlota])
+def candidatas_alta(_: Usuario = Depends(ETAPAS), db: Session = Depends(get_db)) -> list[CandidataAltaFlota]:
+    """HU-3.01: unidades listas con el costo de su hoja de costo y su cuadre con el mayor."""
+    return [CandidataAltaFlota(**c) for c in service.candidatas_alta(db)]
 
 
 @router.get("", response_model=list[UnidadSalida])
@@ -79,3 +90,10 @@ def cambiar_estado(
 @router.get("/{vin}/historial", response_model=list[CambioEstadoSalida])
 def historial(vin: str, db: Session = Depends(get_db)) -> list[CambioEstadoSalida]:
     return [CambioEstadoSalida.model_validate(c) for c in service.historial(db, vin)]
+
+
+@router.post("/{vin}/alta-flota", response_model=AltaFlotaSalida, status_code=201)
+def dar_de_alta(
+    vin: str, datos: AltaFlotaEntrada, usuario: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
+) -> AltaFlotaSalida:
+    return AltaFlotaSalida.model_validate(service.dar_de_alta(db, vin, datos.fecha, usuario.id))

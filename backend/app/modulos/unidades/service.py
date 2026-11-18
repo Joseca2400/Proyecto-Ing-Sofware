@@ -27,6 +27,14 @@ HU-4.07 (diferido):
 - Criterio 3: el paso a "lista" exigirá la DUCA registrada (HU-4.06) y que no haya órdenes de
   reacondicionamiento abiertas (HU-5.01); ver `_validar_paso_a_lista`.
 - Las métricas de la etapa (promedios de días, unidades detenidas) quedan para HU-7.04.
+
+HU-3.01 (incluido, versión delgada): alta en flota (`dar_de_alta`) de una unidad "lista" sin orden
+de taller abierta; su costo es el total de la hoja de costo (HU-4.08), que debe ser mayor que cero
+y cuadrar con el mayor. En una transacción: registro del alta (VIN único), partida `alta_flota`
+que traslada el costo de unidades en proceso a activo fijo – flota con el VIN, y paso a "en flota",
+desde donde la unidad se puede alquilar. Una unidad lista no pasa a "en flota" sin su alta.
+HU-3.01 (diferido): que el auxiliar registre el alta y el contador la apruebe (criterio 5, Sprint 5);
+hoy solo el contador la registra.
 """
 
 import re
@@ -39,7 +47,9 @@ from sqlalchemy.orm import Session, aliased
 
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
-from app.modulos.unidades.models import ESTADOS, CambioEstadoUnidad, Unidad
+from app.modulos.contabilidad import service as contabilidad
+from app.modulos.contabilidad.schemas import LineaEntrada
+from app.modulos.unidades.models import ESTADOS, AltaFlota, CambioEstadoUnidad, Unidad
 from app.modulos.unidades.schemas import UnidadEntrada
 
 TIPOS_VEHICULO = ("sedan", "hatchback", "suv", "pickup", "camioneta", "microbus", "motocicleta", "otro")
@@ -291,6 +301,10 @@ def cambiar_estado(
     _validar_transicion(unidad.estado, estado, en_importacion)
     if en_importacion and estado == "lista":
         _validar_paso_a_lista(db, unidad)
+    if unidad.estado == "lista" and estado == "en_flota" and alta_de_unidad(db, unidad.vin) is None:
+        raise ErrorNegocio(
+            "Una unidad lista entra a la flota con su alta como activo fijo (Alta en flota)", 409
+        )
     db.add(
         CambioEstadoUnidad(
             unidad_id=unidad.id,
@@ -378,6 +392,114 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
         for etapa in etapas
     ]
     return {"etapas": resumen, "unidades": unidades}
+
+
+# ── HU-3.01: alta de la unidad como activo fijo de la flota ───────────────────
+
+DOCUMENTO_ALTA = "alta_flota"
+
+
+def alta_de_unidad(db: Session, vin: str) -> AltaFlota | None:
+    return db.scalar(select(AltaFlota).where(AltaFlota.vin == vin.strip().upper()))
+
+
+def costo_de_alta(db: Session, vin: str) -> Decimal | None:
+    """Para `compras` (hoja de costo, HU-4.08): el costo congelado en el alta, o None sin alta."""
+    alta = alta_de_unidad(db, vin)
+    return alta.costo if alta else None
+
+
+def candidatas_alta(db: Session) -> list[dict]:
+    """Unidades en "lista" con el costo de su hoja de costo, su cuadre y si tienen orden abierta."""
+    # Import diferido: `compras` y `taller` ya importan este service al cargarse.
+    from app.modulos.compras import service as compras
+    from app.modulos.taller import service as taller
+
+    candidatas = []
+    for unidad in listar_unidades(db, estado="lista"):
+        hoja = compras.hoja_de_costo(db, unidad.vin)
+        candidatas.append(
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "tipo_vehiculo": unidad.tipo_vehiculo,
+                "costo": hoja["total_gtq"],
+                "cuadra": hoja["cuadra"],
+                "diferencia": hoja["diferencia_gtq"],
+                "orden_abierta": taller.tiene_orden_abierta(db, unidad.vin),
+            }
+        )
+    return candidatas
+
+
+def dar_de_alta(db: Session, vin: str, fecha: date, usuario_id: int | None = None) -> AltaFlota:
+    """Alta en flota: registro, partida (unidades en proceso → activo fijo – flota, con el VIN) y paso
+    a "en flota", en una transacción, o nada (criterios 1 a 3)."""
+    from app.modulos.compras import service as compras  # import diferido, ver arriba
+    from app.modulos.taller import service as taller
+
+    unidad = obtener_por_vin(db, vin)
+    db.refresh(unidad, with_for_update=True)  # dos altas simultáneas: la segunda ve "en flota"
+    if unidad.estado != "lista":
+        raise ErrorNegocio(
+            f"Solo una unidad lista se da de alta en la flota; la unidad está {unidad.estado}", 409
+        )
+    if taller.tiene_orden_abierta(db, unidad.vin):
+        raise ErrorNegocio("La unidad tiene una orden de taller abierta; ciérrela antes del alta", 409)
+    if fecha > date.today():
+        raise ErrorNegocio("La fecha del alta no puede ser futura")
+    hoja = compras.hoja_de_costo(db, unidad.vin)
+    costo = hoja["total_gtq"]
+    if costo <= 0:
+        raise ErrorNegocio("La hoja de costo de la unidad está en cero: no hay costo que dar de alta", 409)
+    if not hoja["cuadra"]:
+        raise ErrorNegocio(
+            f"La hoja de costo no cuadra con el mayor (diferencia {hoja['diferencia_gtq']:.2f}); "
+            "corrija la diferencia antes del alta",
+            409,
+        )
+    try:
+        activo = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "activo_flota")
+        en_proceso = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "unidad_en_proceso")
+        alta_id = db.scalar(select(func.nextval("alta_flota_id_seq")))
+        partida = contabilidad.registrar_automatica(
+            db,
+            fecha=fecha,
+            concepto=f"Alta en flota de la unidad {unidad.vin}",
+            lineas=[
+                LineaEntrada(
+                    cuenta_id=activo,
+                    lado="debe",
+                    monto=f"{costo:.6f}",
+                    linea_negocio="alquiler",
+                    vin=unidad.vin,
+                ),
+                LineaEntrada(
+                    cuenta_id=en_proceso,
+                    lado="haber",
+                    monto=f"{costo:.6f}",
+                    linea_negocio=unidad.linea_negocio,
+                    vin=unidad.vin,
+                ),
+            ],
+            documento_tipo=DOCUMENTO_ALTA,
+            documento_id=alta_id,
+            usuario_id=usuario_id,
+        )
+        alta = AltaFlota(
+            id=alta_id, vin=unidad.vin, fecha=fecha, costo=costo, partida_id=partida.id, usuario_id=usuario_id
+        )
+        db.add(alta)
+        db.flush()  # el alta existe antes del cambio de estado, que la exige
+        cambiar_estado(db, unidad.vin, "en_flota", f"Alta en flota {alta_id}", usuario_id, confirmar=False)
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+    db.refresh(alta)
+    return alta
 
 
 def catalogos() -> dict[str, list[str]]:

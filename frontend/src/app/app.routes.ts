@@ -120,6 +120,13 @@ export const routes: Routes = [
           import('./features/unidades/etapas-importacion').then((m) => m.EtapasImportacionPantalla),
       },
       {
+        path: 'unidades/alta-flota',
+        title: 'Alta en flota · Kilómetro Cero',
+        data: soloRoles('contador', 'gerente_financiero', 'gerencia'),
+        loadComponent: () =>
+          import('./features/unidades/alta-flota').then((m) => m.AltaFlotaPantalla),
+      },
+      {
         path: 'contabilidad/partidas',
         title: 'Partidas · Kilómetro Cero',
         loadComponent: () =>

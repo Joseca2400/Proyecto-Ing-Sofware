@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../core/api/api';
+import { components } from '../../core/api/esquema';
 
 // ── HU-1.05: unidades por VIN ──────────────────────────────────────────────────
 
@@ -122,6 +123,11 @@ export interface EtapasImportacion {
   unidades: UnidadEnEtapa[];
 }
 
+// ── HU-3.01: alta en flota ─────────────────────────────────────────────────────
+
+export type CandidataAltaFlota = components['schemas']['CandidataAltaFlota'];
+export type AltaFlota = components['schemas']['AltaFlotaSalida'];
+
 @Injectable({ providedIn: 'root' })
 export class UnidadesService {
   private readonly http = inject(HttpClient);
@@ -153,5 +159,13 @@ export class UnidadesService {
 
   historial(vin: string): Observable<CambioEstado[]> {
     return this.http.get<CambioEstado[]>(`${this.url}/${vin}/historial`);
+  }
+
+  candidatasAlta(): Observable<CandidataAltaFlota[]> {
+    return this.http.get<CandidataAltaFlota[]>(`${this.url}/alta-flota/candidatas`);
+  }
+
+  darDeAlta(vin: string, fecha: string): Observable<AltaFlota> {
+    return this.http.post<AltaFlota>(`${this.url}/${vin}/alta-flota`, { fecha });
   }
 }

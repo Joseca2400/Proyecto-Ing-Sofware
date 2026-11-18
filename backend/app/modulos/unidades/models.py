@@ -3,12 +3,14 @@ cambios de estado (HU-1.05). El VIN es el hilo conductor: compras, taller, alqui
 a esta tabla por su VIN.
 """
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
+from app.comun.dinero import MONTO
 
 ESTADOS = (
     "en_transito",
@@ -77,3 +79,23 @@ class CambioEstadoUnidad(Base):
     documento: Mapped[str] = mapped_column(String(200))
     usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AltaFlota(Base):
+    """Alta de la unidad como activo fijo de la flota (HU-3.01): una por VIN, con el costo de su
+    hoja de costo (HU-4.08) congelado y la partida que lo trasladó a "activo fijo – flota"."""
+
+    __tablename__ = "alta_flota"
+    __table_args__ = (
+        UniqueConstraint("vin", name="uq_alta_flota_vin"),
+        UniqueConstraint("partida_id", name="uq_alta_flota_partida"),
+        CheckConstraint("costo > 0", name="ck_alta_flota_costo"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(String(17), ForeignKey("unidad.vin", name="fk_alta_flota_vin_unidad"))
+    fecha: Mapped[date] = mapped_column(Date)
+    costo: Mapped[Decimal] = mapped_column(MONTO)
+    partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_alta_flota_partida"))
+    usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
