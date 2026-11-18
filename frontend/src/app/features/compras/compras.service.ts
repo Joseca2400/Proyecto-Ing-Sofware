@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../core/api/api';
+import { components } from '../../core/api/esquema';
 
 // ── HU-4.01: proveedores ───────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ export interface ResumenGastosUnidad {
   total_credito_fiscal_gtq: string;
   /** Equivalente en quetzales de la compra en EE. UU. (HU-4.02); "0.000000" si no hay compra. */
   compra_gtq: string;
-  /** Compra más gastos que suman al costo. */
+  /** Costo acumulado de la hoja de costo (HU-4.08): compra, gastos que suman y reacondicionamiento. */
   costo_total_gtq: string;
 }
 
@@ -312,4 +313,12 @@ export class ComprasService {
   registrarCompraUnidad(datos: CompraUnidadEntrada): Observable<CompraUnidad> {
     return this.http.post<CompraUnidad>(this.urlCompras, datos);
   }
+
+  hojaCosto(vin: string): Observable<HojaCosto> {
+    return this.http.get<HojaCosto>(`${API_URL}/compras/hoja-costo/${vin}`);
+  }
 }
+
+// ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
+
+export type HojaCosto = components['schemas']['HojaCosto'];

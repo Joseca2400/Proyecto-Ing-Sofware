@@ -495,6 +495,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/hoja-costo/{vin}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hoja De Costo */
+        get: operations["hoja_de_costo_api_v1_compras_hoja_costo__vin__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -1338,6 +1355,24 @@ export interface components {
              */
             readonly identificacion_formateada: string;
         };
+        /** CompraHojaCosto */
+        CompraHojaCosto: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /** Total Usd */
+            total_usd: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Total Gtq */
+            total_gtq: string;
+        };
         /**
          * CompraUnidadEntrada
          * @description Compra en USD a un proveedor del exterior con los datos de la unidad que crea.
@@ -2047,6 +2082,36 @@ export interface components {
             saldo_final: string;
         };
         /**
+         * GastoHojaCosto
+         * @description Un gasto de importación; `suma_al_costo` es falso para el IVA de importación (crédito fiscal).
+         */
+        GastoHojaCosto: {
+            /** Concepto */
+            concepto: string;
+            /** Nombre */
+            nombre: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Monto Gtq */
+            monto_gtq: string;
+            /** Suma Al Costo */
+            suma_al_costo: boolean;
+        };
+        /**
          * GastoImportacionEntrada
          * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
          *     `unidades`), el concepto, el proveedor y el tipo de cambio se validan en el service.
@@ -2126,6 +2191,50 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HojaCosto
+         * @description Hoja de costo (HU-4.08) que calcula el servidor; el front solo da formato a los montos.
+         *
+         *     `saldo_mayor_gtq` es el saldo de unidades en proceso del VIN, más el costo trasladado en el alta
+         *     a la flota (`costo_alta_gtq`) cuando ya la tiene; `cuadra` compara el total con ese saldo.
+         */
+        HojaCosto: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            compra: components["schemas"]["CompraHojaCosto"] | null;
+            /** Importacion */
+            importacion: components["schemas"]["GastoHojaCosto"][];
+            /** Mano Obra */
+            mano_obra: components["schemas"]["ManoObraHojaCosto"][];
+            /** Repuestos */
+            repuestos: components["schemas"]["RepuestoHojaCosto"][];
+            /** Compra Gtq */
+            compra_gtq: string;
+            /** Importacion Gtq */
+            importacion_gtq: string;
+            /** Credito Fiscal Gtq */
+            credito_fiscal_gtq: string;
+            /** Reacondicionamiento Gtq */
+            reacondicionamiento_gtq: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /** Saldo Mayor Gtq */
+            saldo_mayor_gtq: string;
+            /** Costo Alta Gtq */
+            costo_alta_gtq: string | null;
+            /** Diferencia Gtq */
+            diferencia_gtq: string;
+            /** Cuadra */
+            cuadra: boolean;
         };
         /**
          * HoraEntrada
@@ -2301,6 +2410,18 @@ export interface components {
             /** Token */
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
+        };
+        /** ManoObraHojaCosto */
+        ManoObraHojaCosto: {
+            /** Numero */
+            numero: string;
+            /**
+             * Fecha Cierre
+             * Format: date
+             */
+            fecha_cierre: string;
+            /** Costo Gtq */
+            costo_gtq: string;
         };
         /** MayorSalida */
         MayorSalida: {
@@ -2671,6 +2792,25 @@ export interface components {
             descripcion: string;
             /** Cuenta Codigo */
             cuenta_codigo: string | null;
+        };
+        /**
+         * RepuestoHojaCosto
+         * @description Línea de una factura local cargada a unidades en proceso con el VIN (repuesto o subcontrato).
+         */
+        RepuestoHojaCosto: {
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Descripcion */
+            descripcion: string;
+            /** Monto Gtq */
+            monto_gtq: string;
         };
         /** ResumenEtapa */
         ResumenEtapa: {
@@ -4222,6 +4362,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompraUnidadSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hoja_de_costo_api_v1_compras_hoja_costo__vin__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HojaCosto"];
                 };
             };
             /** @description Validation Error */

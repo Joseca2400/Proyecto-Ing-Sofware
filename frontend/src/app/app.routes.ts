@@ -60,6 +60,12 @@ export const routes: Routes = [
           import('./features/compras/gastos-importacion').then((m) => m.GastosImportacionPantalla),
       },
       {
+        path: 'compras/hoja-costo',
+        title: 'Hoja de costo · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/hoja-costo').then((m) => m.HojaCostoPantalla),
+      },
+      {
         path: 'facturacion/clientes',
         title: 'Clientes · Kilómetro Cero',
         loadComponent: () =>

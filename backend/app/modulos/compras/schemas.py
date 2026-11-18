@@ -397,3 +397,107 @@ class CompraUnidadSalida(BaseModel):
     @field_serializer("tipo_cambio")
     def tipo_cambio_a_texto(self, valor: Decimal) -> str:
         return f"{valor:.8f}"
+
+
+# ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
+
+
+class CompraHojaCosto(BaseModel):
+    fecha: date
+    documento: str
+    proveedor: str
+    total_usd: Decimal
+    tipo_cambio: Decimal
+    total_gtq: Decimal
+
+    @field_serializer("total_usd", "total_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("tipo_cambio")
+    def tipo_cambio_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.8f}"
+
+
+class GastoHojaCosto(BaseModel):
+    """Un gasto de importación; `suma_al_costo` es falso para el IVA de importación (crédito fiscal)."""
+
+    concepto: str
+    nombre: str
+    fecha: date
+    documento: str
+    moneda: Moneda
+    monto: Decimal
+    tipo_cambio: Decimal | None
+    monto_gtq: Decimal
+    suma_al_costo: bool
+
+    @field_serializer("monto", "monto_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("tipo_cambio")
+    def tipo_cambio_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.8f}"
+
+
+class ManoObraHojaCosto(BaseModel):
+    numero: str
+    fecha_cierre: date
+    costo_gtq: Decimal
+
+    @field_serializer("costo_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class RepuestoHojaCosto(BaseModel):
+    """Línea de una factura local cargada a unidades en proceso con el VIN (repuesto o subcontrato)."""
+
+    documento: str
+    proveedor: str
+    fecha: date
+    descripcion: str
+    monto_gtq: Decimal
+
+    @field_serializer("monto_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class HojaCosto(BaseModel):
+    """Hoja de costo (HU-4.08) que calcula el servidor; el front solo da formato a los montos.
+
+    `saldo_mayor_gtq` es el saldo de unidades en proceso del VIN, más el costo trasladado en el alta
+    a la flota (`costo_alta_gtq`) cuando ya la tiene; `cuadra` compara el total con ese saldo.
+    """
+
+    vin: str
+    marca: str
+    linea: str
+    modelo: int
+    estado: str
+    compra: CompraHojaCosto | None
+    importacion: list[GastoHojaCosto]
+    mano_obra: list[ManoObraHojaCosto]
+    repuestos: list[RepuestoHojaCosto]
+    compra_gtq: Decimal
+    importacion_gtq: Decimal
+    credito_fiscal_gtq: Decimal
+    reacondicionamiento_gtq: Decimal
+    total_gtq: Decimal
+    saldo_mayor_gtq: Decimal
+    costo_alta_gtq: Decimal | None
+    diferencia_gtq: Decimal
+    cuadra: bool
+
+    @field_serializer(
+        "compra_gtq", "importacion_gtq", "credito_fiscal_gtq", "reacondicionamiento_gtq", "total_gtq",
+        "saldo_mayor_gtq", "diferencia_gtq",
+    )  # fmt: skip
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("costo_alta_gtq")
+    def costo_alta_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else _monto_texto(valor)
