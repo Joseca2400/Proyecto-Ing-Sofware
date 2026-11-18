@@ -619,6 +619,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alquileres/tarifas/catalogos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalogos */
+        get: operations["catalogos_api_v1_alquileres_tarifas_catalogos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/tarifas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Tarifas */
+        get: operations["listar_tarifas_api_v1_alquileres_tarifas_get"];
+        put?: never;
+        /** Registrar Tarifa */
+        post: operations["registrar_tarifa_api_v1_alquileres_tarifas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/tarifas/vigente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tarifa Vigente
+         * @description Cotización: la tarifa que aplica hoy (o en `fecha`) a esa unidad o tipo de vehículo.
+         */
+        get: operations["tarifa_vigente_api_v1_alquileres_tarifas_vigente_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -693,6 +748,15 @@ export interface components {
             tipos_vehiculo: string[];
             /** Lineas Negocio */
             lineas_negocio: string[];
+        };
+        /** CatalogosTarifas */
+        CatalogosTarifas: {
+            /** Modalidades */
+            modalidades: ("diaria" | "semanal" | "mensual" | "por_kilometraje")[];
+            /** Monedas */
+            monedas: ("GTQ" | "USD")[];
+            /** Tipos Vehiculo */
+            tipos_vehiculo: string[];
         };
         /**
          * ClienteEntrada
@@ -1471,6 +1535,83 @@ export interface components {
             compra_gtq: string;
             /** Costo Total Gtq */
             costo_total_gtq: string;
+        };
+        /**
+         * TarifaEntrada
+         * @description Alta de una tarifa. Los montos llegan como texto; que se indique tipo de vehículo o VIN (uno
+         *     solo), la existencia del VIN y la vigencia se validan en el service.
+         */
+        TarifaEntrada: {
+            /** Tipo Vehiculo */
+            tipo_vehiculo?: string | null;
+            /** Vin */
+            vin?: string | null;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /**
+             * Km Incluido
+             * @default 0
+             */
+            km_incluido: number;
+            /**
+             * Precio Km Adicional
+             * @default 0
+             */
+            precio_km_adicional: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vigente Hasta */
+            vigente_hasta?: string | null;
+        };
+        /** TarifaSalida */
+        TarifaSalida: {
+            /** Id */
+            id: number;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string | null;
+            /** Vin */
+            vin: string | null;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Km Incluido */
+            km_incluido: number;
+            /** Precio Km Adicional */
+            precio_km_adicional: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vigente Hasta */
+            vigente_hasta: string | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
         };
         /**
          * TipoCambioEntrada
@@ -3177,6 +3318,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClienteSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    catalogos_api_v1_alquileres_tarifas_catalogos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogosTarifas"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_tarifas_api_v1_alquileres_tarifas_get: {
+        parameters: {
+            query?: {
+                tipo_vehiculo?: string | null;
+                vin?: string | null;
+                modalidad?: ("diaria" | "semanal" | "mensual" | "por_kilometraje") | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_tarifa_api_v1_alquileres_tarifas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TarifaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tarifa_vigente_api_v1_alquileres_tarifas_vigente_get: {
+        parameters: {
+            query: {
+                modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+                moneda: "GTQ" | "USD";
+                tipo_vehiculo: string;
+                fecha?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"];
                 };
             };
             /** @description Validation Error */
