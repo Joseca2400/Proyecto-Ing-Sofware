@@ -761,6 +761,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/depreciacion/tipos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Depreciacion Tipos
+         * @description HU-3.02: valores de depreciación por defecto de cada tipo de vehículo.
+         */
+        get: operations["listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/depreciacion/tipos/{tipo_vehiculo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Depreciacion Tipo */
+        put: operations["definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades": {
         parameters: {
             query?: never;
@@ -841,6 +878,44 @@ export interface paths {
         put?: never;
         /** Dar De Alta */
         post: operations["dar_de_alta_api_v1_unidades__vin__alta_flota_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/parametros-depreciacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parametros Depreciacion */
+        get: operations["parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get"];
+        put?: never;
+        /** Cambiar Parametros */
+        post: operations["cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/valor-libros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valor En Libros
+         * @description Depreciación acumulada y valor en libros, financiero y fiscal, a la fecha (hoy si no se indica).
+         */
+        get: operations["valor_en_libros_api_v1_unidades__vin__valor_libros_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1188,13 +1263,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AltaFlotaEntrada */
+        /**
+         * AltaFlotaEntrada
+         * @description Fecha del alta y, opcionalmente, los parámetros de depreciación si el contador cambia los
+         *     propuestos (montos y porcentajes como texto).
+         */
         AltaFlotaEntrada: {
             /**
              * Fecha
              * Format: date
              */
             fecha: string;
+            /** Vida Util Meses */
+            vida_util_meses?: number | null;
+            /** Valor Residual */
+            valor_residual?: string | null;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal?: string | null;
         };
         /** AltaFlotaSalida */
         AltaFlotaSalida: {
@@ -1320,6 +1405,12 @@ export interface components {
             diferencia: string;
             /** Orden Abierta */
             orden_abierta: boolean;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
         };
         /**
          * Catalogos
@@ -1936,6 +2027,26 @@ export interface components {
             totales: {
                 [key: string]: string;
             };
+        };
+        /** DepreciacionTipoEntrada */
+        DepreciacionTipoEntrada: {
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** DepreciacionTipoSalida */
+        DepreciacionTipoSalida: {
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
         };
         /** DevolucionDepositoEntrada */
         DevolucionDepositoEntrada: {
@@ -2637,6 +2748,45 @@ export interface components {
             /** Partida Id */
             partida_id: number | null;
         };
+        /** ParametroDepreciacionEntrada */
+        ParametroDepreciacionEntrada: {
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** ParametroDepreciacionSalida */
+        ParametroDepreciacionSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
         /** PartidaEntrada */
         PartidaEntrada: {
             /**
@@ -3235,6 +3385,42 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * ValorEnLibros
+         * @description Depreciación acumulada y valor en libros a una fecha, financieros y fiscales (línea recta).
+         */
+        ValorEnLibros: {
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Costo */
+            costo: string;
+            /** Meses Depreciados */
+            meses_depreciados: number;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Depreciacion Financiera */
+            depreciacion_financiera: string;
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Depreciacion Fiscal */
+            depreciacion_fiscal: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
         };
     };
     responses: never;
@@ -5049,6 +5235,74 @@ export interface operations {
             };
         };
     };
+    listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                tipo_vehiculo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepreciacionTipoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_unidades_api_v1_unidades_get: {
         parameters: {
             query?: {
@@ -5245,6 +5499,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AltaFlotaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParametroDepreciacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    valor_en_libros_api_v1_unidades__vin__valor_libros_get: {
+        parameters: {
+            query?: {
+                fecha?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValorEnLibros"];
                 };
             };
             /** @description Validation Error */

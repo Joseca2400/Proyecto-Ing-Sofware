@@ -1,0 +1,68 @@
+<section class="encabezado">
+  <h1>Depreciación</h1>
+  <p>
+    Valores por defecto de cada tipo de vehículo que se proponen al dar de alta una unidad en la
+    flota: vida útil en meses y valor residual (porcentaje del costo) para la depreciación
+    financiera en línea recta, y porcentaje anual para la fiscal. Cada unidad guarda los suyos.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Tipo de vehículo
+    <select formControlName="tipo_vehiculo">
+      <option value="" disabled>Selecciona</option>
+      @for (t of tipos(); track t.tipo_vehiculo) {
+        <option [value]="t.tipo_vehiculo">{{ etiqueta(t.tipo_vehiculo) }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Vida útil (meses)
+    <input type="number" formControlName="vida_util_meses" min="1" />
+  </label>
+  <label>
+    Residual (% del costo)
+    <input type="text" inputmode="decimal" formControlName="porcentaje_residual" />
+  </label>
+  <label>
+    Fiscal anual (%)
+    <input type="text" inputmode="decimal" formControlName="porcentaje_fiscal" />
+  </label>
+  @if (formulario.invalid && formulario.touched) {
+    <small class="falla">Completa los valores (porcentajes con hasta 2 decimales)</small>
+  }
+  <button type="submit">Guardar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Tipo</th>
+      <th class="numero">Vida útil (meses)</th>
+      <th class="numero">Residual</th>
+      <th class="numero">Fiscal anual</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (t of tipos(); track t.tipo_vehiculo) {
+      <tr>
+        <td>{{ etiqueta(t.tipo_vehiculo) }}</td>
+        <td class="numero">{{ t.vida_util_meses }}</td>
+        <td class="numero">{{ t.porcentaje_residual }} %</td>
+        <td class="numero">{{ t.porcentaje_fiscal }} %</td>
+        <td>
+          <button type="button" class="secundario" (click)="editar(t)">Editar</button>
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>

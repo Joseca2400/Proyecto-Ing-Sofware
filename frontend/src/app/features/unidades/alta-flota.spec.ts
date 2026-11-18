@@ -17,6 +17,9 @@ const CANDIDATA: CandidataAltaFlota = {
   cuadra: true,
   diferencia: '0.000000',
   orden_abierta: false,
+  vida_util_meses: 60,
+  valor_residual: '7719.690000',
+  porcentaje_fiscal: '20.00',
 };
 
 describe('AltaFlotaPantalla', () => {
@@ -59,6 +62,9 @@ describe('AltaFlotaPantalla', () => {
 
     const envio = http.expectOne({ method: 'POST', url: `/api/v1/unidades/${VIN}/alta-flota` });
     expect(envio.request.body.fecha).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(envio.request.body.vida_util_meses).toBe(60);
+    expect(envio.request.body.valor_residual).toBe('7719.690000');
+    expect(envio.request.body.porcentaje_fiscal).toBe('20.00');
     envio.flush({ id: 1, vin: VIN, fecha: '2026-11-18', costo: '77196.850000', partida_id: 9 });
     http.expectOne(URL).flush([]);
     await fixture.whenStable();

@@ -127,6 +127,15 @@ export interface EtapasImportacion {
 
 export type CandidataAltaFlota = components['schemas']['CandidataAltaFlota'];
 export type AltaFlota = components['schemas']['AltaFlotaSalida'];
+export type AltaFlotaEntrada = components['schemas']['AltaFlotaEntrada'];
+
+// ── HU-3.02: depreciación ──────────────────────────────────────────────────────
+
+export type DepreciacionTipo = components['schemas']['DepreciacionTipoSalida'];
+export type DepreciacionTipoEntrada = components['schemas']['DepreciacionTipoEntrada'];
+export type ParametroDepreciacion = components['schemas']['ParametroDepreciacionSalida'];
+export type ParametroDepreciacionEntrada = components['schemas']['ParametroDepreciacionEntrada'];
+export type ValorEnLibros = components['schemas']['ValorEnLibros'];
 
 @Injectable({ providedIn: 'root' })
 export class UnidadesService {
@@ -165,7 +174,36 @@ export class UnidadesService {
     return this.http.get<CandidataAltaFlota[]>(`${this.url}/alta-flota/candidatas`);
   }
 
-  darDeAlta(vin: string, fecha: string): Observable<AltaFlota> {
-    return this.http.post<AltaFlota>(`${this.url}/${vin}/alta-flota`, { fecha });
+  darDeAlta(vin: string, datos: AltaFlotaEntrada): Observable<AltaFlota> {
+    return this.http.post<AltaFlota>(`${this.url}/${vin}/alta-flota`, datos);
+  }
+
+  depreciacionTipos(): Observable<DepreciacionTipo[]> {
+    return this.http.get<DepreciacionTipo[]>(`${this.url}/depreciacion/tipos`);
+  }
+
+  definirDepreciacionTipo(
+    tipo: string,
+    datos: DepreciacionTipoEntrada,
+  ): Observable<DepreciacionTipo> {
+    return this.http.put<DepreciacionTipo>(`${this.url}/depreciacion/tipos/${tipo}`, datos);
+  }
+
+  parametrosDepreciacion(vin: string): Observable<ParametroDepreciacion[]> {
+    return this.http.get<ParametroDepreciacion[]>(`${this.url}/${vin}/parametros-depreciacion`);
+  }
+
+  cambiarParametros(
+    vin: string,
+    datos: ParametroDepreciacionEntrada,
+  ): Observable<ParametroDepreciacion> {
+    return this.http.post<ParametroDepreciacion>(
+      `${this.url}/${vin}/parametros-depreciacion`,
+      datos,
+    );
+  }
+
+  valorEnLibros(vin: string, fecha: string): Observable<ValorEnLibros> {
+    return this.http.get<ValorEnLibros>(`${this.url}/${vin}/valor-libros`, { params: { fecha } });
   }
 }

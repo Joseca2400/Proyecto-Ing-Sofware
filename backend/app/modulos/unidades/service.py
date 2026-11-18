@@ -35,21 +35,38 @@ que traslada el costo de unidades en proceso a activo fijo – flota con el VIN,
 desde donde la unidad se puede alquilar. Una unidad lista no pasa a "en flota" sin su alta.
 HU-3.01 (diferido): que el auxiliar registre el alta y el contador la apruebe (criterio 5, Sprint 5);
 hoy solo el contador la registra.
+
+HU-3.02 (incluido): parámetros de depreciación por unidad, financieros (vida útil en meses, valor
+residual, línea recta) y fiscal (porcentaje anual), con valores por defecto por tipo de vehículo que
+se proponen al alta y el contador cambia. Cada cambio es una versión nueva con su vigencia (desde el
+mes en curso): las cuotas ya devengadas no se recalculan; la bitácora guarda cada versión.
+`valor_en_libros` da la depreciación acumulada y el valor en libros a cualquier fecha (sin partidas:
+la depreciación mensual contabilizada es HU-2.07, Sprint 3). Convención de meses (supuesto que
+confirma el contador): el mes del alta no se deprecia; cada fin de mes posterior devenga una cuota.
 """
 
 import re
+from calendar import monthrange
 from datetime import UTC, date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
+from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
 from app.modulos.contabilidad import service as contabilidad
 from app.modulos.contabilidad.schemas import LineaEntrada
-from app.modulos.unidades.models import ESTADOS, AltaFlota, CambioEstadoUnidad, Unidad
+from app.modulos.unidades.models import (
+    ESTADOS,
+    AltaFlota,
+    CambioEstadoUnidad,
+    DepreciacionTipoVehiculo,
+    ParametroDepreciacion,
+    Unidad,
+)
 from app.modulos.unidades.schemas import UnidadEntrada
 
 TIPOS_VEHICULO = ("sedan", "hatchback", "suv", "pickup", "camioneta", "microbus", "motocicleta", "otro")
@@ -429,14 +446,24 @@ def candidatas_alta(db: Session) -> list[dict]:
                 "cuadra": hoja["cuadra"],
                 "diferencia": hoja["diferencia_gtq"],
                 "orden_abierta": taller.tiene_orden_abierta(db, unidad.vin),
+                **propuesta_depreciacion(db, unidad.tipo_vehiculo, hoja["total_gtq"]),
             }
         )
     return candidatas
 
 
-def dar_de_alta(db: Session, vin: str, fecha: date, usuario_id: int | None = None) -> AltaFlota:
-    """Alta en flota: registro, partida (unidades en proceso → activo fijo – flota, con el VIN) y paso
-    a "en flota", en una transacción, o nada (criterios 1 a 3)."""
+def dar_de_alta(
+    db: Session,
+    vin: str,
+    fecha: date,
+    usuario_id: int | None = None,
+    vida_util_meses: int | None = None,
+    valor_residual: str | None = None,
+    porcentaje_fiscal: str | None = None,
+) -> AltaFlota:
+    """Alta en flota: registro, partida (unidades en proceso → activo fijo – flota, con el VIN),
+    primera versión de los parámetros de depreciación (HU-3.02; lo no enviado se toma de la
+    propuesta del tipo de vehículo) y paso a "en flota", en una transacción, o nada."""
     from app.modulos.compras import service as compras  # import diferido, ver arriba
     from app.modulos.taller import service as taller
 
@@ -460,6 +487,13 @@ def dar_de_alta(db: Session, vin: str, fecha: date, usuario_id: int | None = Non
             "corrija la diferencia antes del alta",
             409,
         )
+    propuesta = propuesta_depreciacion(db, unidad.tipo_vehiculo, costo)
+    parametros = _parametros(
+        costo,
+        vida_util_meses if vida_util_meses is not None else propuesta["vida_util_meses"],
+        valor_residual if valor_residual is not None else f"{propuesta['valor_residual']}",
+        porcentaje_fiscal if porcentaje_fiscal is not None else f"{propuesta['porcentaje_fiscal']}",
+    )
     try:
         activo = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "activo_flota")
         en_proceso = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "unidad_en_proceso")
@@ -492,6 +526,9 @@ def dar_de_alta(db: Session, vin: str, fecha: date, usuario_id: int | None = Non
             id=alta_id, vin=unidad.vin, fecha=fecha, costo=costo, partida_id=partida.id, usuario_id=usuario_id
         )
         db.add(alta)
+        db.add(
+            ParametroDepreciacion(vin=unidad.vin, vigente_desde=fecha, usuario_id=usuario_id, **parametros)
+        )
         db.flush()  # el alta existe antes del cambio de estado, que la exige
         cambiar_estado(db, unidad.vin, "en_flota", f"Alta en flota {alta_id}", usuario_id, confirmar=False)
         db.commit()
@@ -500,6 +537,203 @@ def dar_de_alta(db: Session, vin: str, fecha: date, usuario_id: int | None = Non
         raise
     db.refresh(alta)
     return alta
+
+
+# ── HU-3.02: parámetros de depreciación y valor en libros ─────────────────────
+
+
+def _decimal(texto: str, campo: str, decimales: int) -> Decimal:
+    try:
+        valor = Decimal(str(texto).strip())
+    except InvalidOperation:
+        raise ErrorNegocio(f"{campo} no es un número válido") from None
+    if not valor.is_finite() or valor < 0:
+        raise ErrorNegocio(f"{campo} debe ser un número no negativo")
+    if valor >= Decimal(10) ** 12:
+        raise ErrorNegocio(f"{campo} excede el máximo permitido")
+    if valor != round(valor, decimales):  # "7719.690000" vale; "7719.695" no
+        raise ErrorNegocio(f"{campo} admite hasta {decimales} decimales")
+    return valor
+
+
+def _validar_vida_y_fiscal(vida_util_meses: int, fiscal: Decimal) -> None:
+    if not 0 < vida_util_meses <= 600:
+        raise ErrorNegocio("La vida útil es un número de meses entre 1 y 600")
+    if not 0 < fiscal <= 100:
+        raise ErrorNegocio("El porcentaje fiscal anual debe ser mayor que 0 y hasta 100")
+
+
+def _parametros(costo: Decimal, vida_util_meses: int, valor_residual: str, porcentaje_fiscal: str) -> dict:
+    """Valida los parámetros de una unidad contra su costo."""
+    residual = _decimal(valor_residual, "El valor residual", 2)
+    fiscal = _decimal(porcentaje_fiscal, "El porcentaje fiscal", 2)
+    _validar_vida_y_fiscal(vida_util_meses, fiscal)
+    if residual >= costo:
+        raise ErrorNegocio("El valor residual debe ser menor que el costo de la unidad")
+    return {"vida_util_meses": vida_util_meses, "valor_residual": residual, "porcentaje_fiscal": fiscal}
+
+
+def _tipo(db: Session, tipo_vehiculo: str) -> DepreciacionTipoVehiculo | None:
+    return db.scalar(
+        select(DepreciacionTipoVehiculo).where(DepreciacionTipoVehiculo.tipo_vehiculo == tipo_vehiculo)
+    )
+
+
+def listar_depreciacion_tipos(db: Session) -> list[DepreciacionTipoVehiculo]:
+    return list(db.scalars(select(DepreciacionTipoVehiculo).order_by(DepreciacionTipoVehiculo.id)))
+
+
+def definir_depreciacion_tipo(
+    db: Session,
+    tipo_vehiculo: str,
+    vida_util_meses: int,
+    porcentaje_residual: str,
+    porcentaje_fiscal: str,
+    usuario_id: int | None = None,
+) -> DepreciacionTipoVehiculo:
+    """Cambia los valores por defecto de un tipo (criterio 2): solo afectan las altas siguientes y
+    la bitácora guarda los anteriores."""
+    tipo = _tipo(db, tipo_vehiculo)
+    if tipo is None:
+        raise ErrorNegocio(f"Tipo de vehículo desconocido: {tipo_vehiculo}", 404)
+    residual = _decimal(porcentaje_residual, "El porcentaje residual", 2)
+    fiscal = _decimal(porcentaje_fiscal, "El porcentaje fiscal", 2)
+    _validar_vida_y_fiscal(vida_util_meses, fiscal)
+    if residual >= 100:
+        raise ErrorNegocio("El porcentaje residual debe ser menor que 100")
+    tipo.vida_util_meses = vida_util_meses
+    tipo.porcentaje_residual = residual
+    tipo.porcentaje_fiscal = fiscal
+    tipo.actualizado_por = usuario_id
+    db.commit()
+    db.refresh(tipo)
+    return tipo
+
+
+def propuesta_depreciacion(db: Session, tipo_vehiculo: str, costo: Decimal) -> dict:
+    """Parámetros que se proponen al alta: los del tipo, con el residual en quetzales sobre el costo."""
+    tipo = _tipo(db, tipo_vehiculo)
+    if tipo is None:  # sin valores del tipo: 20 % fiscal de vehículos, 60 meses y sin residual
+        return {
+            "vida_util_meses": 60,
+            "valor_residual": Decimal("0.00"),
+            "porcentaje_fiscal": Decimal("20.00"),
+        }
+    return {
+        "vida_util_meses": tipo.vida_util_meses,
+        "valor_residual": redondear(costo * tipo.porcentaje_residual / 100, 2),
+        "porcentaje_fiscal": tipo.porcentaje_fiscal,
+    }
+
+
+def parametros_depreciacion(db: Session, vin: str) -> list[ParametroDepreciacion]:
+    """Versiones de los parámetros de la unidad, de la más antigua (la del alta) a la vigente."""
+    unidad = obtener_por_vin(db, vin)
+    return list(
+        db.scalars(
+            select(ParametroDepreciacion)
+            .where(ParametroDepreciacion.vin == unidad.vin)
+            .order_by(ParametroDepreciacion.vigente_desde)
+        )
+    )
+
+
+def _indice_mes(fecha: date) -> int:
+    return fecha.year * 12 + fecha.month - 1
+
+
+def _fin_de_mes(indice: int) -> date:
+    anio, mes = divmod(indice, 12)
+    return date(anio, mes + 1, monthrange(anio, mes + 1)[1])
+
+
+def meses_depreciados(fecha_alta: date, fecha: date) -> int:
+    """Cuotas devengadas a `fecha`: una por cada mes cerrado (fin de mes <= fecha) posterior al mes
+    del alta. El mes del alta no se deprecia; la primera cuota es la del cierre del mes siguiente."""
+    cerrado = _indice_mes(fecha) - (0 if fecha == _fin_de_mes(_indice_mes(fecha)) else 1)
+    return max(cerrado - _indice_mes(fecha_alta), 0)
+
+
+def calcular_depreciacion(costo: Decimal, fecha_alta: date, versiones: list, fecha: date) -> dict:
+    """Depreciación acumulada a `fecha`, financiera y fiscal, mes a mes.
+
+    Cada mes usa la versión vigente a su fin de mes. Financiera, línea recta: la cuota es lo que
+    falta depreciar (valor en libros menos residual) entre los meses que faltan de la vida útil,
+    redondeada a centavos mitad hacia arriba; así un cambio aplica solo hacia adelante, la última
+    cuota absorbe los centavos y nunca se baja del residual. Fiscal: costo por porcentaje anual
+    entre 12, sin residual, hasta llegar a cero.
+    """
+    meses = meses_depreciados(fecha_alta, fecha)
+    financiera = fiscal = Decimal(0)
+    vigente = versiones[0]
+    for k in range(1, meses + 1):
+        fin = _fin_de_mes(_indice_mes(fecha_alta) + k)
+        vigente = [v for v in versiones if v.vigente_desde <= fin][-1]
+        faltan = max(vigente.vida_util_meses - (k - 1), 1)
+        financiera += max(redondear((costo - financiera - vigente.valor_residual) / faltan, 2), Decimal(0))
+        fiscal += min(redondear(costo * vigente.porcentaje_fiscal / 1200, 2), costo - fiscal)
+    return {
+        "meses_depreciados": meses,
+        "vida_util_meses": vigente.vida_util_meses,
+        "valor_residual": vigente.valor_residual,
+        "porcentaje_fiscal": vigente.porcentaje_fiscal,
+        "depreciacion_financiera": financiera,
+        "valor_libros_financiero": costo - financiera,
+        "depreciacion_fiscal": fiscal,
+        "valor_libros_fiscal": costo - fiscal,
+    }
+
+
+def valor_en_libros(db: Session, vin: str, fecha: date) -> dict:
+    """Costo, depreciación acumulada y valor en libros, financieros y fiscales, a `fecha`.
+
+    Lo reutilizan la ficha, los reportes y la depreciación mensual (HU-2.07), para que todos usen el
+    mismo cálculo. Requiere el alta en flota."""
+    alta = alta_de_unidad(db, vin)
+    if alta is None:
+        raise ErrorNegocio(f"La unidad {vin.strip().upper()} no tiene alta en la flota", 404)
+    return {
+        "vin": alta.vin,
+        "fecha": fecha,
+        "fecha_alta": alta.fecha,
+        "costo": alta.costo,
+        **calcular_depreciacion(alta.costo, alta.fecha, parametros_depreciacion(db, alta.vin), fecha),
+    }
+
+
+def cambiar_parametros(
+    db: Session,
+    vin: str,
+    vigente_desde: date,
+    vida_util_meses: int,
+    valor_residual: str,
+    porcentaje_fiscal: str,
+    usuario_id: int | None = None,
+) -> ParametroDepreciacion:
+    """Nueva versión de los parámetros, prospectiva (criterio 3): vigente desde el mes en curso o
+    uno posterior, así no recalcula cuotas de meses ya cerrados."""
+    alta = alta_de_unidad(db, vin)
+    if alta is None:
+        raise ErrorNegocio(f"La unidad {vin.strip().upper()} no tiene alta en la flota", 404)
+    ultima = parametros_depreciacion(db, alta.vin)[-1]
+    if vigente_desde < date.today().replace(day=1):
+        raise ErrorNegocio("El cambio es prospectivo: su vigencia no puede ser anterior al mes en curso")
+    if vigente_desde <= ultima.vigente_desde:
+        raise ErrorNegocio(
+            f"Ya hay parámetros vigentes desde el {ultima.vigente_desde}; use una fecha posterior"
+        )
+    parametros = _parametros(alta.costo, vida_util_meses, valor_residual, porcentaje_fiscal)
+    # Meses ya devengados al cierre del mes anterior a la vigencia: la vida nueva debe superarlos.
+    devengados = meses_depreciados(alta.fecha, _fin_de_mes(_indice_mes(vigente_desde) - 1))
+    if vida_util_meses <= devengados:
+        raise ErrorNegocio(f"La vida útil debe ser mayor que los {devengados} meses ya depreciados")
+    version = ParametroDepreciacion(
+        vin=alta.vin, vigente_desde=vigente_desde, usuario_id=usuario_id, **parametros
+    )
+    db.add(version)
+    db.commit()
+    db.refresh(version)
+    return version
 
 
 def catalogos() -> dict[str, list[str]]:

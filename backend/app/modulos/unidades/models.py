@@ -6,7 +6,17 @@ a esta tabla por su VIN.
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
@@ -97,5 +107,57 @@ class AltaFlota(Base):
     fecha: Mapped[date] = mapped_column(Date)
     costo: Mapped[Decimal] = mapped_column(MONTO)
     partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_alta_flota_partida"))
+    usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+PORCENTAJE = Numeric(5, 2)
+
+
+class DepreciacionTipoVehiculo(Base):
+    """Parámetros de depreciación por defecto de un tipo de vehículo (HU-3.02, criterio 2): se
+    proponen al dar de alta la unidad. El residual es un porcentaje del costo."""
+
+    __tablename__ = "depreciacion_tipo_vehiculo"
+    __table_args__ = (
+        UniqueConstraint("tipo_vehiculo", name="uq_depreciacion_tipo_vehiculo"),
+        CheckConstraint(
+            "vida_util_meses > 0 AND porcentaje_residual >= 0 AND porcentaje_residual < 100"
+            " AND porcentaje_fiscal > 0 AND porcentaje_fiscal <= 100",
+            name="ck_depreciacion_tipo_vehiculo_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tipo_vehiculo: Mapped[str] = mapped_column(String(20))
+    vida_util_meses: Mapped[int] = mapped_column(Integer)
+    porcentaje_residual: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    porcentaje_fiscal: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    actualizado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class ParametroDepreciacion(Base):
+    """Versión de los parámetros de depreciación de una unidad (HU-3.02): financieros (vida útil en
+    meses y valor residual, línea recta) y fiscal (porcentaje anual). Un cambio es una versión nueva
+    con su vigencia; nunca se edita una existente (criterio 3)."""
+
+    __tablename__ = "parametro_depreciacion"
+    __table_args__ = (
+        UniqueConstraint("vin", "vigente_desde", name="uq_parametro_depreciacion_vigencia"),
+        CheckConstraint(
+            "vida_util_meses > 0 AND valor_residual >= 0"
+            " AND porcentaje_fiscal > 0 AND porcentaje_fiscal <= 100",
+            name="ck_parametro_depreciacion_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(
+        String(17), ForeignKey("unidad.vin", name="fk_parametro_depreciacion_vin_unidad"), index=True
+    )
+    vigente_desde: Mapped[date] = mapped_column(Date)
+    vida_util_meses: Mapped[int] = mapped_column(Integer)
+    valor_residual: Mapped[Decimal] = mapped_column(MONTO)
+    porcentaje_fiscal: Mapped[Decimal] = mapped_column(PORCENTAJE)
     usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -153,14 +153,28 @@ class CandidataAltaFlota(BaseModel):
     cuadra: bool
     diferencia: Decimal
     orden_abierta: bool
+    # Parámetros de depreciación que se proponen (HU-3.02), los del tipo de vehículo.
+    vida_util_meses: int
+    valor_residual: Decimal
+    porcentaje_fiscal: Decimal
 
-    @field_serializer("costo", "diferencia")
+    @field_serializer("costo", "diferencia", "valor_residual")
     def monto_a_texto(self, valor: Decimal) -> str:
         return _monto_texto(valor)
 
+    @field_serializer("porcentaje_fiscal")
+    def porcentaje_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"
+
 
 class AltaFlotaEntrada(BaseModel):
+    """Fecha del alta y, opcionalmente, los parámetros de depreciación si el contador cambia los
+    propuestos (montos y porcentajes como texto)."""
+
     fecha: date
+    vida_util_meses: int | None = None
+    valor_residual: str | None = Field(default=None, max_length=30)
+    porcentaje_fiscal: str | None = Field(default=None, max_length=10)
 
 
 class AltaFlotaSalida(BaseModel):
@@ -177,3 +191,81 @@ class AltaFlotaSalida(BaseModel):
     @field_serializer("costo")
     def monto_a_texto(self, valor: Decimal) -> str:
         return _monto_texto(valor)
+
+
+# ── HU-3.02: depreciación ─────────────────────────────────────────────────────
+
+
+class DepreciacionTipoEntrada(BaseModel):
+    vida_util_meses: int
+    porcentaje_residual: str = Field(max_length=10)
+    porcentaje_fiscal: str = Field(max_length=10)
+
+
+class DepreciacionTipoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    tipo_vehiculo: str
+    vida_util_meses: int
+    porcentaje_residual: Decimal
+    porcentaje_fiscal: Decimal
+
+    @field_serializer("porcentaje_residual", "porcentaje_fiscal")
+    def porcentaje_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"
+
+
+class ParametroDepreciacionEntrada(BaseModel):
+    vigente_desde: date
+    vida_util_meses: int
+    valor_residual: str = Field(max_length=30)
+    porcentaje_fiscal: str = Field(max_length=10)
+
+
+class ParametroDepreciacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vin: str
+    vigente_desde: date
+    vida_util_meses: int
+    valor_residual: Decimal
+    porcentaje_fiscal: Decimal
+    usuario_id: int | None
+    creado_en: datetime
+
+    @field_serializer("valor_residual")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("porcentaje_fiscal")
+    def porcentaje_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"
+
+
+class ValorEnLibros(BaseModel):
+    """Depreciación acumulada y valor en libros a una fecha, financieros y fiscales (línea recta)."""
+
+    vin: str
+    fecha: date
+    fecha_alta: date
+    costo: Decimal
+    meses_depreciados: int
+    vida_util_meses: int
+    valor_residual: Decimal
+    porcentaje_fiscal: Decimal
+    depreciacion_financiera: Decimal
+    valor_libros_financiero: Decimal
+    depreciacion_fiscal: Decimal
+    valor_libros_fiscal: Decimal
+
+    @field_serializer(
+        "costo", "valor_residual", "depreciacion_financiera", "valor_libros_financiero",
+        "depreciacion_fiscal", "valor_libros_fiscal",
+    )  # fmt: skip
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("porcentaje_fiscal")
+    def porcentaje_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"

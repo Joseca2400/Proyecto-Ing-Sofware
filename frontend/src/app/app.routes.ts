@@ -127,6 +127,12 @@ export const routes: Routes = [
           import('./features/unidades/alta-flota').then((m) => m.AltaFlotaPantalla),
       },
       {
+        path: 'unidades/depreciacion',
+        title: 'Depreciación · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/unidades/depreciacion').then((m) => m.DepreciacionPantalla),
+      },
+      {
         path: 'contabilidad/partidas',
         title: 'Partidas · Kilómetro Cero',
         loadComponent: () =>

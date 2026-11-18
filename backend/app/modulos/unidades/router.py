@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -19,11 +21,16 @@ from app.modulos.unidades.schemas import (
     CambioEstadoSalida,
     CandidataAltaFlota,
     Catalogos,
+    DepreciacionTipoEntrada,
+    DepreciacionTipoSalida,
     Estado,
     Etapa,
     EtapasImportacion,
+    ParametroDepreciacionEntrada,
+    ParametroDepreciacionSalida,
     UnidadEntrada,
     UnidadSalida,
+    ValorEnLibros,
 )
 
 # HU-1.09: todas las rutas exigen sesión. El gerente financiero sigue las etapas de importación
@@ -54,6 +61,30 @@ def etapas_importacion(
 def candidatas_alta(_: Usuario = Depends(ETAPAS), db: Session = Depends(get_db)) -> list[CandidataAltaFlota]:
     """HU-3.01: unidades listas con el costo de su hoja de costo y su cuadre con el mayor."""
     return [CandidataAltaFlota(**c) for c in service.candidatas_alta(db)]
+
+
+@router.get("/depreciacion/tipos", response_model=list[DepreciacionTipoSalida])
+def listar_depreciacion_tipos(db: Session = Depends(get_db)) -> list[DepreciacionTipoSalida]:
+    """HU-3.02: valores de depreciación por defecto de cada tipo de vehículo."""
+    return [DepreciacionTipoSalida.model_validate(t) for t in service.listar_depreciacion_tipos(db)]
+
+
+@router.put("/depreciacion/tipos/{tipo_vehiculo}", response_model=DepreciacionTipoSalida)
+def definir_depreciacion_tipo(
+    tipo_vehiculo: str,
+    datos: DepreciacionTipoEntrada,
+    usuario: Usuario = Depends(CONTADOR_),
+    db: Session = Depends(get_db),
+) -> DepreciacionTipoSalida:
+    tipo = service.definir_depreciacion_tipo(
+        db,
+        tipo_vehiculo,
+        datos.vida_util_meses,
+        datos.porcentaje_residual,
+        datos.porcentaje_fiscal,
+        usuario.id,
+    )
+    return DepreciacionTipoSalida.model_validate(tipo)
 
 
 @router.get("", response_model=list[UnidadSalida])
@@ -96,4 +127,40 @@ def historial(vin: str, db: Session = Depends(get_db)) -> list[CambioEstadoSalid
 def dar_de_alta(
     vin: str, datos: AltaFlotaEntrada, usuario: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
 ) -> AltaFlotaSalida:
-    return AltaFlotaSalida.model_validate(service.dar_de_alta(db, vin, datos.fecha, usuario.id))
+    alta = service.dar_de_alta(
+        db, vin, datos.fecha, usuario.id, datos.vida_util_meses, datos.valor_residual, datos.porcentaje_fiscal
+    )
+    return AltaFlotaSalida.model_validate(alta)
+
+
+# ── HU-3.02: depreciación ─────────────────────────────────────────────────────
+
+
+@router.get("/{vin}/parametros-depreciacion", response_model=list[ParametroDepreciacionSalida])
+def parametros_depreciacion(vin: str, db: Session = Depends(get_db)) -> list[ParametroDepreciacionSalida]:
+    return [ParametroDepreciacionSalida.model_validate(p) for p in service.parametros_depreciacion(db, vin)]
+
+
+@router.post("/{vin}/parametros-depreciacion", response_model=ParametroDepreciacionSalida, status_code=201)
+def cambiar_parametros(
+    vin: str,
+    datos: ParametroDepreciacionEntrada,
+    usuario: Usuario = Depends(CONTADOR_),
+    db: Session = Depends(get_db),
+) -> ParametroDepreciacionSalida:
+    version = service.cambiar_parametros(
+        db,
+        vin,
+        datos.vigente_desde,
+        datos.vida_util_meses,
+        datos.valor_residual,
+        datos.porcentaje_fiscal,
+        usuario.id,
+    )
+    return ParametroDepreciacionSalida.model_validate(version)
+
+
+@router.get("/{vin}/valor-libros", response_model=ValorEnLibros)
+def valor_en_libros(vin: str, fecha: date | None = None, db: Session = Depends(get_db)) -> ValorEnLibros:
+    """Depreciación acumulada y valor en libros, financiero y fiscal, a la fecha (hoy si no se indica)."""
+    return ValorEnLibros(**service.valor_en_libros(db, vin, fecha or date.today()))

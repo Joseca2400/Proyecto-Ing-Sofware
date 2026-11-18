@@ -254,6 +254,57 @@ describe('UnidadesPantalla', () => {
     expect(ficha).toMatch(/Costo acumulado\s*\D*74,606\.35/);
   });
 
+  it('con alta en flota muestra el valor en libros y cambia los parámetros', async () => {
+    const fixture = await crear([{ ...HONDA, estado: 'en_flota' }]);
+    const el = elemento(fixture);
+
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    http.expectOne(`${URL}/${VIN}/historial`).flush([ALTA]);
+    http.expectOne(URL_GASTOS).flush(SIN_GASTOS);
+    const valor = {
+      vin: VIN,
+      fecha: '2026-11-18',
+      fecha_alta: '2025-01-15',
+      costo: '60000.000000',
+      meses_depreciados: 22,
+      vida_util_meses: 60,
+      valor_residual: '6000.000000',
+      porcentaje_fiscal: '20.00',
+      depreciacion_financiera: '19800.000000',
+      valor_libros_financiero: '40200.000000',
+      depreciacion_fiscal: '22000.000000',
+      valor_libros_fiscal: '38000.000000',
+    };
+    http.expectOne((r) => r.url === `${URL}/${VIN}/valor-libros`).flush(valor);
+    const version = {
+      id: 1,
+      vin: VIN,
+      vigente_desde: '2025-01-15',
+      vida_util_meses: 60,
+      valor_residual: '6000.000000',
+      porcentaje_fiscal: '20.00',
+      usuario_id: 2,
+      creado_en: 'x',
+    };
+    http.expectOne(`${URL}/${VIN}/parametros-depreciacion`).flush([version]);
+    await fixture.whenStable();
+
+    const ficha = el.querySelector('.ficha')!.textContent ?? '';
+    expect(ficha).toContain('40,200.00');
+    expect(ficha).toContain('38,000.00');
+    expect(ficha).toContain('22 meses depreciados');
+
+    escribir(el, 'valor_residual', '5000');
+    el.querySelector<HTMLFormElement>('form.cambio')!.dispatchEvent(new Event('submit'));
+    const envio = http.expectOne({ method: 'POST', url: `${URL}/${VIN}/parametros-depreciacion` });
+    expect(envio.request.body.valor_residual).toBe('5000');
+    envio.flush({ ...version, id: 2, vigente_desde: '2026-12-01' });
+    http.expectOne((r) => r.url === `${URL}/${VIN}/valor-libros`).flush(valor);
+    http.expectOne(`${URL}/${VIN}/parametros-depreciacion`).flush([version]);
+    await fixture.whenStable();
+    expect(el.textContent).toContain('vigentes desde el 2026-12-01');
+  });
+
   it('consulta con los filtros de búsqueda y estado', async () => {
     const fixture = await crear();
     const el = elemento(fixture);

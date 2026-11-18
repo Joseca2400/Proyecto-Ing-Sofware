@@ -22,8 +22,12 @@ export class AltaFlotaPantalla {
   protected readonly aviso = signal<string | null>(null);
   protected readonly guardando = signal(false);
 
+  // Los parámetros de depreciación (HU-3.02) llegan propuestos según el tipo de vehículo.
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
     fecha: [new Date().toLocaleDateString('en-CA'), Validators.required],
+    vida_util_meses: [60, [Validators.required, Validators.min(1)]],
+    valor_residual: ['', [Validators.required, Validators.pattern(/^\s*\d+(\.\d{1,6})?\s*$/)]],
+    porcentaje_fiscal: ['', [Validators.required, Validators.pattern(/^\s*\d+(\.\d{1,2})?\s*$/)]],
   });
 
   constructor() {
@@ -39,6 +43,11 @@ export class AltaFlotaPantalla {
 
   protected elegir(candidata: CandidataAltaFlota): void {
     this.seleccionada.set(candidata);
+    this.formulario.patchValue({
+      vida_util_meses: candidata.vida_util_meses,
+      valor_residual: candidata.valor_residual,
+      porcentaje_fiscal: candidata.porcentaje_fiscal,
+    });
     this.error.set(null);
     this.aviso.set(null);
   }
@@ -51,7 +60,14 @@ export class AltaFlotaPantalla {
     }
     this.guardando.set(true);
     this.error.set(null);
-    this.servicio.darDeAlta(candidata.vin, this.formulario.getRawValue().fecha).subscribe({
+    const valores = this.formulario.getRawValue();
+    const datos = {
+      fecha: valores.fecha,
+      vida_util_meses: valores.vida_util_meses,
+      valor_residual: valores.valor_residual.trim(),
+      porcentaje_fiscal: valores.porcentaje_fiscal.trim(),
+    };
+    this.servicio.darDeAlta(candidata.vin, datos).subscribe({
       next: (alta) => {
         this.guardando.set(false);
         this.seleccionada.set(null);

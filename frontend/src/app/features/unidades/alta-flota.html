@@ -25,6 +25,25 @@
       Fecha de alta
       <input type="date" formControlName="fecha" />
     </label>
+    <p>
+      Parámetros de depreciación propuestos para {{ c.tipo_vehiculo }} (línea recta); puedes
+      cambiarlos:
+    </p>
+    <label>
+      Vida útil (meses)
+      <input type="number" formControlName="vida_util_meses" min="1" />
+    </label>
+    <label>
+      Valor residual (Q)
+      <input type="text" inputmode="decimal" formControlName="valor_residual" />
+    </label>
+    <label>
+      Depreciación fiscal anual (%)
+      <input type="text" inputmode="decimal" formControlName="porcentaje_fiscal" />
+    </label>
+    @if (formulario.invalid && formulario.touched) {
+      <small class="falla">Revisa la fecha y los parámetros</small>
+    }
     <button type="submit" [disabled]="guardando()">Confirmar alta</button>
     <button type="button" class="secundario" (click)="seleccionada.set(null)">Cancelar</button>
   </form>
