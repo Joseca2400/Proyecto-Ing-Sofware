@@ -34,6 +34,14 @@ class LineaEntrada(BaseModel):
         return valor
 
 
+class LineaAutomatica(LineaEntrada):
+    """Solo para `registrar_automatica` (no la recibe ninguna ruta): una línea en USD llevada al
+    tipo de cambio dado y no al de la fecha, p. ej. el saldo en libros de la factura que se paga
+    (HU-2.09)."""
+
+    tipo_cambio: Decimal | None = None
+
+
 class PartidaEntrada(BaseModel):
     fecha: date
     concepto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]

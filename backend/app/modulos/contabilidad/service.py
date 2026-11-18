@@ -23,12 +23,17 @@ HU-2.05 (incluido): reversión con motivo y fecha elegida, en una partida nueva 
 invierte las líneas y apunta a la original (`revierte_a`); la original no se toca y no se revierte
 dos veces. Solo el contador revierte a mano y solo partidas manuales; la de un documento la pide
 su módulo con `revertir_automatica`.
+HU-2.09 (incluido, pieza del motor): `diferencial_cambiario` calcula la ganancia o pérdida
+realizada de un pago o cobro en USD (proporcional al monto aplicado, desde el tipo de cambio en
+libros) y da su línea; una `LineaAutomatica` lleva la línea en USD del saldo a su tasa en libros.
+HU-2.09 (diferido): la partida de pagos y cobros la arma su módulo en el Sprint 3.
 Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
 (HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
 """
 
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from typing import Literal
 
 from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
@@ -74,7 +79,13 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
     if datos.moneda == "USD":
         if not cuenta.monetaria_usd:
             raise ErrorNegocio(f"Línea {numero}: la cuenta {cuenta.codigo} no admite montos en USD")
-        monto_usd, tipo_cambio = monto, configuracion.tipo_cambio_de(db, fecha)
+        # Una `LineaAutomatica` puede traer su tipo de cambio (saldo en libros, HU-2.09).
+        tipo_cambio = getattr(datos, "tipo_cambio", None)
+        if tipo_cambio is None:
+            tipo_cambio = configuracion.tipo_cambio_de(db, fecha)
+        elif tipo_cambio <= 0 or -tipo_cambio.as_tuple().exponent > 8:  # type: ignore[operator]
+            raise ErrorNegocio(f"Línea {numero}: el tipo de cambio debe ser positivo con hasta 8 decimales")
+        monto_usd = monto
         equivalente = convertir(monto_usd, tipo_cambio)
         if equivalente >= _LIMITE:
             raise ErrorNegocio(f"Línea {numero}: el equivalente en quetzales excede el máximo permitido")
@@ -427,6 +438,56 @@ def definir_regla(db: Session, regla_id: int, cuenta_codigo: str) -> ReglaContab
     regla.cuenta_codigo = cuenta.codigo
     db.commit()
     return regla
+
+
+# ── HU-2.09: diferencial cambiario realizado ──────────────────────────────────
+
+
+def diferencial_cambiario(
+    db: Session,
+    monto_usd: Decimal | str,
+    tipo_cambio_libros: Decimal | str,
+    tipo_cambio_liquidacion: Decimal | str,
+    saldo: Literal["por_pagar", "por_cobrar"],
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> tuple[Decimal, LineaEntrada | None]:
+    """Diferencial realizado al pagar o cobrar `monto_usd` de un saldo en dólares.
+
+    - `monto_usd`: lo que se aplica ahora; un pago parcial da un diferencial proporcional.
+    - `tipo_cambio_libros`: al que está el saldo en los libros: el del documento o, si ya se
+      revaluó (HU-2.08), el de la última revaluación, para no contar dos veces el efecto.
+    - `tipo_cambio_liquidacion`: el del pago o cobro; para que la partida cuadre al centavo debe
+      ser el mismo con que `registrar_automatica` convierta la línea del banco (el de la fecha).
+
+    Devuelve el diferencial en quetzales (positivo ganancia, negativo pérdida) y la línea lista
+    para la partida, o `(0, None)` si no hay diferencia. Redondea igual que el motor (mitad hacia
+    arriba, 6 decimales) para componer con las líneas en USD. La cuenta sale de las reglas
+    `diferencial_cambiario · ganancia/perdida`; si falta, lanza `ErrorNegocio` (409).
+    """
+    usd, libros, liquidacion = (
+        a_decimal(valor) for valor in (monto_usd, tipo_cambio_libros, tipo_cambio_liquidacion)
+    )
+    if usd <= 0 or libros <= 0 or liquidacion <= 0:
+        raise ErrorNegocio("El monto en USD y los tipos de cambio deben ser mayores que cero")
+    if saldo not in ("por_pagar", "por_cobrar"):
+        raise ErrorNegocio("El saldo debe ser por_pagar o por_cobrar")
+    diferencia = redondear(convertir(usd, liquidacion), DECIMALES) - redondear(
+        convertir(usd, libros), DECIMALES
+    )
+    # Cobrar a una tasa mayor es ganancia; pagar a una tasa mayor es pérdida.
+    resultado = diferencia if saldo == "por_cobrar" else -diferencia
+    if resultado == 0:
+        return Decimal(0), None
+    concepto, lado = ("ganancia", "haber") if resultado > 0 else ("perdida", "debe")
+    linea = LineaEntrada(
+        cuenta_id=cuenta_regla(db, "diferencial_cambiario", concepto),
+        lado=lado,
+        monto=f"{abs(resultado):f}",
+        linea_negocio=linea_negocio,
+        vin=vin,
+    )
+    return resultado, linea
 
 
 # ── HU-2.16: balance de comprobación y mayor (solo partidas contabilizadas) ───
