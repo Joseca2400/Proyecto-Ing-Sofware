@@ -10,4 +10,5 @@ from app.modulos.configuracion import models as _configuracion  # noqa: F401,E40
 from app.modulos.contabilidad import models as _contabilidad  # noqa: F401,E402
 from app.modulos.facturacion import models as _facturacion  # noqa: F401,E402
 from app.modulos.seguridad import models as _seguridad  # noqa: F401,E402
+from app.modulos.taller import models as _taller  # noqa: F401,E402
 from app.modulos.unidades import models as _unidades  # noqa: F401,E402

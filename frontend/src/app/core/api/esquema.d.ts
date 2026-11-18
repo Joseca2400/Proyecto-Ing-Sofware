@@ -812,6 +812,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taller/tarifas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Tarifas */
+        get: operations["listar_tarifas_api_v1_taller_tarifas_get"];
+        put?: never;
+        /** Crear Tarifa */
+        post: operations["crear_tarifa_api_v1_taller_tarifas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Ordenes */
+        get: operations["listar_ordenes_api_v1_taller_ordenes_get"];
+        put?: never;
+        /** Abrir Orden */
+        post: operations["abrir_orden_api_v1_taller_ordenes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Orden */
+        get: operations["consultar_orden_api_v1_taller_ordenes__orden_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}/horas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Horas */
+        get: operations["listar_horas_api_v1_taller_ordenes__orden_id__horas_get"];
+        put?: never;
+        /** Registrar Horas */
+        post: operations["registrar_horas_api_v1_taller_ordenes__orden_id__horas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}/cerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cerrar Orden */
+        post: operations["cerrar_orden_api_v1_taller_ordenes__orden_id__cerrar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -895,6 +983,14 @@ export interface components {
             monedas: ("GTQ" | "USD")[];
             /** Tipos Vehiculo */
             tipos_vehiculo: string[];
+        };
+        /**
+         * CierreEntrada
+         * @description Cierre de la orden. La justificación solo es obligatoria si el costo es cero.
+         */
+        CierreEntrada: {
+            /** Justificacion */
+            justificacion?: string | null;
         };
         /**
          * ClienteEntrada
@@ -1425,6 +1521,45 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HoraEntrada
+         * @description Horas de un mecánico en la orden. Las horas viajan como texto ("2.50"); el service las valida.
+         */
+        HoraEntrada: {
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+        };
+        /** HoraSalida */
+        HoraSalida: {
+            /** Id */
+            id: number;
+            /** Orden Id */
+            orden_id: number;
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /** Costo */
+            costo: string;
+        };
         JsonValue: unknown;
         /**
          * LineaEntrada
@@ -1527,6 +1662,70 @@ export interface components {
         NumeracionChequesEntrada: {
             /** Siguiente Cheque */
             siguiente_cheque?: number | null;
+        };
+        /**
+         * OrdenEntrada
+         * @description Apertura de la orden. El VIN y la coherencia con el estado de la unidad se validan en el service.
+         */
+        OrdenEntrada: {
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+        };
+        /** OrdenSalida */
+        OrdenSalida: {
+            /** Id */
+            id: number;
+            /** Numero */
+            numero: string;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "abierta" | "cerrada";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+            /** Dias */
+            dias: number;
+            /** Costo Acumulado */
+            costo_acumulado: string;
+            /** Fecha Cierre */
+            fecha_cierre: string | null;
+            /** Justificacion */
+            justificacion: string | null;
+            /** Partida Id */
+            partida_id: number | null;
         };
         /** PartidaEntrada */
         PartidaEntrada: {
@@ -1844,6 +2043,36 @@ export interface components {
             vigente_desde: string;
             /** Vigente Hasta */
             vigente_hasta?: string | null;
+        };
+        /**
+         * TarifaManoObraEntrada
+         * @description Tarifa horaria de costo en quetzales; viaja como texto y el service la valida.
+         */
+        TarifaManoObraEntrada: {
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+        };
+        /** TarifaManoObraSalida */
+        TarifaManoObraSalida: {
+            /** Id */
+            id: number;
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
         };
         /** TarifaSalida */
         TarifaSalida: {
@@ -4064,6 +4293,281 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TarifaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_tarifas_api_v1_taller_tarifas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaManoObraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crear_tarifa_api_v1_taller_tarifas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TarifaManoObraEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaManoObraSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_ordenes_api_v1_taller_ordenes_get: {
+        parameters: {
+            query?: {
+                estado?: ("abierta" | "cerrada") | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrir_orden_api_v1_taller_ordenes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrdenEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_orden_api_v1_taller_ordenes__orden_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_horas_api_v1_taller_ordenes__orden_id__horas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_horas_api_v1_taller_ordenes__orden_id__horas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoraEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_orden_api_v1_taller_ordenes__orden_id__cerrar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CierreEntrada"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
                 };
             };
             /** @description Validation Error */

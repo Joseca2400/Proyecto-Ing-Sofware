@@ -72,6 +72,18 @@ export const routes: Routes = [
           import('./features/alquileres/tarifario').then((m) => m.TarifarioPantalla),
       },
       {
+        path: 'taller/ordenes',
+        title: 'Órdenes de taller · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/taller/ordenes').then((m) => m.OrdenesTallerPantalla),
+      },
+      {
+        path: 'taller/tarifas',
+        title: 'Tarifas de taller · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/taller/tarifas').then((m) => m.TarifasTallerPantalla),
+      },
+      {
         path: 'unidades',
         title: 'Unidades · Kilómetro Cero',
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),
