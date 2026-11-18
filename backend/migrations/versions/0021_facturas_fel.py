@@ -7,8 +7,8 @@
 - Reglas de contabilización del documento `factura`.
 - Bitácora (HU-1.11) en las tablas nuevas; el XML de la factura no se copia a la bitácora.
 
-Revision ID: 0024
-Revises: 0019
+Revision ID: 0021
+Revises: 0020
 Create Date: 2026-11-18
 """
 
@@ -17,8 +17,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0024"
-down_revision: str | None = "0019"
+revision: str = "0021"
+down_revision: str | None = "0020"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

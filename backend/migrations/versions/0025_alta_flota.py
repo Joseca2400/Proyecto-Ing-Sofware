@@ -6,7 +6,7 @@
   1.1.04.01 (las del catálogo semilla); el contador las ajusta después.
 
 Revision ID: 0025
-Revises: 0023
+Revises: 0024
 Create Date: 2026-11-18
 """
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0025"
-down_revision: str | None = "0023"
+down_revision: str | None = "0024"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

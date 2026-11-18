@@ -6,8 +6,8 @@
 - `unidad` y `cambio_estado_unidad` admiten el estado nuevo "alquilada" (módulo `unidades`).
 - Bitácora (HU-1.11) en la tabla nueva, con el VIN copiado para filtrarla por unidad.
 
-Revision ID: 0021
-Revises: 0024
+Revision ID: 0022
+Revises: 0021
 Create Date: 2026-11-18
 """
 
@@ -16,8 +16,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0021"
-down_revision: str | None = "0024"
+revision: str = "0022"
+down_revision: str | None = "0021"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

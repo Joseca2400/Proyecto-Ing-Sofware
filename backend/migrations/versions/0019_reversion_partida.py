@@ -11,8 +11,8 @@ del documento), así que "una partida por documento" pasa a ser un índice únic
 cuenta las partidas que no son reversiones. La bitácora de `partida` se vuelve a crear para copiar
 también `revierte_a`.
 
-Revision ID: 0018
-Revises: 0020
+Revision ID: 0019
+Revises: 0018
 Create Date: 2026-11-18
 """
 
@@ -21,8 +21,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0018"
-down_revision: str | None = "0020"
+revision: str = "0019"
+down_revision: str | None = "0018"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

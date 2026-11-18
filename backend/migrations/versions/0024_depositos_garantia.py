@@ -6,8 +6,8 @@
 - Reglas de contabilización del pasivo por moneda y de la cuenta por cobrar a la que se aplica.
 - Bitácora (HU-1.11) en las dos tablas nuevas; en `deposito_garantia` se copia el VIN.
 
-Revision ID: 0023
-Revises: 0022
+Revision ID: 0024
+Revises: 0023
 Create Date: 2026-11-18
 """
 
@@ -16,8 +16,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0023"
-down_revision: str | None = "0022"
+revision: str = "0024"
+down_revision: str | None = "0023"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
