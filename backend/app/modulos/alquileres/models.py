@@ -72,6 +72,12 @@ class ContratoAlquiler(Base):
             " AND dias_previstos >= 1 AND monto_estimado > 0",
             name="ck_contrato_alquiler_montos",
         ),
+        CheckConstraint(
+            "estado = 'abierto' OR (devolucion IS NOT NULL AND km_devolucion >= km_salida"
+            " AND combustible_devolucion BETWEEN 0 AND 8 AND dias_efectivos >= 1 AND km_recorridos >= 0"
+            " AND km_excedentes >= 0 AND combustible_faltante >= 0 AND monto_final > 0)",
+            name="ck_contrato_alquiler_cierre",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -94,3 +100,14 @@ class ContratoAlquiler(Base):
     estado: Mapped[str] = mapped_column(String(10), default="abierto", index=True)
     usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # HU-3.08: devolución y cálculo del cierre; vacíos mientras el contrato está abierto.
+    devolucion: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    km_devolucion: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    combustible_devolucion: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    observaciones_danos: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    dias_efectivos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    km_recorridos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    km_excedentes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    combustible_faltante: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    monto_final: Mapped[Decimal | None] = mapped_column(MONTO, nullable=True)
+    cerrado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -8,6 +8,7 @@ from app.comun.db import get_db
 from app.modulos.alquileres import service
 from app.modulos.alquileres.schemas import (
     CatalogosTarifas,
+    CierreEntrada,
     ContratoEntrada,
     ContratoSalida,
     Modalidad,
@@ -89,3 +90,13 @@ def registrar_contrato(
 @router.get("/contratos/{contrato_id}", response_model=ContratoSalida)
 def obtener_contrato(contrato_id: int, db: Session = Depends(get_db)) -> ContratoSalida:
     return ContratoSalida.model_validate(service.obtener_contrato(db, contrato_id))
+
+
+# ── HU-3.08: cierre ────────────────────────────────────────────────────────────
+
+
+@router.post("/contratos/{contrato_id}/cierre", response_model=ContratoSalida)
+def cerrar_contrato(
+    contrato_id: int, datos: CierreEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+) -> ContratoSalida:
+    return ContratoSalida.model_validate(service.cerrar_contrato(db, contrato_id, datos, usuario.id))

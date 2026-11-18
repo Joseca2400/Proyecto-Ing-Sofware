@@ -52,6 +52,14 @@ export class ContratosPantalla {
     deposito_esperado: ['0', [Validators.required, Validators.pattern(/^\d+(\.\d{1,6})?$/)]],
   });
 
+  // HU-3.08: devolución; el servidor calcula días, km excedentes, combustible faltante y monto final.
+  protected readonly cierre = this.fb.group({
+    devolucion: [ahoraLocal(), Validators.required],
+    km_devolucion: [0, [Validators.required, Validators.min(0)]],
+    combustible_devolucion: [8, [Validators.required, Validators.min(0), Validators.max(8)]],
+    observaciones_danos: [''],
+  });
+
   constructor() {
     this.servicio.clientes().subscribe((lista) => this.clientes.set(lista));
     this.cargar();
@@ -71,6 +79,35 @@ export class ContratosPantalla {
 
   protected ver(contrato: Contrato): void {
     this.seleccionado.set(contrato);
+    this.cierre.patchValue({ km_devolucion: contrato.km_salida });
+  }
+
+  protected cerrar(contrato: Contrato): void {
+    if (this.cierre.invalid) {
+      this.cierre.markAllAsTouched();
+      return;
+    }
+    const v = this.cierre.getRawValue();
+    this.error.set(null);
+    this.aviso.set(null);
+    this.servicio
+      .cerrarContrato(contrato.id, {
+        devolucion: new Date(v.devolucion).toISOString(),
+        km_devolucion: Number(v.km_devolucion),
+        combustible_devolucion: Number(v.combustible_devolucion),
+        observaciones_danos: v.observaciones_danos.trim() || null,
+      })
+      .subscribe({
+        next: (cerrado) => {
+          this.aviso.set(`Contrato ${cerrado.numero} cerrado; la unidad volvió a la flota`);
+          this.seleccionado.set(cerrado);
+          this.cargar();
+        },
+        error: (respuesta: HttpErrorResponse) => {
+          const detalle = respuesta.error?.detail;
+          this.error.set(typeof detalle === 'string' ? detalle : 'No se pudo cerrar el contrato');
+        },
+      });
   }
 
   protected imprimir(): void {
@@ -99,7 +136,7 @@ export class ContratosPantalla {
       next: (contrato) => {
         this.guardando.set(false);
         this.aviso.set(`Contrato ${contrato.numero} registrado; la unidad quedó alquilada`);
-        this.seleccionado.set(contrato);
+        this.ver(contrato);
         this.formulario.patchValue({ vin: '', devolucion_prevista: '' });
         this.cargar();
       },

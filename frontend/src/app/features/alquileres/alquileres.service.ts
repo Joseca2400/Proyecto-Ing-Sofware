@@ -18,6 +18,7 @@ export type Contrato = components['schemas']['ContratoSalida'];
 export type ContratoEntrada = components['schemas']['ContratoEntrada'];
 export type ClienteAlquiler = components['schemas']['ClienteSalida'];
 export type UnidadAlquiler = components['schemas']['UnidadSalida'];
+export type CierreEntrada = components['schemas']['CierreEntrada'];
 
 export const ETIQUETAS_MODALIDAD: Record<Modalidad, string> = {
   diaria: 'Diaria',
@@ -49,6 +50,10 @@ export class AlquileresService {
 
   registrarContrato(entrada: ContratoEntrada): Observable<Contrato> {
     return this.http.post<Contrato>(`${API_URL}/alquileres/contratos`, entrada);
+  }
+
+  cerrarContrato(id: number, entrada: CierreEntrada): Observable<Contrato> {
+    return this.http.post<Contrato>(`${API_URL}/alquileres/contratos/${id}/cierre`, entrada);
   }
 
   clientes(): Observable<ClienteAlquiler[]> {

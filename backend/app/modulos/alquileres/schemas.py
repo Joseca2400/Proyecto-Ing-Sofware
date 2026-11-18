@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 Modalidad = Literal["diaria", "semanal", "mensual", "por_kilometraje"]
 Moneda = Literal["GTQ", "USD"]
@@ -76,7 +76,7 @@ class ContratoEntrada(BaseModel):
 
     cliente_id: int
     vin: str = Field(max_length=30)
-    salida: datetime
+    salida: AwareDatetime
     devolucion_prevista: date
     modalidad: Modalidad
     moneda: Moneda
@@ -109,7 +109,28 @@ class ContratoSalida(BaseModel):
     monto_estimado: Decimal
     estado: Literal["abierto", "cerrado"]
     creado_en: datetime
+    devolucion: datetime | None
+    km_devolucion: int | None
+    combustible_devolucion: int | None
+    observaciones_danos: str | None
+    dias_efectivos: int | None
+    km_recorridos: int | None
+    km_excedentes: int | None
+    combustible_faltante: int | None
+    monto_final: Decimal | None
 
-    @field_serializer("tarifa_monto", "precio_km_adicional", "deposito_esperado", "monto_estimado")
-    def monto_a_texto(self, valor: Decimal) -> str:
-        return f"{valor:.6f}"
+    @field_serializer(
+        "tarifa_monto", "precio_km_adicional", "deposito_esperado", "monto_estimado", "monto_final"
+    )
+    def monto_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.6f}"
+
+
+# ── HU-3.08: cierre ────────────────────────────────────────────────────────────
+
+
+class CierreEntrada(BaseModel):
+    devolucion: AwareDatetime
+    km_devolucion: int = Field(ge=0, le=10_000_000)
+    combustible_devolucion: int = Field(ge=0, le=8, description="Octavos de tanque, de 0 (vacío) a 8 (lleno)")
+    observaciones_danos: str | None = Field(default=None, max_length=1000)

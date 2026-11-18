@@ -1,5 +1,7 @@
 """HU-3.06: contrato de alquiler (disponibilidad, estado "alquilada", tarifa copiada, monto estimado)."""
 
+from decimal import Decimal
+
 import pytest
 from sqlalchemy import text
 
@@ -252,12 +254,167 @@ def test_transiciones_del_estado_alquilada(cliente_contador, cliente_id):
     assert alta.status_code == 400
 
 
+# ── HU-3.08: cierre ───────────────────────────────────────────────────────────
+
+CIERRE = {
+    "devolucion": "2026-11-13T09:00:00-06:00",
+    "km_devolucion": 42600,
+    "combustible_devolucion": 5,
+    "observaciones_danos": "Rayón en la puerta trasera izquierda",
+}
+
+
+@pytest.fixture
+def contrato_id(cliente_contador, cliente_id) -> int:
+    return cliente_contador.post(URL, json=_contrato(cliente_id)).json()["id"]
+
+
+def _cerrar(cliente, contrato_id: int, **cambios):
+    return cliente.post(f"{URL}/{contrato_id}/cierre", json={**CIERRE, **cambios})
+
+
+def test_cierra_el_contrato_con_su_calculo(cliente_contador, contrato_id):
+    respuesta = _cerrar(cliente_contador, contrato_id)
+
+    assert respuesta.status_code == 200
+    cierre = respuesta.json()
+    assert cierre["estado"] == "cerrado"
+    assert cierre["dias_efectivos"] == 3
+    assert cierre["km_recorridos"] == 600
+    assert cierre["km_excedentes"] == 150  # 600 − 150 km × 3 días
+    assert cierre["combustible_faltante"] == 3
+    assert cierre["monto_final"] == "1425.000000"  # 3 × 350 + 150 × 2.50
+    assert cierre["observaciones_danos"] == "Rayón en la puerta trasera izquierda"
+
+
+def test_al_cerrar_la_unidad_vuelve_a_la_flota_con_su_kilometraje(cliente_contador, contrato_id):
+    _cerrar(cliente_contador, contrato_id)
+
+    unidad = cliente_contador.get(f"{API}/unidades/{VIN}").json()
+    assert (unidad["estado"], unidad["kilometraje"]) == ("en_flota", 42600)
+    historial = cliente_contador.get(f"{API}/unidades/{VIN}/historial").json()
+    assert (historial[-1]["estado_anterior"], historial[-1]["estado_nuevo"]) == ("alquilada", "en_flota")
+
+
+@pytest.mark.parametrize(
+    ("devolucion", "dias"),
+    [
+        ("2026-11-10T10:00:00-06:00", 1),  # el mismo día cuenta uno
+        ("2026-11-13T08:30:00-06:00", 3),
+        ("2026-11-13T10:00:00-06:00", 4),  # un periodo de 24 horas iniciado cuenta completo
+    ],
+)
+def test_dias_efectivos(cliente_contador, contrato_id, devolucion, dias):
+    cierre = _cerrar(cliente_contador, contrato_id, devolucion=devolucion, km_devolucion=42000).json()
+
+    assert cierre["dias_efectivos"] == dias
+    assert cierre["km_excedentes"] == 0
+    assert cierre["monto_final"] == f"{350 * dias}.000000"
+
+
+def test_combustible_de_mas_no_es_faltante(cliente_contador, contrato_id):
+    assert (
+        _cerrar(cliente_contador, contrato_id, combustible_devolucion=8).json()["combustible_faltante"] == 0
+    )
+
+
+def test_un_contrato_cerrado_no_se_vuelve_a_cerrar(cliente_contador, contrato_id):
+    _cerrar(cliente_contador, contrato_id)
+
+    respuesta = _cerrar(cliente_contador, contrato_id, km_devolucion=50000)
+
+    assert respuesta.status_code == 409
+    assert "ya está cerrado" in respuesta.json()["detail"]
+    assert cliente_contador.get(f"{URL}/{contrato_id}").json()["km_devolucion"] == 42600
+
+
+@pytest.mark.parametrize(
+    ("cambio", "mensaje"),
+    [
+        ({"km_devolucion": 41999}, "menor que el de salida"),
+        ({"devolucion": "2026-11-10T08:00:00-06:00"}, "antes de la salida"),
+        ({"devolucion": "2099-01-01T08:00:00-06:00"}, "en el futuro"),
+    ],
+)
+def test_rechaza_cierres_invalidos(cliente_contador, contrato_id, cambio, mensaje):
+    respuesta = _cerrar(cliente_contador, contrato_id, **cambio)
+
+    assert respuesta.status_code == 400
+    assert mensaje in respuesta.json()["detail"]
+    assert _estado(cliente_contador) == "alquilada"
+
+
+def test_la_devolucion_exige_zona_horaria(cliente_contador, contrato_id):
+    assert _cerrar(cliente_contador, contrato_id, devolucion="2026-11-13T09:00:00").status_code == 422
+
+
+def test_el_kilometraje_de_la_unidad_no_retrocede(cliente_contador, cliente_id, contrato_id):
+    _cerrar(cliente_contador, contrato_id)
+
+    respuesta = cliente_contador.post(URL, json=_contrato(cliente_id, km_salida=42000))
+
+    assert respuesta.status_code == 400
+    assert "menor que el de la unidad (42600 km)" in respuesta.json()["detail"]
+
+
+def test_si_falla_la_unidad_el_contrato_sigue_abierto(cliente_contador, contrato_id, monkeypatch):
+    def falla(*_args, **_kwargs):
+        raise ErrorNegocio("Fallo simulado")
+
+    monkeypatch.setattr(service.unidades, "fijar_kilometraje", falla)
+
+    assert _cerrar(cliente_contador, contrato_id).status_code == 400
+    assert cliente_contador.get(f"{URL}/{contrato_id}").json()["estado"] == "abierto"
+    assert _estado(cliente_contador) == "alquilada"
+
+
+def test_una_unidad_enviada_al_taller_se_queda_en_taller(cliente_contador, contrato_id):
+    _cambiar(cliente_contador, "en_taller")
+
+    assert _cerrar(cliente_contador, contrato_id).status_code == 200
+    assert _estado(cliente_contador) == "en_taller"
+
+
+def test_resumen_para_facturar(cliente_contador, cliente_id, contrato_id):
+    with SessionLocal() as db, pytest.raises(ErrorNegocio, match="no está cerrado"):
+        service.resumen_para_facturar(db, contrato_id)
+    _cerrar(cliente_contador, contrato_id)
+
+    with SessionLocal() as db:
+        resumen = service.resumen_para_facturar(db, contrato_id)
+
+    assert {k: resumen[k] for k in ("cliente_id", "moneda", "vin", "linea_negocio")} == {
+        "cliente_id": cliente_id,
+        "moneda": "GTQ",
+        "vin": VIN,
+        "linea_negocio": "alquiler",
+    }
+    assert [(linea["cantidad"], linea["precio_unitario"]) for linea in resumen["lineas"]] == [
+        (Decimal(3), Decimal("350")),
+        (Decimal(150), Decimal("2.5")),
+    ]
+    assert "contrato 1" in resumen["lineas"][0]["descripcion"]
+
+
 # ── Permisos ──────────────────────────────────────────────────────────────────
 
 
 def test_sin_sesion_responde_401(cliente):
     assert cliente.get(URL).status_code == 401
     assert cliente.post(URL, json=_contrato(1)).status_code == 401
+    assert cliente.post(f"{URL}/1/cierre", json=CIERRE).status_code == 401
+
+
+def test_gerencia_no_cierra(cliente, contrato_id):
+    token = cliente.post(
+        f"{API}/seguridad/login", json={"correo": "gerencia@empresa.gt", "clave": CLAVE_PRUEBAS}
+    ).json()["token"]
+
+    respuesta = cliente.post(
+        f"{URL}/{contrato_id}/cierre", json=CIERRE, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert respuesta.status_code == 403
 
 
 def test_auxiliar_registra_y_gerencia_solo_consulta(cliente, cliente_id):

@@ -30,10 +30,24 @@ misma transacción. Monto estimado = periodos × monto de la tarifa (`_periodos`
 La impresión es la vista de detalle del front.
 HU-3.06 (diferido): quién registra si los usuarios son solo contables (pendiente de la historia);
 reservas a futuro (el contrato no admite salida en un día posterior a hoy).
+
+HU-3.08 (incluido): cierre con fecha y hora de devolución, kilometraje y combustible de entrada y
+observaciones de daños. Calcula, con la tarifa copiada:
+- días efectivos = periodos de 24 horas iniciados desde la salida, mínimo 1 (supuesto para el
+  contador: sin horas de gracia);
+- km recorridos = entrada − salida; km excedentes = recorridos − km incluidos × periodos, si es
+  positivo; combustible faltante = octavos de salida − octavos de entrada, si es positivo;
+- monto final = periodos × monto de la tarifa + km excedentes × precio por km adicional.
+El kilometraje de entrada actualiza el de la unidad (nunca retrocede) y la unidad vuelve a "en
+flota", todo en la misma transacción. Un contrato cerrado no se vuelve a cerrar ni se edita.
+Para `facturacion`: `resumen_para_facturar` (líneas del cobro de un contrato cerrado).
+HU-3.08 (diferido): el cobro en dinero del combustible faltante y otros cargos adicionales
+(HU-3.09, Sprint 3; hoy solo se muestra el faltante en octavos); abrir la orden de taller por daños
+y dejar la unidad "en taller" (órdenes de mantenimiento, Sprint 5).
 """
 
 import math
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import func, select, text
@@ -42,7 +56,7 @@ from sqlalchemy.orm import Session
 from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.alquileres.models import MODALIDADES, ContratoAlquiler, Tarifa
-from app.modulos.alquileres.schemas import ContratoEntrada, TarifaEntrada
+from app.modulos.alquileres.schemas import CierreEntrada, ContratoEntrada, TarifaEntrada
 from app.modulos.facturacion import service as facturacion
 from app.modulos.unidades import service as unidades
 
@@ -207,6 +221,10 @@ def registrar_contrato(
         )
     if datos.devolucion_prevista < salida_dia:
         raise ErrorNegocio("La devolución prevista no puede ser antes de la salida")
+    if unidad.kilometraje is not None and datos.km_salida < unidad.kilometraje:
+        raise ErrorNegocio(
+            f"El kilometraje de salida no puede ser menor que el de la unidad ({unidad.kilometraje} km)"
+        )
     deposito = _monto(datos.deposito_esperado, "El depósito esperado", permite_cero=True)
 
     if unidad.estado != "en_flota":
@@ -272,3 +290,106 @@ def obtener_contrato(db: Session, contrato_id: int) -> ContratoAlquiler:
     if contrato is None:
         raise ErrorNegocio("El contrato no existe", status=404)
     return contrato
+
+
+# ── HU-3.08: cierre ────────────────────────────────────────────────────────────
+
+
+def _cargos(contrato: ContratoAlquiler) -> tuple[int, Decimal, Decimal]:
+    """(periodos, cargo por tiempo, cargo por km excedentes) de un contrato cerrado."""
+    periodos = _periodos(contrato.modalidad, contrato.dias_efectivos)
+    return (
+        periodos,
+        contrato.tarifa_monto * periodos,
+        contrato.precio_km_adicional * contrato.km_excedentes,
+    )
+
+
+def cerrar_contrato(
+    db: Session, contrato_id: int, datos: CierreEntrada, usuario_id: int | None = None
+) -> ContratoAlquiler:
+    """Registra la devolución, calcula el cierre, actualiza la unidad y la regresa a la flota, en
+    una transacción, o nada."""
+    contrato = db.get(ContratoAlquiler, contrato_id, with_for_update=True)
+    if contrato is None:
+        raise ErrorNegocio("El contrato no existe", status=404)
+    if contrato.estado == "cerrado":
+        raise ErrorNegocio(f"El contrato {contrato.numero} ya está cerrado", status=409)
+    if datos.devolucion < contrato.salida:
+        raise ErrorNegocio("La devolución no puede ser antes de la salida")
+    if datos.devolucion > datetime.now(UTC):
+        raise ErrorNegocio("La devolución no puede ser en el futuro")
+    if datos.km_devolucion < contrato.km_salida:
+        raise ErrorNegocio(
+            f"El kilometraje de entrada no puede ser menor que el de salida ({contrato.km_salida} km)"
+        )
+
+    contrato.devolucion = datos.devolucion
+    contrato.km_devolucion = datos.km_devolucion
+    contrato.combustible_devolucion = datos.combustible_devolucion
+    contrato.observaciones_danos = (datos.observaciones_danos or "").strip() or None
+    contrato.dias_efectivos = max(math.ceil((datos.devolucion - contrato.salida) / timedelta(days=1)), 1)
+    periodos = _periodos(contrato.modalidad, contrato.dias_efectivos)
+    contrato.km_recorridos = datos.km_devolucion - contrato.km_salida
+    contrato.km_excedentes = max(contrato.km_recorridos - contrato.km_incluido * periodos, 0)
+    contrato.combustible_faltante = max(contrato.combustible_salida - datos.combustible_devolucion, 0)
+    _, tiempo, excedente = _cargos(contrato)
+    contrato.monto_final = redondear(tiempo + excedente)
+    contrato.estado = "cerrado"
+    contrato.cerrado_por = usuario_id
+    try:
+        db.flush()
+        unidades.fijar_kilometraje(db, contrato.vin, datos.km_devolucion)
+        # Si la unidad ya salió de "alquilada" a mano (por ejemplo, al taller), se respeta ese estado.
+        if unidades.obtener_por_vin(db, contrato.vin).estado == "alquilada":
+            unidades.cambiar_estado(
+                db, contrato.vin, "en_flota", f"Cierre del contrato de alquiler {contrato.numero}",
+                usuario_id, confirmar=False,
+            )  # fmt: skip
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+    db.refresh(contrato)
+    return contrato
+
+
+def resumen_para_facturar(db: Session, contrato_id: int) -> dict:
+    """Para `facturacion` (factura de cierre): cliente, moneda, VIN, línea de negocio y las líneas
+    del cobro de un contrato cerrado, con cantidades y precios en Decimal.
+
+    Supuesto para el contador: los montos de la tarifa son precios con IVA incluido.
+    """
+    contrato = obtener_contrato(db, contrato_id)
+    if contrato.estado != "cerrado":
+        raise ErrorNegocio(f"El contrato {contrato.numero} no está cerrado; ciérrelo antes de facturar", 409)
+    periodos, _, _ = _cargos(contrato)
+    unidad_tiempo = {
+        "diaria": "días",
+        "semanal": "semanas",
+        "mensual": "meses",
+        "por_kilometraje": "contrato",
+    }
+    lineas = [
+        {
+            "descripcion": f"Alquiler de la unidad {contrato.vin}, contrato {contrato.numero} "
+            f"({periodos} {unidad_tiempo[contrato.modalidad]})",
+            "cantidad": Decimal(periodos),
+            "precio_unitario": contrato.tarifa_monto,
+        }
+    ]
+    if contrato.km_excedentes:
+        lineas.append(
+            {
+                "descripcion": f"Kilómetros excedentes, contrato {contrato.numero}",
+                "cantidad": Decimal(contrato.km_excedentes),
+                "precio_unitario": contrato.precio_km_adicional,
+            }
+        )
+    return {
+        "cliente_id": contrato.cliente_id,
+        "moneda": contrato.moneda,
+        "vin": contrato.vin,
+        "linea_negocio": "alquiler",
+        "lineas": lineas,
+    }

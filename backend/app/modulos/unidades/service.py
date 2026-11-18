@@ -186,6 +186,19 @@ def existe_vin(db: Session, vin: str) -> bool:
     return buscar_por_vin(db, vin) is not None
 
 
+def fijar_kilometraje(db: Session, vin: str, kilometraje: int) -> Unidad:
+    """Para la devolución de un alquiler (HU-3.08): actualiza el kilometraje sin confirmar; lo
+    confirma el llamador con su documento. El kilometraje no retrocede."""
+    unidad = obtener_por_vin(db, vin)
+    if unidad.kilometraje is not None and kilometraje < unidad.kilometraje:
+        raise ErrorNegocio(
+            f"El kilometraje {kilometraje} es menor que el registrado en la unidad ({unidad.kilometraje} km)"
+        )
+    unidad.kilometraje = kilometraje
+    db.flush()
+    return unidad
+
+
 # ── HU-4.07: etapas de importación ────────────────────────────────────────────
 
 ETAPAS_IMPORTACION = ("en_transito", "en_aduana", "en_taller", "lista")

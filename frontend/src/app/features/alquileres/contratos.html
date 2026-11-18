@@ -107,9 +107,63 @@
       <dd>{{ c.monto_estimado | monto: c.moneda }}</dd>
       <dt>Estado</dt>
       <dd>{{ c.estado }}</dd>
+      @if (c.estado === 'cerrado') {
+        <dt>Devolución</dt>
+        <dd>
+          {{ c.devolucion | date: 'dd/MM/yyyy HH:mm' }} · {{ c.dias_efectivos }} días efectivos
+        </dd>
+        <dt>Kilometraje</dt>
+        <dd>
+          {{ c.km_devolucion }} km de entrada · {{ c.km_recorridos }} recorridos ·
+          {{ c.km_excedentes }} excedentes
+        </dd>
+        <dt>Combustible</dt>
+        <dd>
+          {{ c.combustible_devolucion }}/8 de entrada · faltan {{ c.combustible_faltante }}/8 (su
+          cobro llega con los cargos adicionales, HU-3.09)
+        </dd>
+        <dt>Daños</dt>
+        <dd>{{ c.observaciones_danos ?? 'Sin observaciones' }}</dd>
+        <dt>Monto final</dt>
+        <dd>{{ c.monto_final | monto: c.moneda }}</dd>
+      }
     </dl>
     <button type="button" class="secundario no-imprimir" (click)="imprimir()">Imprimir</button>
   </section>
+
+  @if (c.estado === 'abierto') {
+    <form class="tarjeta formulario no-imprimir cierre" [formGroup]="cierre" (ngSubmit)="cerrar(c)">
+      <h3>Devolución de la unidad</h3>
+      <label>
+        Fecha y hora de devolución
+        <input type="datetime-local" formControlName="devolucion" name="devolucion" />
+      </label>
+      <label>
+        Kilometraje de entrada
+        <input type="number" min="0" formControlName="km_devolucion" name="km_devolucion" />
+      </label>
+      <label>
+        Combustible de entrada (octavos)
+        <input
+          type="number"
+          min="0"
+          max="8"
+          formControlName="combustible_devolucion"
+          name="combustible_devolucion"
+        />
+      </label>
+      <label>
+        Observaciones de daños
+        <input
+          type="text"
+          maxlength="1000"
+          formControlName="observaciones_danos"
+          name="observaciones_danos"
+        />
+      </label>
+      <button type="submit">Cerrar contrato</button>
+    </form>
+  }
 }
 
 <table class="tarjeta no-imprimir">

@@ -68,6 +68,7 @@ class UnidadSalida(BaseModel):
     tipo_vehiculo: str
     linea_negocio: str | None
     estado: Estado
+    kilometraje: int | None = None
     creado_en: datetime
 
 

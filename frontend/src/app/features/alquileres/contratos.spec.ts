@@ -122,6 +122,50 @@ describe('ContratosPantalla', () => {
     expect(el.textContent).toContain('Complete cliente');
   });
 
+  it('cierra un contrato abierto y muestra el cálculo del servidor', async () => {
+    const fixture = await crear([CONTRATO]);
+    const el = elemento(fixture);
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    await fixture.whenStable();
+
+    escribir(el, 'devolucion', '2026-11-13T09:00');
+    escribir(el, 'km_devolucion', '42600');
+    escribir(el, 'combustible_devolucion', '5');
+    escribir(el, 'observaciones_danos', ' Rayón ');
+    el.querySelector('form.cierre')!.dispatchEvent(new Event('submit'));
+
+    const envio = http.expectOne({ method: 'POST', url: `${URL}/1/cierre` });
+    expect(envio.request.body).toEqual({
+      devolucion: new Date('2026-11-13T09:00').toISOString(),
+      km_devolucion: 42600,
+      combustible_devolucion: 5,
+      observaciones_danos: 'Rayón',
+    });
+    const cerrado = {
+      ...CONTRATO,
+      estado: 'cerrado',
+      devolucion: '2026-11-13T15:00:00Z',
+      km_devolucion: 42600,
+      combustible_devolucion: 5,
+      observaciones_danos: 'Rayón',
+      dias_efectivos: 3,
+      km_recorridos: 600,
+      km_excedentes: 150,
+      combustible_faltante: 3,
+      monto_final: '1425.000000',
+    };
+    envio.flush(cerrado);
+    http.expectOne(URL_UNIDADES).flush([UNIDAD]);
+    http.expectOne(URL).flush([cerrado]);
+    await fixture.whenStable();
+
+    const detalle = el.querySelector('.impresion')!.textContent ?? '';
+    expect(detalle).toContain('150 excedentes');
+    expect(detalle).toContain('faltan 3/8');
+    expect(detalle).toMatch(/1,425\.00/);
+    expect(el.querySelector('form.cierre')).toBeNull();
+  });
+
   it('muestra el rechazo del servidor por unidad no disponible', async () => {
     const fixture = await crear();
     const el = elemento(fixture);
