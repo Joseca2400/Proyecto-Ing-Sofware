@@ -20,6 +20,15 @@ export type ClienteAlquiler = components['schemas']['ClienteSalida'];
 export type UnidadAlquiler = components['schemas']['UnidadSalida'];
 export type CierreEntrada = components['schemas']['CierreEntrada'];
 
+// ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
+
+export type Deposito = components['schemas']['DepositoSalida'];
+export type DepositoEntrada = components['schemas']['DepositoEntrada'];
+export type AplicacionEntrada = components['schemas']['AplicacionEntrada'];
+export type DevolucionEntrada = components['schemas']['DevolucionDepositoEntrada'];
+export type DepositosVigentes = components['schemas']['DepositosVigentes'];
+export type CuentaBancaria = components['schemas']['CuentaBancariaSalida'];
+
 export const ETIQUETAS_MODALIDAD: Record<Modalidad, string> = {
   diaria: 'Diaria',
   semanal: 'Semanal',
@@ -54,6 +63,32 @@ export class AlquileresService {
 
   cerrarContrato(id: number, entrada: CierreEntrada): Observable<Contrato> {
     return this.http.post<Contrato>(`${API_URL}/alquileres/contratos/${id}/cierre`, entrada);
+  }
+
+  depositosDeContrato(id: number): Observable<Deposito[]> {
+    return this.http.get<Deposito[]>(`${API_URL}/alquileres/contratos/${id}/depositos`);
+  }
+
+  recibirDeposito(id: number, entrada: DepositoEntrada): Observable<Deposito> {
+    return this.http.post<Deposito>(`${API_URL}/alquileres/contratos/${id}/depositos`, entrada);
+  }
+
+  aplicarDeposito(id: number, entrada: AplicacionEntrada): Observable<Deposito> {
+    return this.http.post<Deposito>(`${API_URL}/alquileres/depositos/${id}/aplicacion`, entrada);
+  }
+
+  devolverDeposito(id: number, entrada: DevolucionEntrada): Observable<Deposito> {
+    return this.http.post<Deposito>(`${API_URL}/alquileres/depositos/${id}/devolucion`, entrada);
+  }
+
+  depositosVigentes(): Observable<DepositosVigentes> {
+    return this.http.get<DepositosVigentes>(`${API_URL}/alquileres/depositos`);
+  }
+
+  cuentasBancarias(): Observable<CuentaBancaria[]> {
+    return this.http.get<CuentaBancaria[]>(`${API_URL}/configuracion/cuentas-bancarias`, {
+      params: { solo_activas: true },
+    });
   }
 
   clientes(): Observable<ClienteAlquiler[]> {

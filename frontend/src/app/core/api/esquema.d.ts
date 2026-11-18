@@ -864,10 +864,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alquileres/contratos/{contrato_id}/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos De Contrato */
+        get: operations["depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get"];
+        put?: never;
+        /** Recibir Deposito */
+        post: operations["recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos Vigentes */
+        get: operations["depositos_vigentes_api_v1_alquileres_depositos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/aplicacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar Deposito */
+        post: operations["aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/devolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Devolver Deposito */
+        post: operations["devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AplicacionEntrada */
+        AplicacionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+        };
         /** BitacoraSalida */
         BitacoraSalida: {
             /** Id */
@@ -1417,6 +1496,96 @@ export interface components {
             vin: "obligatorio" | "opcional" | "no_aplica";
             /** Linea Defecto */
             linea_defecto: ("alquiler" | "venta" | "taller" | "financiamiento" | "administracion") | null;
+        };
+        /**
+         * DepositoEntrada
+         * @description Depósito en dinero (con su cuenta bancaria) o autorización de tarjeta sin cobro (con su
+         *     referencia). La moneda de la cuenta bancaria se valida en el service.
+         */
+        DepositoEntrada: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id?: number | null;
+            /** Referencia */
+            referencia?: string | null;
+        };
+        /** DepositoSalida */
+        DepositoSalida: {
+            /** Id */
+            id: number;
+            /** Contrato Id */
+            contrato_id: number;
+            /** Contrato Numero */
+            contrato_numero: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Saldo */
+            saldo: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number | null;
+            /** Referencia */
+            referencia: string | null;
+            /** Devuelto */
+            devuelto: boolean;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /** DepositosVigentes */
+        DepositosVigentes: {
+            /** Depositos */
+            depositos: components["schemas"]["DepositoSalida"][];
+            /** Totales */
+            totales: {
+                [key: string]: string;
+            };
+        };
+        /** DevolucionDepositoEntrada */
+        DevolucionDepositoEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number;
         };
         /** DevolucionEntrada */
         DevolucionEntrada: {
@@ -4394,6 +4563,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_vigentes_api_v1_alquileres_depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositosVigentes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AplicacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevolucionDepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
                 };
             };
             /** @description Validation Error */

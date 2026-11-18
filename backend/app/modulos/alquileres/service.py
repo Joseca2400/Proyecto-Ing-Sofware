@@ -44,6 +44,21 @@ Para `facturacion`: `resumen_para_facturar` (líneas del cobro de un contrato ce
 HU-3.08 (diferido): el cobro en dinero del combustible faltante y otros cargos adicionales
 (HU-3.09, Sprint 3; hoy solo se muestra el faltante en octavos); abrir la orden de taller por daños
 y dejar la unidad "en taller" (órdenes de mantenimiento, Sprint 5).
+
+HU-3.07 (incluido): depósito en garantía ligado al contrato abierto, en la moneda recibida, a una
+cuenta bancaria activa de esa moneda. Es pasivo: partida (`deposito_garantia`) débito al banco y
+crédito a depósitos en garantía (regla `pasivo_gtq`/`pasivo_usd`); en USD las dos líneas van en
+dólares y cuadran al tipo de cambio del día. Una autorización de tarjeta sin cobro queda solo como
+referencia, sin partida ni saldo. Con el contrato cerrado el depósito se aplica, total o
+parcialmente, a sus cargos (`aplicacion_deposito`: débito al pasivo, crédito a la cuenta por
+cobrar al cliente; nunca más que el saldo ni que el monto final del contrato, y en la moneda del
+contrato) y el resto se devuelve (`devolucion_deposito`: débito al pasivo, crédito al banco; una
+sola vez y nunca más que el saldo). Cada documento y su partida se confirman juntos o nada. La
+consulta de vigentes da el saldo de cada uno y el total por moneda (`saldo_depositos`).
+Supuesto para el contador: la aplicación y la devolución debitan el pasivo de la regla vigente.
+HU-3.07 (diferido): bajar el saldo de la cuenta por cobrar de la factura al aplicar el depósito
+(cobros, HU-6.07, Sprint 3; hoy solo se contabiliza contra la cuenta por cobrar); aplicar un
+depósito en una moneda distinta a la del contrato; cobrar una autorización de tarjeta.
 """
 
 import math
@@ -55,8 +70,24 @@ from sqlalchemy.orm import Session
 
 from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.alquileres.models import MODALIDADES, ContratoAlquiler, Tarifa
-from app.modulos.alquileres.schemas import CierreEntrada, ContratoEntrada, TarifaEntrada
+from app.modulos.alquileres.models import (
+    MODALIDADES,
+    ContratoAlquiler,
+    DepositoGarantia,
+    MovimientoDeposito,
+    Tarifa,
+)
+from app.modulos.alquileres.schemas import (
+    AplicacionEntrada,
+    CierreEntrada,
+    ContratoEntrada,
+    DepositoEntrada,
+    DevolucionDepositoEntrada,
+    TarifaEntrada,
+)
+from app.modulos.configuracion import service as configuracion
+from app.modulos.contabilidad import service as contabilidad
+from app.modulos.contabilidad.schemas import LineaEntrada
 from app.modulos.facturacion import service as facturacion
 from app.modulos.unidades import service as unidades
 
@@ -393,3 +424,246 @@ def resumen_para_facturar(db: Session, contrato_id: int) -> dict:
         "linea_negocio": "alquiler",
         "lineas": lineas,
     }
+
+
+# ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
+
+
+def _banco(db: Session, cuenta_bancaria_id: int, moneda: str) -> int:
+    """Cuenta contable de una cuenta bancaria activa en `moneda`."""
+    banco = configuracion.obtener_cuenta_bancaria(db, cuenta_bancaria_id)
+    if not banco.activa:
+        raise ErrorNegocio(f"La cuenta bancaria {banco.banco} {banco.numero} está inactiva")
+    if banco.moneda != moneda:
+        raise ErrorNegocio(
+            f"La cuenta bancaria {banco.banco} {banco.numero} es en {banco.moneda}, no en {moneda}"
+        )
+    return banco.cuenta_id
+
+
+def _pasivo(db: Session, moneda: str) -> int:
+    return contabilidad.cuenta_regla(db, "deposito_garantia", f"pasivo_{moneda.lower()}")
+
+
+def _linea(db: Session, cuenta_id: int, lado: str, monto: Decimal, moneda: str, vin: str) -> LineaEntrada:
+    """Línea en la moneda del depósito, en la línea de alquiler y con el VIN si la cuenta lo admite."""
+    admite_vin = configuracion.obtener_cuenta(db, cuenta_id).vin != configuracion.VIN_NO_APLICA
+    return LineaEntrada(
+        cuenta_id=cuenta_id,
+        lado=lado,
+        monto=f"{monto:.6f}",
+        moneda=moneda,
+        linea_negocio="alquiler",
+        vin=vin if admite_vin else None,
+    )
+
+
+def _confirmar_con_partida(
+    db: Session,
+    documento: DepositoGarantia | MovimientoDeposito,
+    documento_tipo: str,
+    concepto: str,
+    debe: int,
+    haber: int,
+    deposito: DepositoGarantia,
+    usuario_id: int | None,
+) -> None:
+    """Escribe el documento, pide su partida y confirma los dos, o revierte todo."""
+    db.add(documento)
+    try:
+        db.flush()  # el id del documento liga su partida
+        contabilidad.registrar_automatica(
+            db,
+            fecha=documento.fecha,
+            concepto=concepto[:300],
+            lineas=[
+                _linea(db, debe, "debe", documento.monto, deposito.moneda, deposito.vin),
+                _linea(db, haber, "haber", documento.monto, deposito.moneda, deposito.vin),
+            ],
+            documento_tipo=documento_tipo,
+            documento_id=documento.id,
+            usuario_id=usuario_id,
+        )
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+
+
+def _validar_fecha(fecha: date) -> None:
+    if fecha > date.today():
+        raise ErrorNegocio("La fecha no puede ser futura")
+
+
+def recibir_deposito(
+    db: Session, contrato_id: int, datos: DepositoEntrada, usuario_id: int | None = None
+) -> DepositoGarantia:
+    """Registra el depósito del contrato abierto con su partida (pasivo), o la autorización de
+    tarjeta solo como referencia."""
+    contrato = obtener_contrato(db, contrato_id)
+    if contrato.estado != "abierto":
+        raise ErrorNegocio(
+            f"El contrato {contrato.numero} está cerrado; el depósito se recibe con el contrato abierto"
+        )
+    _validar_fecha(datos.fecha)
+    monto = _monto(datos.monto, "El monto del depósito", permite_cero=False)
+    referencia = (datos.referencia or "").strip() or None
+    deposito = DepositoGarantia(
+        contrato_id=contrato.id,
+        vin=contrato.vin,
+        tipo=datos.tipo,
+        fecha=datos.fecha,
+        moneda=datos.moneda,
+        monto=monto,
+        saldo=monto,
+        referencia=referencia,
+        usuario_id=usuario_id,
+    )
+    if datos.tipo == "autorizacion_tarjeta":
+        if referencia is None or datos.cuenta_bancaria_id is not None:
+            raise ErrorNegocio("La autorización de tarjeta lleva su referencia y no una cuenta bancaria")
+        deposito.saldo = Decimal(0)  # no es dinero recibido: sin saldo ni partida
+        db.add(deposito)
+        db.commit()
+        db.refresh(deposito)
+        return deposito
+
+    if datos.cuenta_bancaria_id is None:
+        raise ErrorNegocio("Indique la cuenta bancaria donde se recibió el depósito")
+    banco = _banco(db, datos.cuenta_bancaria_id, datos.moneda)
+    pasivo = _pasivo(db, datos.moneda)
+    deposito.cuenta_bancaria_id = datos.cuenta_bancaria_id
+    _confirmar_con_partida(
+        db, deposito, "deposito_garantia",
+        f"Depósito en garantía del contrato de alquiler {contrato.numero}, unidad {contrato.vin}",
+        banco, pasivo, deposito, usuario_id,
+    )  # fmt: skip
+    db.refresh(deposito)
+    return deposito
+
+
+def _deposito_para_mover(db: Session, deposito_id: int, monto_texto: str) -> tuple[DepositoGarantia, Decimal]:
+    """Depósito en dinero de un contrato cerrado, con el contrato bloqueado (los movimientos de un
+    mismo contrato van de uno en uno) y el monto validado contra su saldo."""
+    deposito = db.get(DepositoGarantia, deposito_id)
+    if deposito is None:
+        raise ErrorNegocio("El depósito no existe", status=404)
+    contrato = db.get(ContratoAlquiler, deposito.contrato_id, with_for_update=True, populate_existing=True)
+    db.refresh(deposito)
+    if deposito.tipo != "deposito":
+        raise ErrorNegocio("Una autorización de tarjeta no tiene saldo que aplicar o devolver")
+    if contrato.estado != "cerrado":
+        raise ErrorNegocio(f"El depósito se aplica o devuelve al cerrar el contrato {contrato.numero}")
+    monto = _monto(monto_texto, "El monto", permite_cero=False)
+    if monto > deposito.saldo:
+        raise ErrorNegocio(f"El monto excede el saldo del depósito ({deposito.saldo:.2f} {deposito.moneda})")
+    return deposito, monto
+
+
+def aplicar_deposito(
+    db: Session, deposito_id: int, datos: AplicacionEntrada, usuario_id: int | None = None
+) -> DepositoGarantia:
+    """Aplica parte o todo el saldo a los cargos del contrato cerrado, con su partida.
+
+    Pendiente (HU-6.07, cobros, Sprint 3): bajar el saldo del documento por cobrar de la factura
+    del contrato; hoy la aplicación solo se contabiliza contra la cuenta por cobrar al cliente.
+    """
+    _validar_fecha(datos.fecha)
+    deposito, monto = _deposito_para_mover(db, deposito_id, datos.monto)
+    contrato = deposito.contrato
+    if deposito.moneda != contrato.moneda:
+        raise ErrorNegocio(f"El depósito es en {deposito.moneda} y el contrato en {contrato.moneda}")
+    aplicado = db.scalar(
+        select(func.coalesce(func.sum(MovimientoDeposito.monto), 0))
+        .join(DepositoGarantia, DepositoGarantia.id == MovimientoDeposito.deposito_id)
+        .where(DepositoGarantia.contrato_id == contrato.id, MovimientoDeposito.tipo == "aplicacion")
+    )
+    if aplicado + monto > contrato.monto_final:
+        raise ErrorNegocio(
+            "Lo aplicado excedería el monto final del contrato "
+            f"({contrato.monto_final:.2f} {contrato.moneda}; ya aplicado {aplicado:.2f})"
+        )
+    por_cobrar = contabilidad.cuenta_regla(db, "aplicacion_deposito", f"por_cobrar_{deposito.moneda.lower()}")
+    pasivo = _pasivo(db, deposito.moneda)
+    deposito.saldo -= monto
+    movimiento = MovimientoDeposito(
+        deposito_id=deposito.id, tipo="aplicacion", fecha=datos.fecha, monto=monto, usuario_id=usuario_id
+    )
+    _confirmar_con_partida(
+        db, movimiento, "aplicacion_deposito",
+        f"Aplicación del depósito en garantía a los cargos del contrato de alquiler {contrato.numero}",
+        pasivo, por_cobrar, deposito, usuario_id,
+    )  # fmt: skip
+    db.refresh(deposito)
+    return deposito
+
+
+def devolver_deposito(
+    db: Session, deposito_id: int, datos: DevolucionDepositoEntrada, usuario_id: int | None = None
+) -> DepositoGarantia:
+    """Devuelve al cliente el saldo (o parte) desde una cuenta bancaria, con su partida; una vez."""
+    _validar_fecha(datos.fecha)
+    deposito, monto = _deposito_para_mover(db, deposito_id, datos.monto)
+    ya_devuelto = db.scalar(
+        select(MovimientoDeposito.id).where(
+            MovimientoDeposito.deposito_id == deposito.id, MovimientoDeposito.tipo == "devolucion"
+        )
+    )
+    if ya_devuelto is not None:
+        raise ErrorNegocio("El depósito ya se devolvió; no se puede devolver dos veces", status=409)
+    banco = _banco(db, datos.cuenta_bancaria_id, deposito.moneda)
+    pasivo = _pasivo(db, deposito.moneda)
+    deposito.saldo -= monto
+    movimiento = MovimientoDeposito(
+        deposito_id=deposito.id,
+        tipo="devolucion",
+        fecha=datos.fecha,
+        monto=monto,
+        cuenta_bancaria_id=datos.cuenta_bancaria_id,
+        usuario_id=usuario_id,
+    )
+    _confirmar_con_partida(
+        db, movimiento, "devolucion_deposito",
+        f"Devolución del depósito en garantía del contrato de alquiler {deposito.contrato.numero}",
+        pasivo, banco, deposito, usuario_id,
+    )  # fmt: skip
+    db.refresh(deposito)
+    return deposito
+
+
+def depositos_de_contrato(db: Session, contrato_id: int) -> list[DepositoGarantia]:
+    obtener_contrato(db, contrato_id)
+    return list(
+        db.scalars(
+            select(DepositoGarantia)
+            .where(DepositoGarantia.contrato_id == contrato_id)
+            .order_by(DepositoGarantia.id)
+        )
+    )
+
+
+def depositos_vigentes(db: Session) -> list[DepositoGarantia]:
+    """Depósitos en dinero con saldo, del más antiguo al más reciente."""
+    return list(
+        db.scalars(
+            select(DepositoGarantia)
+            .where(DepositoGarantia.tipo == "deposito", DepositoGarantia.saldo > 0)
+            .order_by(DepositoGarantia.fecha, DepositoGarantia.id)
+        )
+    )
+
+
+def saldo_depositos(db: Session) -> dict[str, Decimal]:
+    """Para el cuadre con el mayor: saldo total de los depósitos vigentes por moneda.
+
+    Pendiente (coordinador, con HU-2.16): comparar cada total con el saldo de su cuenta de pasivo
+    (reglas `deposito_garantia`) en el mayor; en USD, contra el saldo en dólares de la cuenta.
+    """
+    totales = dict(
+        db.execute(
+            select(DepositoGarantia.moneda, func.sum(DepositoGarantia.saldo))
+            .where(DepositoGarantia.tipo == "deposito")
+            .group_by(DepositoGarantia.moneda)
+        ).all()
+    )
+    return {moneda: totales.get(moneda, Decimal(0)) for moneda in ("GTQ", "USD")}

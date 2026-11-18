@@ -78,6 +78,12 @@ export const routes: Routes = [
           import('./features/alquileres/contratos').then((m) => m.ContratosPantalla),
       },
       {
+        path: 'alquileres/depositos',
+        title: 'Depósitos en garantía · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/depositos').then((m) => m.DepositosPantalla),
+      },
+      {
         path: 'unidades',
         title: 'Unidades · Kilómetro Cero',
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),

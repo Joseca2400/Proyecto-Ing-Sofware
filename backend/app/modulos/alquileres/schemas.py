@@ -134,3 +134,62 @@ class CierreEntrada(BaseModel):
     km_devolucion: int = Field(ge=0, le=10_000_000)
     combustible_devolucion: int = Field(ge=0, le=8, description="Octavos de tanque, de 0 (vacío) a 8 (lleno)")
     observaciones_danos: str | None = Field(default=None, max_length=1000)
+
+
+# ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
+
+
+class DepositoEntrada(BaseModel):
+    """Depósito en dinero (con su cuenta bancaria) o autorización de tarjeta sin cobro (con su
+    referencia). La moneda de la cuenta bancaria se valida en el service."""
+
+    tipo: Literal["deposito", "autorizacion_tarjeta"]
+    fecha: date
+    moneda: Moneda
+    monto: str
+    cuenta_bancaria_id: int | None = None
+    referencia: str | None = Field(default=None, max_length=100)
+
+    _monto_texto = field_validator("monto", mode="before")(_texto)
+
+
+class AplicacionEntrada(BaseModel):
+    fecha: date
+    monto: str
+
+    _monto_texto = field_validator("monto", mode="before")(_texto)
+
+
+class DevolucionDepositoEntrada(AplicacionEntrada):
+    cuenta_bancaria_id: int
+
+
+class DepositoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    contrato_id: int
+    contrato_numero: int
+    vin: str
+    tipo: Literal["deposito", "autorizacion_tarjeta"]
+    fecha: date
+    moneda: Moneda
+    monto: Decimal
+    saldo: Decimal
+    cuenta_bancaria_id: int | None
+    referencia: str | None
+    devuelto: bool
+    creado_en: datetime
+
+    @field_serializer("monto", "saldo")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.6f}"
+
+
+class DepositosVigentes(BaseModel):
+    depositos: list[DepositoSalida]
+    totales: dict[Moneda, Decimal]
+
+    @field_serializer("totales")
+    def totales_a_texto(self, valores: dict[str, Decimal]) -> dict[str, str]:
+        return {moneda: f"{valor:.6f}" for moneda, valor in valores.items()}

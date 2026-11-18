@@ -1,0 +1,48 @@
+<section class="encabezado">
+  <h1>Depósitos en garantía</h1>
+  <p>
+    Depósitos recibidos en dinero que aún tienen saldo. Son un pasivo con el cliente; el total por
+    moneda es el que debe cuadrar con su cuenta contable.
+  </p>
+</section>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Contrato</th>
+      <th>VIN</th>
+      <th>Fecha</th>
+      <th class="numero">Monto</th>
+      <th class="numero">Saldo</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (d of vigentes().depositos; track d.id) {
+      <tr>
+        <td>{{ d.contrato_numero }}</td>
+        <td>{{ d.vin }}</td>
+        <td>{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+        <td class="numero">{{ d.monto | monto: d.moneda }}</td>
+        <td class="numero">{{ d.saldo | monto: d.moneda }}</td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="5" class="vacio">No hay depósitos vigentes</td>
+      </tr>
+    }
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="4">Total en quetzales</th>
+      <th class="numero">{{ vigentes().totales['GTQ'] ?? '0' | monto: 'GTQ' }}</th>
+    </tr>
+    <tr>
+      <th colspan="4">Total en dólares</th>
+      <th class="numero">{{ vigentes().totales['USD'] ?? '0' | monto: 'USD' }}</th>
+    </tr>
+  </tfoot>
+</table>

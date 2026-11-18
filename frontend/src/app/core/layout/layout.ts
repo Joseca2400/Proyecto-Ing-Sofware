@@ -50,6 +50,7 @@ export class Layout {
     { etiqueta: 'Clientes', ruta: '/facturacion/clientes' },
     { etiqueta: 'Tarifario', ruta: '/alquileres/tarifario' },
     { etiqueta: 'Contratos', ruta: '/alquileres/contratos' },
+    { etiqueta: 'Depósitos en garantía', ruta: '/alquileres/depositos' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },

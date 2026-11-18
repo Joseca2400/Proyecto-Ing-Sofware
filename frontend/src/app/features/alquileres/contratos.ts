@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MontoPipe } from '../../shared/pipes/monto.pipe';
 import {
@@ -8,6 +9,9 @@ import {
   ClienteAlquiler,
   Contrato,
   ContratoEntrada,
+  CuentaBancaria,
+  Deposito,
+  DepositoEntrada,
   ETIQUETAS_MODALIDAD,
   Modalidad,
   UnidadAlquiler,
@@ -21,6 +25,8 @@ function ahoraLocal(): string {
 
 // HU-3.06 (Sprint 2): contrato de alquiler. El servidor toma y copia la tarifa vigente, valida la
 // disponibilidad, pasa la unidad a "alquilada" y calcula el monto estimado; aquí solo se muestra.
+// HU-3.08: cierre con la devolución (el cálculo es del servidor). HU-3.07: recibir, aplicar y
+// devolver depósitos en garantía desde el detalle. Diferido: cargos adicionales (HU-3.09).
 @Component({
   selector: 'app-contratos',
   imports: [ReactiveFormsModule, MontoPipe, DatePipe],
@@ -60,9 +66,102 @@ export class ContratosPantalla {
     observaciones_danos: [''],
   });
 
+  // HU-3.07: depósitos del contrato; el servidor genera las partidas y lleva el saldo.
+  protected readonly cuentas = signal<CuentaBancaria[]>([]);
+  protected readonly depositos = signal<Deposito[]>([]);
+  protected readonly deposito = this.fb.group({
+    tipo: ['deposito' as DepositoEntrada['tipo']],
+    fecha: [new Date().toLocaleDateString('en-CA'), Validators.required],
+    moneda: ['GTQ' as 'GTQ' | 'USD'],
+    monto: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,6})?$/)]],
+    cuenta_bancaria_id: [0],
+    referencia: [''],
+  });
+  protected readonly tipoDeposito = toSignal(this.deposito.controls.tipo.valueChanges, {
+    initialValue: this.deposito.controls.tipo.value,
+  });
+  protected readonly monedaDeposito = toSignal(this.deposito.controls.moneda.valueChanges, {
+    initialValue: this.deposito.controls.moneda.value,
+  });
+  protected readonly movimiento = this.fb.group({
+    fecha: [new Date().toLocaleDateString('en-CA'), Validators.required],
+    monto: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,6})?$/)]],
+    cuenta_bancaria_id: [0],
+  });
+
   constructor() {
     this.servicio.clientes().subscribe((lista) => this.clientes.set(lista));
+    this.servicio.cuentasBancarias().subscribe((lista) => this.cuentas.set(lista));
     this.cargar();
+  }
+
+  protected cuentasEn(moneda: string): CuentaBancaria[] {
+    return this.cuentas().filter((c) => c.moneda === moneda);
+  }
+
+  private fallo(porDefecto: string) {
+    return (respuesta: HttpErrorResponse) => {
+      const detalle = respuesta.error?.detail;
+      this.error.set(typeof detalle === 'string' ? detalle : porDefecto);
+    };
+  }
+
+  private cargarDepositos(contrato: Contrato): void {
+    this.servicio.depositosDeContrato(contrato.id).subscribe((lista) => this.depositos.set(lista));
+  }
+
+  protected recibir(contrato: Contrato): void {
+    const v = this.deposito.getRawValue();
+    if (this.deposito.invalid) {
+      this.deposito.markAllAsTouched();
+      return;
+    }
+    const tarjeta = v.tipo === 'autorizacion_tarjeta';
+    this.error.set(null);
+    this.servicio
+      .recibirDeposito(contrato.id, {
+        tipo: v.tipo,
+        fecha: v.fecha,
+        moneda: v.moneda,
+        monto: v.monto,
+        cuenta_bancaria_id: tarjeta ? null : Number(v.cuenta_bancaria_id) || null,
+        referencia: v.referencia.trim() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.aviso.set(tarjeta ? 'Autorización registrada como referencia' : 'Depósito recibido');
+          this.deposito.patchValue({ monto: '', referencia: '' });
+          this.cargarDepositos(contrato);
+        },
+        error: this.fallo('No se pudo registrar el depósito'),
+      });
+  }
+
+  protected mover(contrato: Contrato, deposito: Deposito, accion: 'aplicar' | 'devolver'): void {
+    const v = this.movimiento.getRawValue();
+    if (this.movimiento.invalid) {
+      this.movimiento.markAllAsTouched();
+      return;
+    }
+    this.error.set(null);
+    const peticion =
+      accion === 'aplicar'
+        ? this.servicio.aplicarDeposito(deposito.id, { fecha: v.fecha, monto: v.monto })
+        : this.servicio.devolverDeposito(deposito.id, {
+            fecha: v.fecha,
+            monto: v.monto,
+            cuenta_bancaria_id: Number(v.cuenta_bancaria_id),
+          });
+    peticion.subscribe({
+      next: () => {
+        this.aviso.set(
+          accion === 'aplicar' ? 'Depósito aplicado a los cargos' : 'Depósito devuelto',
+        );
+        this.movimiento.patchValue({ monto: '' });
+        this.cargarDepositos(contrato);
+      },
+      error: this.fallo('No se pudo registrar el movimiento del depósito'),
+    });
   }
 
   protected cargar(): void {
@@ -80,6 +179,8 @@ export class ContratosPantalla {
   protected ver(contrato: Contrato): void {
     this.seleccionado.set(contrato);
     this.cierre.patchValue({ km_devolucion: contrato.km_salida });
+    this.deposito.patchValue({ moneda: contrato.moneda });
+    this.cargarDepositos(contrato);
   }
 
   protected cerrar(contrato: Contrato): void {
@@ -103,10 +204,7 @@ export class ContratosPantalla {
           this.seleccionado.set(cerrado);
           this.cargar();
         },
-        error: (respuesta: HttpErrorResponse) => {
-          const detalle = respuesta.error?.detail;
-          this.error.set(typeof detalle === 'string' ? detalle : 'No se pudo cerrar el contrato');
-        },
+        error: this.fallo('No se pudo cerrar el contrato'),
       });
   }
 
@@ -142,8 +240,7 @@ export class ContratosPantalla {
       },
       error: (respuesta: HttpErrorResponse) => {
         this.guardando.set(false);
-        const detalle = respuesta.error?.detail;
-        this.error.set(typeof detalle === 'string' ? detalle : 'No se pudo registrar el contrato');
+        this.fallo('No se pudo registrar el contrato')(respuesta);
       },
     });
   }

@@ -164,6 +164,117 @@
       <button type="submit">Cerrar contrato</button>
     </form>
   }
+
+  <section class="tarjeta no-imprimir depositos">
+    <h3>Depósitos en garantía</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Forma</th>
+          <th class="numero">Monto</th>
+          <th class="numero">Saldo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (d of depositos(); track d.id) {
+          <tr>
+            <td>{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              {{ d.tipo === 'deposito' ? 'Depósito' : 'Autorización de tarjeta ' + d.referencia }}
+              {{ d.devuelto ? '(devuelto)' : '' }}
+            </td>
+            <td class="numero">{{ d.monto | monto: d.moneda }}</td>
+            <td class="numero">{{ d.saldo | monto: d.moneda }}</td>
+            <td>
+              @if (c.estado === 'cerrado' && d.tipo === 'deposito' && d.saldo !== '0.000000') {
+                <button type="button" class="secundario" (click)="mover(c, d, 'aplicar')">
+                  Aplicar
+                </button>
+                @if (!d.devuelto) {
+                  <button type="button" class="secundario" (click)="mover(c, d, 'devolver')">
+                    Devolver
+                  </button>
+                }
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="vacio">Sin depósitos</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (c.estado === 'abierto') {
+      <form class="formulario" [formGroup]="deposito" (ngSubmit)="recibir(c)">
+        <label>
+          Forma
+          <select formControlName="tipo" name="dep_tipo">
+            <option value="deposito">Depósito en dinero</option>
+            <option value="autorizacion_tarjeta">Autorización de tarjeta (sin cobro)</option>
+          </select>
+        </label>
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" name="dep_fecha" />
+        </label>
+        <label>
+          Moneda
+          <select formControlName="moneda" name="dep_moneda">
+            <option value="GTQ">Quetzales (GTQ)</option>
+            <option value="USD">Dólares (USD)</option>
+          </select>
+        </label>
+        <label>
+          Monto
+          <input type="text" inputmode="decimal" formControlName="monto" name="dep_monto" />
+        </label>
+        @if (tipoDeposito() === 'deposito') {
+          <label>
+            Cuenta bancaria
+            <select formControlName="cuenta_bancaria_id" name="dep_cuenta">
+              <option [value]="0" disabled>Seleccione…</option>
+              @for (b of cuentasEn(monedaDeposito()); track b.id) {
+                <option [value]="b.id">{{ b.banco }} {{ b.numero }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label>
+          Referencia
+          <input type="text" maxlength="100" formControlName="referencia" name="dep_referencia" />
+        </label>
+        <button type="submit">Recibir depósito</button>
+      </form>
+    } @else {
+      <form class="formulario" [formGroup]="movimiento">
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" name="mov_fecha" />
+        </label>
+        <label>
+          Monto a aplicar o devolver
+          <input type="text" inputmode="decimal" formControlName="monto" name="mov_monto" />
+        </label>
+        <label>
+          Cuenta bancaria (devolución)
+          <select formControlName="cuenta_bancaria_id" name="mov_cuenta">
+            <option [value]="0" disabled>Seleccione…</option>
+            @for (b of cuentas(); track b.id) {
+              <option [value]="b.id">{{ b.banco }} {{ b.numero }} ({{ b.moneda }})</option>
+            }
+          </select>
+        </label>
+      </form>
+      <p class="vacio">
+        La aplicación se contabiliza contra la cuenta por cobrar del cliente; bajar el saldo de la
+        factura llega con los cobros (HU-6.07).
+      </p>
+    }
+  </section>
 }
 
 <table class="tarjeta no-imprimir">

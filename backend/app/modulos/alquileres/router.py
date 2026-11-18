@@ -7,10 +7,15 @@ from sqlalchemy.orm import Session
 from app.comun.db import get_db
 from app.modulos.alquileres import service
 from app.modulos.alquileres.schemas import (
+    AplicacionEntrada,
     CatalogosTarifas,
     CierreEntrada,
     ContratoEntrada,
     ContratoSalida,
+    DepositoEntrada,
+    DepositoSalida,
+    DepositosVigentes,
+    DevolucionDepositoEntrada,
     Modalidad,
     Moneda,
     TarifaEntrada,
@@ -24,7 +29,8 @@ from app.modulos.seguridad.service import (
     usuario_actual,
 )
 
-# Todas las rutas exigen sesión; el alta de tarifas, además, el rol que las registra.
+# Todas las rutas exigen sesión; las altas (tarifas, contratos, cierres, depósitos), además, el rol
+# que las registra.
 CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
 
 router = APIRouter(prefix="/alquileres", tags=["Alquileres"], dependencies=[Depends(usuario_actual)])
@@ -100,3 +106,49 @@ def cerrar_contrato(
     contrato_id: int, datos: CierreEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
 ) -> ContratoSalida:
     return ContratoSalida.model_validate(service.cerrar_contrato(db, contrato_id, datos, usuario.id))
+
+
+# ── HU-3.07: depósitos en garantía ─────────────────────────────────────────────
+
+
+@router.get("/contratos/{contrato_id}/depositos", response_model=list[DepositoSalida])
+def depositos_de_contrato(contrato_id: int, db: Session = Depends(get_db)) -> list[DepositoSalida]:
+    return [DepositoSalida.model_validate(d) for d in service.depositos_de_contrato(db, contrato_id)]
+
+
+@router.post("/contratos/{contrato_id}/depositos", response_model=DepositoSalida, status_code=201)
+def recibir_deposito(
+    contrato_id: int,
+    datos: DepositoEntrada,
+    usuario: Usuario = Depends(CAPTURA),
+    db: Session = Depends(get_db),
+) -> DepositoSalida:
+    return DepositoSalida.model_validate(service.recibir_deposito(db, contrato_id, datos, usuario.id))
+
+
+@router.get("/depositos", response_model=DepositosVigentes)
+def depositos_vigentes(db: Session = Depends(get_db)) -> DepositosVigentes:
+    return DepositosVigentes(
+        depositos=[DepositoSalida.model_validate(d) for d in service.depositos_vigentes(db)],
+        totales=service.saldo_depositos(db),
+    )
+
+
+@router.post("/depositos/{deposito_id}/aplicacion", response_model=DepositoSalida)
+def aplicar_deposito(
+    deposito_id: int,
+    datos: AplicacionEntrada,
+    usuario: Usuario = Depends(CAPTURA),
+    db: Session = Depends(get_db),
+) -> DepositoSalida:
+    return DepositoSalida.model_validate(service.aplicar_deposito(db, deposito_id, datos, usuario.id))
+
+
+@router.post("/depositos/{deposito_id}/devolucion", response_model=DepositoSalida)
+def devolver_deposito(
+    deposito_id: int,
+    datos: DevolucionDepositoEntrada,
+    usuario: Usuario = Depends(CAPTURA),
+    db: Session = Depends(get_db),
+) -> DepositoSalida:
+    return DepositoSalida.model_validate(service.devolver_deposito(db, deposito_id, datos, usuario.id))
