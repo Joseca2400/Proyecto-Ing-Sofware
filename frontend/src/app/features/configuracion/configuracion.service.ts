@@ -62,6 +62,11 @@ export const ETIQUETAS_REGIMEN_ISR: Record<string, string> = {
   simplificado: 'Opcional simplificado',
 };
 
+// ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+export type CuentaBancaria = components['schemas']['CuentaBancariaSalida'];
+export type CuentaBancariaEntrada = components['schemas']['CuentaBancariaEntrada'];
+
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionService {
   private readonly http = inject(HttpClient);
@@ -115,5 +120,30 @@ export class ConfiguracionService {
 
   registrarPerfilFiscal(datos: PerfilFiscalEntrada): Observable<PerfilFiscal> {
     return this.http.post<PerfilFiscal>(`${API_URL}/configuracion/perfil-fiscal`, datos);
+  }
+
+  cuentasBancarias(): Observable<CuentaBancaria[]> {
+    return this.http.get<CuentaBancaria[]>(`${API_URL}/configuracion/cuentas-bancarias`);
+  }
+
+  crearCuentaBancaria(datos: CuentaBancariaEntrada): Observable<CuentaBancaria> {
+    return this.http.post<CuentaBancaria>(`${API_URL}/configuracion/cuentas-bancarias`, datos);
+  }
+
+  definirNumeracionCheques(id: number, siguiente: number | null): Observable<CuentaBancaria> {
+    return this.http.put<CuentaBancaria>(
+      `${API_URL}/configuracion/cuentas-bancarias/${id}/cheques`,
+      {
+        siguiente_cheque: siguiente,
+      },
+    );
+  }
+
+  cambiarEstadoCuentaBancaria(id: number, activa: boolean): Observable<CuentaBancaria> {
+    const accion = activa ? 'activar' : 'inactivar';
+    return this.http.post<CuentaBancaria>(
+      `${API_URL}/configuracion/cuentas-bancarias/${id}/${accion}`,
+      {},
+    );
   }
 }

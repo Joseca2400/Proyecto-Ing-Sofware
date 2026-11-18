@@ -7,9 +7,12 @@ from app.comun.db import get_db
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service
 from app.modulos.configuracion.schemas import (
+    CuentaBancariaEntrada,
+    CuentaBancariaSalida,
     CuentaEntrada,
     CuentaSalida,
     DimensionesEntrada,
+    NumeracionChequesEntrada,
     PerfilFiscalEntrada,
     PerfilFiscalSalida,
     TipoCambioEntrada,
@@ -146,3 +149,47 @@ def registrar_perfil_fiscal(
     datos: PerfilFiscalEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
 ) -> PerfilFiscalSalida:
     return PerfilFiscalSalida.model_validate(service.registrar_perfil_fiscal(db, **datos.model_dump()))
+
+
+# ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+
+@router.get("/cuentas-bancarias", response_model=list[CuentaBancariaSalida])
+def listar_cuentas_bancarias(
+    moneda: str | None = None,
+    solo_activas: bool = False,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
+    return service.listar_cuentas_bancarias(db, moneda, solo_activas)
+
+
+@router.post("/cuentas-bancarias", response_model=CuentaBancariaSalida, status_code=201)
+def crear_cuenta_bancaria(
+    datos: CuentaBancariaEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.crear_cuenta_bancaria(db, **datos.model_dump())
+
+
+@router.put("/cuentas-bancarias/{cuenta_bancaria_id}/cheques", response_model=CuentaBancariaSalida)
+def definir_numeracion_cheques(
+    cuenta_bancaria_id: int,
+    datos: NumeracionChequesEntrada,
+    _: Usuario = Depends(CAMBIARIO),
+    db: Session = Depends(get_db),
+):
+    return service.definir_numeracion_cheques(db, cuenta_bancaria_id, datos.siguiente_cheque)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/inactivar", response_model=CuentaBancariaSalida)
+def inactivar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, False)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/activar", response_model=CuentaBancariaSalida)
+def activar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, True)

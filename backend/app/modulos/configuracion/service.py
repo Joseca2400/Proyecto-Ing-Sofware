@@ -16,6 +16,13 @@ de ISR y calidad de agente de retención; cada cambio es una versión nueva con 
 `perfil_fiscal_vigente` es lo que usará facturación para tomar el perfil de la fecha de cada documento.
 Pendiente: confirmar con el contador el régimen de ISR exacto, la calidad de agente de retención y si
 existe una o dos sociedades (Sprint 2, preguntas 2 y 3 de las épicas).
+
+Cuentas bancarias (HU-1.08, Sprint 2): banco, número, tipo, moneda GTQ o USD y cuenta contable de
+detalle a la que se ligan (la de USD exige una marcada como monetaria en USD); numeración de cheques
+por cuenta; solo se inactivan, no hay ruta para eliminarlas. Otros módulos usan
+`listar_cuentas_bancarias` y `obtener_cuenta_bancaria`.
+Pendiente: bloquear la inactivación de una cuenta con movimientos pendientes y usar la numeración al
+emitir cheques, cuando existan pagos, cobros y conciliación bancaria (Sprint 3).
 """
 
 from datetime import date
@@ -29,8 +36,11 @@ from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.comun.nit import NITInvalido, normalizar_nit
 from app.modulos.configuracion.models import (
+    MONEDAS_BANCARIAS,
     REGIMENES_ISR,
+    TIPOS_CUENTA_BANCARIA,
     Cuenta,
+    CuentaBancaria,
     PerfilFiscal,
     TipoCambio,
     TransaccionUSD,
@@ -344,3 +354,89 @@ def registrar_perfil_fiscal(
     db.commit()
     db.refresh(perfil)
     return perfil
+
+
+# ── HU-1.08: cuentas bancarias en quetzales y dólares ─────────────────────────
+
+
+def listar_cuentas_bancarias(
+    db: Session, moneda: str | None = None, solo_activas: bool = True
+) -> list[CuentaBancaria]:
+    """Para depósitos, cobros y pagos: por defecto solo las activas, ordenadas por banco y número."""
+    consulta = select(CuentaBancaria).order_by(CuentaBancaria.banco, CuentaBancaria.numero)
+    if moneda:
+        consulta = consulta.where(CuentaBancaria.moneda == moneda)
+    if solo_activas:
+        consulta = consulta.where(CuentaBancaria.activa)
+    return list(db.scalars(consulta))
+
+
+def obtener_cuenta_bancaria(db: Session, cuenta_bancaria_id: int) -> CuentaBancaria:
+    cuenta = db.get(CuentaBancaria, cuenta_bancaria_id)
+    if cuenta is None:
+        raise ErrorNegocio("La cuenta bancaria no existe", 404)
+    return cuenta
+
+
+def crear_cuenta_bancaria(
+    db: Session,
+    banco: str,
+    numero: str,
+    tipo: str,
+    moneda: str,
+    cuenta_id: int,
+    siguiente_cheque: int | None = None,
+) -> CuentaBancaria:
+    banco, numero = banco.strip(), numero.strip()
+    if not banco or not numero:
+        raise ErrorNegocio("El banco y el número de cuenta son obligatorios")
+    if tipo not in TIPOS_CUENTA_BANCARIA:
+        raise ErrorNegocio(f"El tipo debe ser uno de: {', '.join(TIPOS_CUENTA_BANCARIA)}")
+    if moneda not in MONEDAS_BANCARIAS:
+        raise ErrorNegocio(f"La moneda debe ser una de: {', '.join(MONEDAS_BANCARIAS)}")
+    _validar_cheque(siguiente_cheque)
+    cuenta = _cuenta(db, cuenta_id)
+    if not cuenta.es_detalle:
+        raise ErrorNegocio(f"La cuenta {cuenta.codigo} es de agrupación: elija una cuenta de detalle")
+    if moneda == "USD" and not cuenta.monetaria_usd:
+        raise ErrorNegocio(
+            "Una cuenta bancaria en USD solo se liga a una cuenta marcada como monetaria en USD; "
+            f"la {cuenta.codigo} no lo está"
+        )
+    if db.scalar(
+        select(CuentaBancaria.id).where(CuentaBancaria.banco == banco, CuentaBancaria.numero == numero)
+    ):
+        raise ErrorNegocio(f"Ya existe la cuenta {numero} del banco {banco}", 409)
+    if db.scalar(select(CuentaBancaria.id).where(CuentaBancaria.cuenta_id == cuenta_id)):
+        raise ErrorNegocio(f"La cuenta contable {cuenta.codigo} ya está ligada a otra cuenta bancaria", 409)
+    bancaria = CuentaBancaria(
+        banco=banco, numero=numero, tipo=tipo, moneda=moneda, cuenta_id=cuenta_id,
+        siguiente_cheque=siguiente_cheque,
+    )  # fmt: skip
+    db.add(bancaria)
+    db.commit()
+    db.refresh(bancaria)
+    return bancaria
+
+
+def _validar_cheque(siguiente_cheque: int | None) -> None:
+    if siguiente_cheque is not None and siguiente_cheque < 1:
+        raise ErrorNegocio("El próximo número de cheque debe ser 1 o mayor")
+
+
+def definir_numeracion_cheques(
+    db: Session, cuenta_bancaria_id: int, siguiente_cheque: int | None
+) -> CuentaBancaria:
+    _validar_cheque(siguiente_cheque)
+    cuenta = obtener_cuenta_bancaria(db, cuenta_bancaria_id)
+    cuenta.siguiente_cheque = siguiente_cheque
+    db.commit()
+    return cuenta
+
+
+def cambiar_estado_cuenta_bancaria(db: Session, cuenta_bancaria_id: int, activa: bool) -> CuentaBancaria:
+    """Una cuenta bancaria no se elimina (no hay ruta para borrarla): solo se inactiva o reactiva."""
+    cuenta = obtener_cuenta_bancaria(db, cuenta_bancaria_id)
+    cuenta.activa = activa
+    db.commit()
+    return cuenta

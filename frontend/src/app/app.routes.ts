@@ -94,6 +94,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/perfil-fiscal').then((m) => m.PerfilFiscalPantalla),
       },
+      {
+        path: 'configuracion/cuentas-bancarias',
+        title: 'Cuentas bancarias · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/cuentas-bancarias').then(
+            (m) => m.CuentasBancariasPantalla,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

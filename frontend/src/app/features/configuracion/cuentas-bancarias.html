@@ -1,0 +1,103 @@
+<section class="encabezado">
+  <h1>Cuentas bancarias</h1>
+  <p>
+    Cuentas de la empresa en quetzales y dólares, cada una ligada a una cuenta de detalle del
+    catálogo. Una cuenta no se elimina: se inactiva.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Banco
+    <input type="text" formControlName="banco" />
+  </label>
+  <label>
+    Número de cuenta
+    <input type="text" formControlName="numero" />
+  </label>
+  <label>
+    Tipo
+    <select formControlName="tipo">
+      <option value="monetaria">Monetaria</option>
+      <option value="ahorro">Ahorro</option>
+    </select>
+  </label>
+  <label>
+    Moneda
+    <select formControlName="moneda">
+      <option value="GTQ">Quetzales (GTQ)</option>
+      <option value="USD">Dólares (USD)</option>
+    </select>
+  </label>
+  <label>
+    Cuenta contable
+    <select formControlName="cuenta_id">
+      <option [ngValue]="0" disabled>Seleccione una cuenta</option>
+      @for (cuenta of opcionesCuenta(); track cuenta.id) {
+        <option [ngValue]="cuenta.id">{{ cuenta.codigo }} {{ cuenta.nombre }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Próximo número de cheque (opcional)
+    <input type="number" min="1" formControlName="siguiente_cheque" />
+  </label>
+  @if (formulario.touched && formulario.invalid) {
+    <small class="falla">Complete banco, número y cuenta contable</small>
+  }
+  <button type="submit" [disabled]="guardando()">Guardar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Banco</th>
+      <th>Número</th>
+      <th>Tipo</th>
+      <th>Moneda</th>
+      <th>Cuenta contable</th>
+      <th>Próximo cheque</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (cuenta of cuentasBancarias(); track cuenta.id) {
+      <tr>
+        <td>{{ cuenta.banco }}</td>
+        <td>{{ cuenta.numero }}</td>
+        <td>{{ cuenta.tipo === 'ahorro' ? 'Ahorro' : 'Monetaria' }}</td>
+        <td>{{ cuenta.moneda }}</td>
+        <td>{{ nombreCuenta(cuenta.cuenta_id) }}</td>
+        <td>
+          <input
+            #cheque
+            type="number"
+            min="1"
+            [value]="cuenta.siguiente_cheque ?? ''"
+            [attr.aria-label]="'Próximo cheque de la cuenta ' + cuenta.numero"
+          />
+          <button type="button" class="secundario" (click)="guardarCheques(cuenta, cheque.value)">
+            Guardar
+          </button>
+        </td>
+        <td>
+          {{ cuenta.activa ? 'Activa' : 'Inactiva' }}
+          <button type="button" class="secundario" (click)="cambiarEstado(cuenta)">
+            {{ cuenta.activa ? 'Inactivar' : 'Activar' }}
+          </button>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="7" class="vacio">Todavía no hay cuentas bancarias registradas</td>
+      </tr>
+    }
+  </tbody>
+</table>

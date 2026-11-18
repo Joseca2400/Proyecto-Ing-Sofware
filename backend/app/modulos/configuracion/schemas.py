@@ -165,3 +165,35 @@ class PerfilFiscalSalida(BaseModel):
     @field_serializer("nit")
     def nit_con_guion(self, nit: str) -> str:
         return formatear_nit(nit)
+
+
+# ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+Moneda = Literal[*service.MONEDAS_BANCARIAS]
+TipoCuentaBancaria = Literal[*service.TIPOS_CUENTA_BANCARIA]
+
+
+class CuentaBancariaEntrada(BaseModel):
+    banco: _texto(100)
+    numero: _texto(30)
+    tipo: TipoCuentaBancaria
+    moneda: Moneda
+    cuenta_id: int
+    siguiente_cheque: int | None = None
+
+
+class NumeracionChequesEntrada(BaseModel):
+    siguiente_cheque: int | None = None
+
+
+class CuentaBancariaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    banco: str
+    numero: str
+    tipo: TipoCuentaBancaria
+    moneda: Moneda
+    cuenta_id: int
+    siguiente_cheque: int | None
+    activa: bool
