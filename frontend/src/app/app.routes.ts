@@ -53,6 +53,12 @@ export const routes: Routes = [
           import('./features/compras/gastos-importacion').then((m) => m.GastosImportacionPantalla),
       },
       {
+        path: 'taller/tarifas',
+        title: 'Tarifas de taller · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/taller/tarifas').then((m) => m.TarifasTallerPantalla),
+      },
+      {
         path: 'unidades',
         title: 'Unidades · Kilómetro Cero',
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),

@@ -46,7 +46,7 @@ export class Layout {
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Compra en EE. UU.', ruta: '/compras/compra-unidades' },
     { etiqueta: 'Gastos de importación', ruta: '/compras/gastos-importacion' },
-    { etiqueta: 'Taller' },
+    { etiqueta: 'Tarifas de taller', ruta: '/taller/tarifas' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },
     { etiqueta: 'Contabilidad', ruta: '/contabilidad/partidas' },
