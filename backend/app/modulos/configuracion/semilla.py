@@ -15,6 +15,7 @@ D, A = "deudora", "acreedora"  # naturaleza
 _VIN = {"vin": service.VIN_OBLIGATORIO}
 _ADMIN = {"linea_defecto": "administracion"}
 _OPC = {"vin": service.VIN_OPCIONAL}
+_USD = {"monetaria_usd": True}
 
 
 def _linea(linea: str, **extra) -> dict:
@@ -32,6 +33,7 @@ CATALOGO = (
     ("1.1.01.03", "Bancos en dólares", "activo", D, True, {"monetaria_usd": True, **_ADMIN}),
     ("1.1.02", "Cuentas por cobrar", "activo", D, False, {}),
     ("1.1.02.01", "Clientes", "activo", D, True, {"linea_obligatoria": True}),
+    ("1.1.02.02", "Clientes en dólares", "activo", D, True, {"linea_obligatoria": True, **_USD}),
     ("1.1.03", "Impuestos por recuperar", "activo", D, False, {}),
     ("1.1.03.01", "IVA crédito fiscal", "activo", D, True, {}),
     ("1.1.03.02", "IVA pagado en importación", "activo", D, True, _OPC),
@@ -49,6 +51,7 @@ CATALOGO = (
     ("2.1.02", "Impuestos por pagar", "pasivo", A, False, {}),
     ("2.1.02.01", "IVA débito fiscal", "pasivo", A, True, {}),
     ("2.1.03", "Depósitos en garantía de clientes", "pasivo", A, True, _linea("alquiler", **_OPC)),
+    ("2.1.04", "Depósitos en garantía en dólares", "pasivo", A, True, _linea("alquiler", **_USD, **_OPC)),
     ("3", "Patrimonio", "patrimonio", A, False, {}),
     ("3.1", "Capital social", "patrimonio", A, True, _ADMIN),
     ("3.2", "Resultados acumulados", "patrimonio", A, True, _ADMIN),
