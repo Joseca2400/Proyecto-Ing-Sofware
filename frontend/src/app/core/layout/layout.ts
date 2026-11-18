@@ -64,7 +64,7 @@ export class Layout {
     { etiqueta: 'Balance de comprobación', ruta: '/contabilidad/balance' },
     { etiqueta: 'Mayor', ruta: '/contabilidad/mayor' },
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
-    { etiqueta: 'Reportes' },
+    { etiqueta: 'Unidades por etapa', ruta: '/reportes/unidades-etapa' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
     { etiqueta: 'Perfil fiscal', ruta: '/configuracion/perfil-fiscal' },

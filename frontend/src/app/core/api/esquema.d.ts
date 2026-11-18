@@ -1259,6 +1259,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reportes/unidades-por-etapa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unidades Por Etapa
+         * @description HU-7.04: unidades y valor por estado, días promedio y las que superan el plazo.
+         */
+        get: operations["unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2089,6 +2109,19 @@ export interface components {
             motor: string | null;
             /** Revision Esquema */
             revision_esquema: string | null;
+        };
+        /** EstadoReporteEtapa */
+        EstadoReporteEtapa: {
+            /** Estado */
+            estado: string;
+            /** Unidades */
+            unidades: number;
+            /** Valor */
+            valor: string;
+            /** Dias Promedio */
+            dias_promedio: number;
+            /** Excedidas */
+            excedidas: number;
         };
         /** EstadoSistema */
         EstadoSistema: {
@@ -3035,6 +3068,17 @@ export interface components {
             /** Cuenta Codigo */
             cuenta_codigo: string | null;
         };
+        /** ReporteUnidadesEtapa */
+        ReporteUnidadesEtapa: {
+            /** Limite Dias */
+            limite_dias: number;
+            /** Valor Total */
+            valor_total: string;
+            /** Estados */
+            estados: components["schemas"]["EstadoReporteEtapa"][];
+            /** Unidades */
+            unidades: components["schemas"]["UnidadReporteEtapa"][];
+        };
         /**
          * RepuestoHojaCosto
          * @description Línea de una factura local cargada a unidades en proceso con el VIN (repuesto o subcontrato).
@@ -3330,6 +3374,35 @@ export interface components {
             estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento?: string | null;
+        };
+        /**
+         * UnidadReporteEtapa
+         * @description `valor_en_libros` dice si el valor es el en libros (con alta en flota) o el costo acumulado.
+         */
+        UnidadReporteEtapa: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            /**
+             * Desde
+             * Format: date-time
+             */
+            desde: string;
+            /** Dias En Estado */
+            dias_en_estado: number;
+            /** Valor */
+            valor: string;
+            /** Valor En Libros */
+            valor_en_libros: boolean;
+            /** Excede */
+            excede: boolean;
         };
         /** UnidadSalida */
         UnidadSalida: {
@@ -6531,6 +6604,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get: {
+        parameters: {
+            query?: {
+                limite_dias?: number;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteUnidadesEtapa"];
                 };
             };
             /** @description Validation Error */

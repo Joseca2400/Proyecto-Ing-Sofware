@@ -361,16 +361,9 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
     if estado is not None and estado not in ETAPAS_IMPORTACION:
         raise ErrorNegocio(f"Etapa desconocida: {estado}. Use una de: {', '.join(ETAPAS_IMPORTACION)}")
     etapas = (estado,) if estado else ETAPAS_IMPORTACION
-    ultimo_cambio = (
-        select(func.max(CambioEstadoUnidad.id).label("id")).group_by(CambioEstadoUnidad.unidad_id).subquery()
-    )
     salio = _ya_salio_de_importacion(Unidad.id)
     filas = db.execute(
-        select(Unidad, CambioEstadoUnidad.fecha)
-        .join(CambioEstadoUnidad, CambioEstadoUnidad.unidad_id == Unidad.id)
-        .join(ultimo_cambio, ultimo_cambio.c.id == CambioEstadoUnidad.id)
-        .where(Unidad.estado.in_(etapas), (Unidad.estado == "lista") | ~salio)
-        .order_by(CambioEstadoUnidad.fecha, Unidad.id)
+        _con_desde().where(Unidad.estado.in_(etapas), (Unidad.estado == "lista") | ~salio)
     ).all()
 
     # Import diferido: `compras` ya importa este service al cargarse.
@@ -389,7 +382,7 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
                 "color": unidad.color,
                 "estado": unidad.estado,
                 "desde": desde,
-                "dias_en_etapa": max((ahora - desde).days, 0),
+                "dias_en_etapa": _dias(ahora, desde),
                 "costo_total_gtq": costos[unidad.vin],
                 "siguiente_etapa": _SIGUIENTE_ETAPA.get(unidad.estado),
             }
@@ -409,6 +402,42 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
         for etapa in etapas
     ]
     return {"etapas": resumen, "unidades": unidades}
+
+
+def _con_desde():
+    """Unidades con la fecha de su último cambio de estado (desde cuándo están en su estado), de la
+    que lleva más tiempo a la que lleva menos."""
+    ultimo_cambio = (
+        select(func.max(CambioEstadoUnidad.id).label("id")).group_by(CambioEstadoUnidad.unidad_id).subquery()
+    )
+    return (
+        select(Unidad, CambioEstadoUnidad.fecha)
+        .join(CambioEstadoUnidad, CambioEstadoUnidad.unidad_id == Unidad.id)
+        .join(ultimo_cambio, ultimo_cambio.c.id == CambioEstadoUnidad.id)
+        .order_by(CambioEstadoUnidad.fecha, Unidad.id)
+    )
+
+
+def _dias(ahora: datetime, desde: datetime) -> int:
+    return max((ahora - desde).days, 0)
+
+
+def dias_en_estado(db: Session) -> list[dict]:
+    """Para `reportes` (HU-7.04): cada unidad con su estado y los días que lleva en él, contados
+    como en las etapas de importación (desde el último cambio del historial)."""
+    ahora = datetime.now(UTC)
+    return [
+        {
+            "vin": unidad.vin,
+            "marca": unidad.marca,
+            "linea": unidad.linea,
+            "modelo": unidad.modelo,
+            "estado": unidad.estado,
+            "desde": desde,
+            "dias_en_estado": _dias(ahora, desde),
+        }
+        for unidad, desde in db.execute(_con_desde()).all()
+    ]
 
 
 # ── HU-3.01: alta de la unidad como activo fijo de la flota ───────────────────
