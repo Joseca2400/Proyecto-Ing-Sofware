@@ -50,6 +50,7 @@ export class Layout {
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },
     { etiqueta: 'Contabilidad', ruta: '/contabilidad/partidas' },
+    { etiqueta: 'Reglas de contabilización', ruta: '/contabilidad/reglas' },
     { etiqueta: 'Balance de comprobación', ruta: '/contabilidad/balance' },
     { etiqueta: 'Mayor', ruta: '/contabilidad/mayor' },
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },

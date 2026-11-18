@@ -303,14 +303,26 @@ describe('PartidasPantalla', () => {
     expect(boton(el, 'Revertir')).toBeUndefined();
   });
 
-  it('no ofrece revertir una automática', async () => {
+  it('muestra el documento de origen de una automática y no ofrece revertirla', async () => {
     const fixture = await crear([
-      { ...PARTIDA, estado: 'contabilizada', numero: 3, origen: 'automatica' },
+      {
+        ...PARTIDA,
+        estado: 'contabilizada',
+        numero: 3,
+        origen: 'automatica',
+        documento_tipo: 'factura_compra',
+        documento_id: '41',
+      },
     ]);
     const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('tbody')!.textContent).toContain('factura_compra 41');
     el.querySelector<HTMLButtonElement>('tbody button')!.click();
     await fixture.whenStable();
+    expect(el.querySelector('.ficha')!.textContent).toContain(
+      'Documento de origen: factura_compra 41',
+    );
     expect(boton(el, 'Revertir')).toBeUndefined();
+    expect(boton(el, 'Corregir')).toBeUndefined();
   });
 
   it('filtra la bandeja por estado', async () => {

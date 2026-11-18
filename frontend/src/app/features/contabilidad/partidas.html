@@ -127,6 +127,9 @@
       @if (p.documento_soporte; as soporte) {
         · Soporte: {{ soporte }}
       }
+      @if (p.documento_tipo) {
+        · Documento de origen: {{ p.documento_tipo }} {{ p.documento_id }}
+      }
     </p>
     @if (p.revierte_a; as id) {
       <p class="datos">
@@ -262,7 +265,12 @@
           <td>{{ p.numero ?? '—' }}</td>
           <td>{{ p.fecha }}</td>
           <td>{{ p.concepto }}</td>
-          <td>{{ p.origen === 'manual' ? 'Manual' : 'Automática' }}</td>
+          <td>
+            {{ p.origen === 'manual' ? 'Manual' : 'Automática' }}
+            @if (p.documento_tipo) {
+              <small>· {{ p.documento_tipo }} {{ p.documento_id }}</small>
+            }
+          </td>
           <td class="numero">{{ p.total_debe | monto }}</td>
           <td>
             <span class="chip" [attr.data-estado]="p.estado">{{

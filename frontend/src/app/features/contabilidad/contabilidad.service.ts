@@ -7,6 +7,7 @@ import { components } from '../../core/api/esquema';
 export type Partida = components['schemas']['PartidaSalida'];
 export type PartidaEntrada = components['schemas']['PartidaEntrada'];
 export type Cuenta = components['schemas']['CuentaSalida'];
+export type Regla = components['schemas']['ReglaSalida'];
 export type Balance = components['schemas']['BalanceSalida'];
 export type Mayor = components['schemas']['MayorSalida'];
 
@@ -67,6 +68,14 @@ export class ContabilidadService {
 
   revertir(id: number, fecha: string, motivo: string): Observable<Partida> {
     return this.http.post<Partida>(`${this.url}/${id}/revertir`, { fecha, motivo });
+  }
+
+  reglas(): Observable<Regla[]> {
+    return this.http.get<Regla[]>(`${API_URL}/contabilidad/reglas`);
+  }
+
+  definirRegla(id: number, cuenta_codigo: string): Observable<Regla> {
+    return this.http.put<Regla>(`${API_URL}/contabilidad/reglas/${id}`, { cuenta_codigo });
   }
 
   balance(filtros: FiltrosLibro): Observable<Balance> {

@@ -8,7 +8,13 @@ HU-2.01 (incluido): partida manual en borrador, líneas en quetzales o dólares 
 validación de dimensiones contra la cuenta, cuadre al enviar a revisión y correlativo al contabilizar.
 HU-2.02 (incluido): borrador → en revisión → contabilizada, o devuelta con comentario y reenvío.
 HU-2.03 (incluido): partida automática ligada a su documento, una por documento; cada tipo de
-documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida.
+documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida;
+el contador cambia la cuenta de una regla desde su pantalla. Navegación en ambos sentidos: la
+partida guarda tipo e id de su documento y `partida_de_documento` va del documento a su partida.
+Una automática nace contabilizada: no se edita, envía, devuelve ni revierte a mano; se corrige
+desde su documento (el módulo dueño llama a `revertir_automatica`).
+HU-2.03 (diferido): reglas con línea de negocio y origen del VIN propios; hoy cada módulo pone
+VIN y línea en sus líneas y el catálogo valida las dimensiones de cada cuenta.
 HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro la corrige por él.
 HU-2.16 (incluido): balance de comprobación y mayor sobre partidas contabilizadas, con filtros de
 fechas, línea de negocio y VIN; `saldo_cuenta` para que otros módulos concilien contra el mayor.

@@ -341,6 +341,28 @@ def test_el_contador_cambia_la_cuenta_de_una_regla_y_los_demas_no(cliente):
     assert cambio.json()["cuenta_codigo"] == "2.1.01.02"
 
 
+def test_la_automatica_no_se_toca_a_mano_y_se_navega_desde_su_documento(cliente, db):
+    partida = _automatica(db, 9201)
+    db.commit()
+    contador, gerente = _entrar(cliente, CONTADOR), _entrar(cliente, GERENTE)
+    base = f"{URL}/{partida.id}"
+    intentos = [
+        cliente.put(base, json=_cuerpo(), headers=contador),
+        cliente.post(f"{base}/enviar-a-revision", headers=contador),
+        cliente.post(f"{base}/devolver", json={"comentario": "x"}, headers=gerente),
+        cliente.post(f"{base}/contabilizar", headers=gerente),
+        cliente.post(f"{base}/revertir", json={"fecha": FECHA.isoformat(), "motivo": "x"}, headers=contador),
+    ]
+    assert [r.status_code for r in intentos] == [409] * 5
+    assert "documento factura_compra 9201" in intentos[-1].json()["detail"]
+
+    documento = "/api/v1/contabilidad/documentos/factura_compra"
+    assert cliente.get(f"{documento}/9201/partida").status_code == 401
+    encontrada = cliente.get(f"{documento}/9201/partida", headers=contador).json()
+    assert (encontrada["id"], encontrada["documento_id"]) == (partida.id, "9201")
+    assert cliente.get(f"{documento}/no-existe/partida", headers=contador).status_code == 404
+
+
 def test_una_regla_sin_cuenta_avisa_cual_falta(db):
     with pytest.raises(ErrorNegocio, match="Falta la regla de contabilización «factura_compra · no_existe»"):
         service.cuenta_regla(db, "factura_compra", "no_existe")

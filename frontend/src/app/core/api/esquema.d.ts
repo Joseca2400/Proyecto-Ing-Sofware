@@ -409,6 +409,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/documentos/{documento_tipo}/{documento_id}/partida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partida De Documento
+         * @description HU-2.03: del documento a su partida (de la partida al documento: `documento_tipo` e id).
+         */
+        get: operations["partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas/{partida_id}": {
         parameters: {
             query?: never;
@@ -2745,6 +2765,40 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                documento_tipo: string;
+                documento_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

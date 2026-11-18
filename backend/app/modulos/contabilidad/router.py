@@ -44,6 +44,17 @@ def crear_partida(datos: PartidaEntrada, usuario: Usuario = Depends(CAPTURA), db
     return service.crear_borrador(db, datos, usuario.id)
 
 
+@router.get("/documentos/{documento_tipo}/{documento_id}/partida", response_model=PartidaSalida)
+def partida_de_documento(
+    documento_tipo: str,
+    documento_id: str,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
+    """HU-2.03: del documento a su partida (de la partida al documento: `documento_tipo` e id)."""
+    return service.partida_de_documento(db, documento_tipo, documento_id)
+
+
 @router.get("/partidas/{partida_id}", response_model=PartidaSalida)
 def consultar_partida(partida_id: int, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
     return service.obtener_partida(db, partida_id)
