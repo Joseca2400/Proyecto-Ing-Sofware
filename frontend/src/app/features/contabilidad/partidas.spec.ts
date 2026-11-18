@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { PartidasPantalla } from './partidas';
 
 const URL = '/api/v1/contabilidad/partidas';
@@ -53,7 +54,7 @@ describe('PartidasPantalla', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [PartidasPantalla],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     http = TestBed.inject(HttpTestingController);
   });
@@ -254,6 +255,74 @@ describe('PartidasPantalla', () => {
     );
     await fixture.whenStable();
     expect(el.querySelector('[role=alert]')!.textContent).toContain('diferencia 7.000000');
+  });
+
+  it('abre la partida que llega desde el mayor', async () => {
+    TestBed.resetTestingModule().configureTestingModule({
+      imports: [PartidasPantalla],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ partida: '7' }) } },
+        },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    const fixture = await crear();
+    http
+      .expectOne({ method: 'GET', url: `${URL}/7` })
+      .flush({ ...PARTIDA, estado: 'contabilizada', numero: 3 });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.ficha').textContent).toContain('Partida No. 3');
+  });
+
+  it('revierte una partida contabilizada con motivo y muestra el vínculo', async () => {
+    const contabilizada = { ...PARTIDA, estado: 'contabilizada', numero: 3 };
+    const fixture = await crear([contabilizada]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    await fixture.whenStable();
+    boton(el, 'Revertir').click();
+    await fixture.whenStable();
+    http.expectNone({ method: 'POST', url: `${URL}/7/revertir` });
+    expect(el.textContent).toContain('Indica el motivo');
+
+    escribir(el, 'fecha_reversion', '2026-11-03');
+    escribir(el, 'motivo_reversion', ' Duplicada ');
+    boton(el, 'Revertir').click();
+    const envio = http.expectOne({ method: 'POST', url: `${URL}/7/revertir` });
+    expect(envio.request.body).toEqual({ fecha: '2026-11-03', motivo: 'Duplicada' });
+    envio.flush({ ...contabilizada, id: 8, numero: 4, revierte_a: 7, comentario: 'Duplicada' });
+    lista().flush([]);
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Partida revertida con la partida No. 4');
+    expect(el.textContent).toContain('Motivo de la reversión: Duplicada');
+    expect(boton(el, 'Revertir')).toBeUndefined();
+  });
+
+  it('muestra el documento de origen de una automática y no ofrece revertirla', async () => {
+    const fixture = await crear([
+      {
+        ...PARTIDA,
+        estado: 'contabilizada',
+        numero: 3,
+        origen: 'automatica',
+        documento_tipo: 'factura_compra',
+        documento_id: '41',
+      },
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('tbody')!.textContent).toContain('factura_compra 41');
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    await fixture.whenStable();
+    expect(el.querySelector('.ficha')!.textContent).toContain(
+      'Documento de origen: factura_compra 41',
+    );
+    expect(boton(el, 'Revertir')).toBeUndefined();
+    expect(boton(el, 'Corregir')).toBeUndefined();
   });
 
   it('filtra la bandeja por estado', async () => {

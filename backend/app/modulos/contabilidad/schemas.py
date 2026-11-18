@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
+    PlainSerializer,
     StringConstraints,
     computed_field,
     field_serializer,
@@ -33,6 +34,14 @@ class LineaEntrada(BaseModel):
         return valor
 
 
+class LineaAutomatica(LineaEntrada):
+    """Solo para `registrar_automatica` (no la recibe ninguna ruta): una línea en USD llevada al
+    tipo de cambio dado y no al de la fecha, p. ej. el saldo en libros de la factura que se paga
+    (HU-2.09)."""
+
+    tipo_cambio: Decimal | None = None
+
+
 class PartidaEntrada(BaseModel):
     fecha: date
     concepto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
@@ -56,6 +65,11 @@ class ReglaSalida(BaseModel):
 
 class DevolucionEntrada(BaseModel):
     comentario: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+
+
+class ReversionEntrada(BaseModel):
+    fecha: date
+    motivo: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 
 
 class LineaSalida(BaseModel):
@@ -96,6 +110,8 @@ class PartidaSalida(BaseModel):
     creado_por: int | None
     contabilizada_por: int | None
     contabilizada_en: datetime | None
+    revierte_a: int | None
+    revertida_por: int | None
     lineas: list[LineaSalida]
 
     # El front no suma montos: la bandeja de revisión muestra estos totales.
@@ -108,3 +124,54 @@ class PartidaSalida(BaseModel):
     @property
     def total_haber(self) -> str:
         return f"{sum((linea.haber for linea in self.lineas), Decimal(0)):.6f}"
+
+
+# ── HU-2.16: balance de comprobación y mayor ──────────────────────────────────
+
+Monto = Annotated[Decimal, PlainSerializer(lambda valor: f"{valor:.6f}", return_type=str)]
+TipoCambio = Annotated[Decimal, PlainSerializer(lambda valor: f"{valor:.8f}", return_type=str)]
+
+
+class FilaBalance(BaseModel):
+    cuenta_id: int
+    codigo: str
+    nombre: str
+    naturaleza: str
+    saldo_inicial: Monto
+    debe: Monto
+    haber: Monto
+    saldo_final: Monto
+
+
+class BalanceSalida(BaseModel):
+    filas: list[FilaBalance]
+    total_debe: Monto
+    total_haber: Monto
+
+
+class MovimientoMayor(BaseModel):
+    fecha: date
+    partida_id: int
+    numero: int | None
+    concepto: str
+    documento_tipo: str | None
+    documento_id: str | None
+    debe: Monto
+    haber: Monto
+    saldo: Monto
+    moneda: str
+    monto_usd: Monto | None
+    tipo_cambio: TipoCambio | None
+    linea_negocio: str | None
+    vin: str | None
+
+
+class MayorSalida(BaseModel):
+    cuenta_id: int
+    codigo: str
+    nombre: str
+    naturaleza: str
+    monetaria_usd: bool
+    saldo_inicial: Monto
+    movimientos: list[MovimientoMayor]
+    saldo_final: Monto

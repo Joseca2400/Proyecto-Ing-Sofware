@@ -73,6 +73,14 @@ button.agregar {
   margin-bottom: 12px;
 }
 
+/* Botón con aspecto de enlace para abrir la partida ligada (HU-2.05). */
+button.enlace {
+  background: none;
+  color: var(--teal);
+  padding: 0;
+  text-decoration: underline;
+}
+
 .acciones {
   display: flex;
   flex-wrap: wrap;

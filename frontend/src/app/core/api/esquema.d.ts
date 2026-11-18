@@ -513,6 +513,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/documentos/{documento_tipo}/{documento_id}/partida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partida De Documento
+         * @description HU-2.03: del documento a su partida (de la partida al documento: `documento_tipo` e id).
+         */
+        get: operations["partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas/{partida_id}": {
         parameters: {
             query?: never;
@@ -582,6 +602,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/partidas/{partida_id}/revertir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revertir */
+        post: operations["revertir_api_v1_contabilidad_partidas__partida_id__revertir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/reglas": {
         parameters: {
             query?: never;
@@ -609,6 +646,40 @@ export interface paths {
         get?: never;
         /** Definir Regla */
         put: operations["definir_regla_api_v1_contabilidad_reglas__regla_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance Comprobacion */
+        get: operations["balance_comprobacion_api_v1_contabilidad_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/mayor/{cuenta_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mayor */
+        get: operations["mayor_api_v1_contabilidad_mayor__cuenta_id__get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -904,6 +975,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BalanceSalida */
+        BalanceSalida: {
+            /** Filas */
+            filas: components["schemas"]["FilaBalance"][];
+            /** Total Debe */
+            total_debe: string;
+            /** Total Haber */
+            total_haber: string;
+        };
         /** BitacoraSalida */
         BitacoraSalida: {
             /** Id */
@@ -1440,6 +1520,25 @@ export interface components {
              */
             readonly genera_credito_fiscal: boolean;
         };
+        /** FilaBalance */
+        FilaBalance: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
+            /** Naturaleza */
+            naturaleza: string;
+            /** Saldo Inicial */
+            saldo_inicial: string;
+            /** Debe */
+            debe: string;
+            /** Haber */
+            haber: string;
+            /** Saldo Final */
+            saldo_final: string;
+        };
         /**
          * GastoImportacionEntrada
          * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
@@ -1658,6 +1757,59 @@ export interface components {
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
         };
+        /** MayorSalida */
+        MayorSalida: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
+            /** Naturaleza */
+            naturaleza: string;
+            /** Monetaria Usd */
+            monetaria_usd: boolean;
+            /** Saldo Inicial */
+            saldo_inicial: string;
+            /** Movimientos */
+            movimientos: components["schemas"]["MovimientoMayor"][];
+            /** Saldo Final */
+            saldo_final: string;
+        };
+        /** MovimientoMayor */
+        MovimientoMayor: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Numero */
+            numero: number | null;
+            /** Concepto */
+            concepto: string;
+            /** Documento Tipo */
+            documento_tipo: string | null;
+            /** Documento Id */
+            documento_id: string | null;
+            /** Debe */
+            debe: string;
+            /** Haber */
+            haber: string;
+            /** Saldo */
+            saldo: string;
+            /** Moneda */
+            moneda: string;
+            /** Monto Usd */
+            monto_usd: string | null;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Linea Negocio */
+            linea_negocio: string | null;
+            /** Vin */
+            vin: string | null;
+        };
         /** NumeracionChequesEntrada */
         NumeracionChequesEntrada: {
             /** Siguiente Cheque */
@@ -1772,6 +1924,10 @@ export interface components {
             contabilizada_por: number | null;
             /** Contabilizada En */
             contabilizada_en: string | null;
+            /** Revierte A */
+            revierte_a: number | null;
+            /** Revertida Por */
+            revertida_por: number | null;
             /** Lineas */
             lineas: components["schemas"]["LineaSalida"][];
             /** Total Debe */
@@ -2003,6 +2159,16 @@ export interface components {
             compra_gtq: string;
             /** Costo Total Gtq */
             costo_total_gtq: string;
+        };
+        /** ReversionEntrada */
+        ReversionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Motivo */
+            motivo: string;
         };
         /**
          * TarifaEntrada
@@ -3590,6 +3756,40 @@ export interface operations {
             };
         };
     };
+    partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                documento_tipo: string;
+                documento_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     consultar_partida_api_v1_contabilidad_partidas__partida_id__get: {
         parameters: {
             query?: never;
@@ -3763,6 +3963,43 @@ export interface operations {
             };
         };
     };
+    revertir_api_v1_contabilidad_partidas__partida_id__revertir_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                partida_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReversionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_reglas_api_v1_contabilidad_reglas_get: {
         parameters: {
             query?: never;
@@ -3818,6 +4055,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReglaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_comprobacion_api_v1_contabilidad_balance_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                linea_negocio?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mayor_api_v1_contabilidad_mayor__cuenta_id__get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                linea_negocio?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MayorSalida"];
                 };
             };
             /** @description Validation Error */

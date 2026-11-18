@@ -1,18 +1,24 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.comun.db import get_db
 from app.modulos.contabilidad import service
 from app.modulos.contabilidad.schemas import (
+    BalanceSalida,
     DevolucionEntrada,
+    MayorSalida,
     PartidaEntrada,
     PartidaSalida,
     ReglaEntrada,
     ReglaSalida,
+    ReversionEntrada,
 )
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
     CONTADOR,
+    GERENCIA,
     GERENTE_FINANCIERO,
     Usuario,
     requiere_rol,
@@ -23,6 +29,7 @@ router = APIRouter(prefix="/contabilidad", tags=["Contabilidad"])
 
 CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
 REVISION = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
+CONSULTA = requiere_rol(CONTADOR, GERENTE_FINANCIERO, GERENCIA)
 
 
 @router.get("/partidas", response_model=list[PartidaSalida])
@@ -35,6 +42,17 @@ def listar_partidas(
 @router.post("/partidas", response_model=PartidaSalida, status_code=201)
 def crear_partida(datos: PartidaEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)):
     return service.crear_borrador(db, datos, usuario.id)
+
+
+@router.get("/documentos/{documento_tipo}/{documento_id}/partida", response_model=PartidaSalida)
+def partida_de_documento(
+    documento_tipo: str,
+    documento_id: str,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
+    """HU-2.03: del documento a su partida (de la partida al documento: `documento_tipo` e id)."""
+    return service.partida_de_documento(db, documento_tipo, documento_id)
 
 
 @router.get("/partidas/{partida_id}", response_model=PartidaSalida)
@@ -66,6 +84,16 @@ def devolver(
     return service.devolver(db, partida_id, datos.comentario)
 
 
+@router.post("/partidas/{partida_id}/revertir", response_model=PartidaSalida, status_code=201)
+def revertir(
+    partida_id: int,
+    datos: ReversionEntrada,
+    usuario: Usuario = Depends(requiere_rol(CONTADOR)),
+    db: Session = Depends(get_db),
+):
+    return service.revertir(db, partida_id, datos.fecha, datos.motivo, usuario.id)
+
+
 # ── HU-2.03: reglas de contabilización ────────────────────────────────────────
 
 
@@ -82,3 +110,31 @@ def definir_regla(
     db: Session = Depends(get_db),
 ):
     return service.definir_regla(db, regla_id, datos.cuenta_codigo)
+
+
+# ── HU-2.16: balance de comprobación y mayor ──────────────────────────────────
+
+
+@router.get("/balance", response_model=BalanceSalida)
+def balance_comprobacion(
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+    _: Usuario = Depends(CONSULTA),
+    db: Session = Depends(get_db),
+):
+    return service.balance_comprobacion(db, desde, hasta, linea_negocio, vin)
+
+
+@router.get("/mayor/{cuenta_id}", response_model=MayorSalida)
+def mayor(
+    cuenta_id: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+    _: Usuario = Depends(CONSULTA),
+    db: Session = Depends(get_db),
+):
+    return service.mayor(db, cuenta_id, desde, hasta, linea_negocio, vin)

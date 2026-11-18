@@ -1,0 +1,54 @@
+<section class="encabezado">
+  <h1>Reglas de contabilización</h1>
+  <p>
+    La cuenta que usa cada tipo de documento al generar su partida automática. Si una regla queda
+    sin cuenta de detalle, el documento no se registra y el sistema avisa cuál falta. Solo el
+    contador cambia las cuentas.
+  </p>
+</section>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@for (grupo of grupos(); track grupo.tipo) {
+  <h2>{{ grupo.tipo }}</h2>
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th>Descripción</th>
+        <th>Cuenta</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of grupo.reglas; track r.id) {
+        <tr>
+          <td class="codigo">{{ r.concepto }}</td>
+          <td>{{ r.descripcion }}</td>
+          <td>
+            <select #cuenta [name]="'cuenta' + r.id" [attr.aria-label]="'Cuenta de ' + r.concepto">
+              <option value="" [selected]="!r.cuenta_codigo" disabled>Sin cuenta</option>
+              @for (c of cuentas(); track c.id) {
+                <option [value]="c.codigo" [selected]="c.codigo === r.cuenta_codigo">
+                  {{ c.codigo }} · {{ c.nombre }}
+                </option>
+              }
+            </select>
+          </td>
+          <td>
+            <button type="button" class="secundario" (click)="guardar(r, cuenta.value)">
+              Guardar
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @empty {
+  <p class="vacio">No hay reglas de contabilización</p>
+}

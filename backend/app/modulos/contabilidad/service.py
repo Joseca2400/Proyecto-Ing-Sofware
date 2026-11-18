@@ -8,15 +8,34 @@ HU-2.01 (incluido): partida manual en borrador, líneas en quetzales o dólares 
 validación de dimensiones contra la cuenta, cuadre al enviar a revisión y correlativo al contabilizar.
 HU-2.02 (incluido): borrador → en revisión → contabilizada, o devuelta con comentario y reenvío.
 HU-2.03 (incluido): partida automática ligada a su documento, una por documento; cada tipo de
-documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida.
+documento toma sus cuentas de una regla configurable (`cuenta_regla`) y, si falta, no hay partida;
+el contador cambia la cuenta de una regla desde su pantalla. Navegación en ambos sentidos: la
+partida guarda tipo e id de su documento y `partida_de_documento` va del documento a su partida.
+Una automática nace contabilizada: no se edita, envía, devuelve ni revierte a mano; se corrige
+desde su documento (el módulo dueño llama a `revertir_automatica`).
+HU-2.03 (diferido): reglas con línea de negocio y origen del VIN propios; hoy cada módulo pone
+VIN y línea en sus líneas y el catálogo valida las dimensiones de cada cuenta.
 HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro la corrige por él.
-Pendiente: límites monetarios de aprobación; lotes; adjuntos; reversión (HU-2.05); período abierto.
+HU-2.16 (incluido): balance de comprobación y mayor sobre partidas contabilizadas, con filtros de
+fechas, línea de negocio y VIN; `saldo_cuenta` para que otros módulos concilien contra el mayor.
+Pendiente: exportar el balance y el mayor (Sprint 5, con HU-7.09).
+HU-2.05 (incluido): reversión con motivo y fecha elegida, en una partida nueva contabilizada que
+invierte las líneas y apunta a la original (`revierte_a`); la original no se toca y no se revierte
+dos veces. Solo el contador revierte a mano y solo partidas manuales; la de un documento la pide
+su módulo con `revertir_automatica`.
+HU-2.09 (incluido, pieza del motor): `diferencial_cambiario` calcula la ganancia o pérdida
+realizada de un pago o cobro en USD (proporcional al monto aplicado, desde el tipo de cambio en
+libros) y da su línea; una `LineaAutomatica` lleva la línea en USD del saldo a su tasa en libros.
+HU-2.09 (diferido): la partida de pagos y cobros la arma su módulo en el Sprint 3.
+Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
+(HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
 """
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from typing import Literal
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -60,7 +79,13 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
     if datos.moneda == "USD":
         if not cuenta.monetaria_usd:
             raise ErrorNegocio(f"Línea {numero}: la cuenta {cuenta.codigo} no admite montos en USD")
-        monto_usd, tipo_cambio = monto, configuracion.tipo_cambio_de(db, fecha)
+        # Una `LineaAutomatica` puede traer su tipo de cambio (saldo en libros, HU-2.09).
+        tipo_cambio = getattr(datos, "tipo_cambio", None)
+        if tipo_cambio is None:
+            tipo_cambio = configuracion.tipo_cambio_de(db, fecha)
+        elif tipo_cambio <= 0 or -tipo_cambio.as_tuple().exponent > 8:  # type: ignore[operator]
+            raise ErrorNegocio(f"Línea {numero}: el tipo de cambio debe ser positivo con hasta 8 decimales")
+        monto_usd = monto
         equivalente = convertir(monto_usd, tipo_cambio)
         if equivalente >= _LIMITE:
             raise ErrorNegocio(f"Línea {numero}: el equivalente en quetzales excede el máximo permitido")
@@ -270,6 +295,104 @@ def registrar_automatica(
     return partida
 
 
+# ── HU-2.05: reversión de una partida contabilizada ───────────────────────────
+
+
+def _revertir(db: Session, original: Partida, fecha: date, motivo: str, usuario_id: int | None) -> Partida:
+    """Crea y contabiliza la reversión, sin confirmar. `original` debe venir bloqueada."""
+    _exigir_estado(original, "contabilizada", accion="revertir")
+    if original.revierte_a is not None:
+        raise ErrorNegocio("Una partida de reversión no se revierte", 409)
+    # Consulta fresca tras el candado: la relación cargada en la sesión puede estar vieja.
+    previa = db.scalar(select(Partida.numero).where(Partida.revierte_a == original.id))
+    if previa is not None:
+        raise ErrorNegocio(f"La partida No. {original.numero} ya fue revertida por la No. {previa}", 409)
+    motivo = motivo.strip()
+    if not motivo:
+        raise ErrorNegocio("La reversión necesita un motivo")
+    if fecha > date.today():
+        raise ErrorNegocio("La fecha de la reversión no puede ser futura")
+    if fecha < original.fecha:
+        raise ErrorNegocio("La reversión no puede tener fecha anterior a la partida original")
+    reversion = Partida(
+        fecha=fecha,
+        concepto=f"Reversión de la partida No. {original.numero}",
+        comentario=motivo,
+        origen=original.origen,
+        documento_tipo=original.documento_tipo,
+        documento_id=original.documento_id,
+        revierte_a=original.id,
+        creado_por=usuario_id,
+        # Mismos quetzales invertidos: una línea en USD no se vuelve a convertir con otra tasa.
+        lineas=[
+            LineaPartida(
+                numero_linea=linea.numero_linea,
+                cuenta_id=linea.cuenta_id,
+                debe=linea.haber,
+                haber=linea.debe,
+                moneda=linea.moneda,
+                monto_usd=linea.monto_usd,
+                tipo_cambio=linea.tipo_cambio,
+                linea_negocio=linea.linea_negocio,
+                vin=linea.vin,
+            )
+            for linea in original.lineas
+        ],
+    )
+    db.add(reversion)
+    db.flush()
+    _contabilizar(db, reversion, usuario_id)
+    return reversion
+
+
+def revertir(
+    db: Session, partida_id: int, fecha: date, motivo: str, usuario_id: int | None = None
+) -> Partida:
+    """Reversión manual por el contador. Las automáticas se revierten desde su documento."""
+    original = _obtener(db, partida_id, bloquear=True)
+    if original.origen == "automatica":
+        raise ErrorNegocio(
+            "Una partida automática no se revierte a mano: anule o corrija el documento "
+            f"{original.documento_tipo} {original.documento_id}",
+            409,
+        )
+    reversion = _revertir(db, original, fecha, motivo, usuario_id)
+    db.commit()
+    db.refresh(reversion)
+    return reversion
+
+
+def revertir_automatica(
+    db: Session,
+    documento_tipo: str,
+    documento_id: str | int,
+    fecha: date,
+    motivo: str,
+    usuario_id: int | None = None,
+) -> Partida:
+    """Revierte la partida de un documento, sin confirmar (como `registrar_automatica`).
+
+    La llama el módulo dueño del documento al anularlo; él confirma la anulación y la reversión
+    juntas, o revierte todo si esto lanza `ErrorNegocio`.
+    """
+    original = partida_de_documento(db, documento_tipo, documento_id)
+    return _revertir(db, _obtener(db, original.id, bloquear=True), fecha, motivo, usuario_id)
+
+
+def partida_de_documento(db: Session, documento_tipo: str, documento_id: str | int) -> Partida:
+    """La partida automática que originó un documento (no su reversión)."""
+    partida = db.scalar(
+        select(Partida).where(
+            Partida.documento_tipo == documento_tipo,
+            Partida.documento_id == str(documento_id),
+            Partida.revierte_a.is_(None),
+        )
+    )
+    if partida is None:
+        raise ErrorNegocio(f"El documento {documento_tipo} {documento_id} no tiene partida", 404)
+    return partida
+
+
 # ── HU-2.03: reglas de contabilización ────────────────────────────────────────
 
 
@@ -315,3 +438,208 @@ def definir_regla(db: Session, regla_id: int, cuenta_codigo: str) -> ReglaContab
     regla.cuenta_codigo = cuenta.codigo
     db.commit()
     return regla
+
+
+# ── HU-2.09: diferencial cambiario realizado ──────────────────────────────────
+
+
+def diferencial_cambiario(
+    db: Session,
+    monto_usd: Decimal | str,
+    tipo_cambio_libros: Decimal | str,
+    tipo_cambio_liquidacion: Decimal | str,
+    saldo: Literal["por_pagar", "por_cobrar"],
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> tuple[Decimal, LineaEntrada | None]:
+    """Diferencial realizado al pagar o cobrar `monto_usd` de un saldo en dólares.
+
+    - `monto_usd`: lo que se aplica ahora; un pago parcial da un diferencial proporcional.
+    - `tipo_cambio_libros`: al que está el saldo en los libros: el del documento o, si ya se
+      revaluó (HU-2.08), el de la última revaluación, para no contar dos veces el efecto.
+    - `tipo_cambio_liquidacion`: el del pago o cobro; para que la partida cuadre al centavo debe
+      ser el mismo con que `registrar_automatica` convierta la línea del banco (el de la fecha).
+
+    Devuelve el diferencial en quetzales (positivo ganancia, negativo pérdida) y la línea lista
+    para la partida, o `(0, None)` si no hay diferencia. Redondea igual que el motor (mitad hacia
+    arriba, 6 decimales) para componer con las líneas en USD. La cuenta sale de las reglas
+    `diferencial_cambiario · ganancia/perdida`; si falta, lanza `ErrorNegocio` (409).
+    """
+    usd, libros, liquidacion = (
+        a_decimal(valor) for valor in (monto_usd, tipo_cambio_libros, tipo_cambio_liquidacion)
+    )
+    if usd <= 0 or libros <= 0 or liquidacion <= 0:
+        raise ErrorNegocio("El monto en USD y los tipos de cambio deben ser mayores que cero")
+    if saldo not in ("por_pagar", "por_cobrar"):
+        raise ErrorNegocio("El saldo debe ser por_pagar o por_cobrar")
+    diferencia = redondear(convertir(usd, liquidacion), DECIMALES) - redondear(
+        convertir(usd, libros), DECIMALES
+    )
+    # Cobrar a una tasa mayor es ganancia; pagar a una tasa mayor es pérdida.
+    resultado = diferencia if saldo == "por_cobrar" else -diferencia
+    if resultado == 0:
+        return Decimal(0), None
+    concepto, lado = ("ganancia", "haber") if resultado > 0 else ("perdida", "debe")
+    linea = LineaEntrada(
+        cuenta_id=cuenta_regla(db, "diferencial_cambiario", concepto),
+        lado=lado,
+        monto=f"{abs(resultado):f}",
+        linea_negocio=linea_negocio,
+        vin=vin,
+    )
+    return resultado, linea
+
+
+# ── HU-2.16: balance de comprobación y mayor (solo partidas contabilizadas) ───
+
+
+def _contabilizadas(consulta, hasta: date | None, linea_negocio: str | None, vin: str | None):
+    consulta = consulta.join(Partida, LineaPartida.partida_id == Partida.id).where(
+        Partida.estado == "contabilizada"
+    )
+    if hasta is not None:
+        consulta = consulta.where(Partida.fecha <= hasta)
+    if linea_negocio:
+        consulta = consulta.where(LineaPartida.linea_negocio == linea_negocio)
+    if vin and vin.strip():
+        consulta = consulta.where(LineaPartida.vin == vin.strip().upper())
+    return consulta
+
+
+def _signo(naturaleza: str) -> int:
+    """Saldo positivo en el lado normal de la cuenta: débito en deudoras, crédito en acreedoras."""
+    return 1 if naturaleza == "deudora" else -1
+
+
+def saldo_cuenta(
+    db: Session,
+    cuenta_id: int,
+    hasta: date | None = None,
+    vin: str | None = None,
+    linea_negocio: str | None = None,
+) -> Decimal:
+    """Saldo en quetzales de una cuenta según el mayor, para que otros módulos concilien.
+
+    Positivo en el lado normal de la cuenta (débito en deudoras, crédito en acreedoras). Ejemplo:
+    la hoja de costo de una unidad (HU-4.08) compara su total con el saldo de unidades en proceso
+    para su VIN.
+    """
+    cuenta = configuracion.obtener_cuenta(db, cuenta_id)
+    neto = db.scalar(
+        _contabilizadas(
+            select(func.coalesce(func.sum(LineaPartida.debe - LineaPartida.haber), 0)).where(
+                LineaPartida.cuenta_id == cuenta_id
+            ),
+            hasta,
+            linea_negocio,
+            vin,
+        )
+    )
+    return Decimal(neto) * _signo(cuenta.naturaleza)
+
+
+def balance_comprobacion(
+    db: Session,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> dict:
+    """Por cuenta: saldo inicial (antes de `desde`), débitos y créditos del rango y saldo final.
+
+    Los saldos van con el signo de la naturaleza de la cuenta; los totales del rango los suma el
+    servidor (el front no suma).
+    """
+    antes = Partida.fecha < (desde or date.min)
+    cero = Decimal(0)
+    filas = db.execute(
+        _contabilizadas(
+            select(
+                LineaPartida.cuenta_id,
+                func.sum(case((antes, LineaPartida.debe - LineaPartida.haber), else_=cero)),
+                func.sum(case((antes, cero), else_=LineaPartida.debe)),
+                func.sum(case((antes, cero), else_=LineaPartida.haber)),
+            ),
+            hasta,
+            linea_negocio,
+            vin,
+        ).group_by(LineaPartida.cuenta_id)
+    ).all()
+    cuentas = {cuenta.id: cuenta for cuenta in configuracion.listar_cuentas(db, solo_detalle=True)}
+    resultado = []
+    for cuenta_id, previo, debe, haber in filas:
+        cuenta = cuentas[cuenta_id]
+        signo = _signo(cuenta.naturaleza)
+        resultado.append(
+            {
+                "cuenta_id": cuenta_id,
+                "codigo": cuenta.codigo,
+                "nombre": cuenta.nombre,
+                "naturaleza": cuenta.naturaleza,
+                "saldo_inicial": previo * signo,
+                "debe": debe,
+                "haber": haber,
+                "saldo_final": (previo + debe - haber) * signo,
+            }
+        )
+    resultado.sort(key=lambda fila: fila["codigo"])
+    return {
+        "filas": resultado,
+        "total_debe": sum((fila["debe"] for fila in resultado), cero),
+        "total_haber": sum((fila["haber"] for fila in resultado), cero),
+    }
+
+
+def mayor(
+    db: Session,
+    cuenta_id: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    linea_negocio: str | None = None,
+    vin: str | None = None,
+) -> dict:
+    """Mayor de una cuenta: saldo inicial, cada movimiento con su saldo acumulado y saldo final."""
+    cuenta = configuracion.obtener_cuenta(db, cuenta_id)
+    signo = _signo(cuenta.naturaleza)
+    inicial = (
+        saldo_cuenta(db, cuenta_id, desde - timedelta(days=1), vin, linea_negocio) if desde else Decimal(0)
+    )
+    consulta = _contabilizadas(
+        select(LineaPartida, Partida).where(LineaPartida.cuenta_id == cuenta_id), hasta, linea_negocio, vin
+    )
+    if desde is not None:
+        consulta = consulta.where(Partida.fecha >= desde)
+    saldo = inicial
+    movimientos = []
+    for linea, partida in db.execute(
+        consulta.order_by(Partida.fecha, Partida.numero, LineaPartida.numero_linea)
+    ).all():
+        saldo += (linea.debe - linea.haber) * signo
+        movimientos.append(
+            {
+                "fecha": partida.fecha,
+                "partida_id": partida.id,
+                "numero": partida.numero,
+                "concepto": partida.concepto,
+                "documento_tipo": partida.documento_tipo,
+                "documento_id": partida.documento_id,
+                "debe": linea.debe,
+                "haber": linea.haber,
+                "saldo": saldo,
+                "moneda": linea.moneda,
+                "monto_usd": linea.monto_usd,
+                "tipo_cambio": linea.tipo_cambio,
+                "linea_negocio": linea.linea_negocio,
+                "vin": linea.vin,
+            }
+        )
+    return {
+        "cuenta_id": cuenta.id,
+        "codigo": cuenta.codigo,
+        "nombre": cuenta.nombre,
+        "naturaleza": cuenta.naturaleza,
+        "monetaria_usd": cuenta.monetaria_usd,
+        "saldo_inicial": inicial,
+        "movimientos": movimientos,
+        "saldo_final": saldo,
+    }

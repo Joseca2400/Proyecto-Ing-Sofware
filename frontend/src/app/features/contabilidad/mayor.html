@@ -1,0 +1,100 @@
+<section class="encabezado">
+  <h1>Mayor</h1>
+  <p>
+    Movimientos contabilizados de una cuenta con su saldo acumulado. El saldo es positivo en el lado
+    normal de la cuenta. Desde cada movimiento puedes abrir su partida.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="filtros" (ngSubmit)="consultar()">
+  <label>
+    Cuenta
+    <select formControlName="cuenta_id" name="cuenta_id">
+      <option [ngValue]="0" disabled>Selecciona</option>
+      @for (c of cuentas(); track c.id) {
+        <option [ngValue]="c.id">{{ c.codigo }} · {{ c.nombre }}</option>
+      }
+    </select>
+    @if (filtros.controls.cuenta_id.touched && filtros.controls.cuenta_id.invalid) {
+      <small class="falla">Elige la cuenta</small>
+    }
+  </label>
+  <label>
+    Desde
+    <input type="date" formControlName="desde" name="desde" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="hasta" name="hasta" />
+  </label>
+  <label>
+    Línea de negocio
+    <select formControlName="linea_negocio" name="linea_negocio">
+      <option value="">Todas</option>
+      @for (l of lineasNegocio(); track l) {
+        <option [value]="l">{{ etiquetasLinea[l] ?? l }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    VIN
+    <input type="text" maxlength="17" formControlName="vin" name="vin" />
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (mayor(); as m) {
+  <h2>{{ m.codigo }} · {{ m.nombre }}</h2>
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Partida</th>
+        <th>Concepto</th>
+        <th>Documento</th>
+        <th class="numero">Debe</th>
+        <th class="numero">Haber</th>
+        @if (m.monetaria_usd) {
+          <th class="numero">Monto USD</th>
+          <th class="numero">Tipo de cambio</th>
+        }
+        <th class="numero">Saldo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td [attr.colspan]="m.monetaria_usd ? 8 : 6">Saldo inicial</td>
+        <td class="numero">{{ m.saldo_inicial | monto }}</td>
+      </tr>
+      @for (mov of m.movimientos; track $index) {
+        <tr>
+          <td>{{ mov.fecha }}</td>
+          <td>
+            <a routerLink="/contabilidad/partidas" [queryParams]="{ partida: mov.partida_id }"
+              >No. {{ mov.numero }}</a
+            >
+          </td>
+          <td>{{ mov.concepto }}</td>
+          <td>{{ mov.documento_tipo ? mov.documento_tipo + ' ' + mov.documento_id : 'Manual' }}</td>
+          <td class="numero">{{ mov.debe === '0.000000' ? '' : (mov.debe | monto) }}</td>
+          <td class="numero">{{ mov.haber === '0.000000' ? '' : (mov.haber | monto) }}</td>
+          @if (m.monetaria_usd) {
+            <td class="numero">{{ mov.monto_usd | monto: 'USD' }}</td>
+            <td class="numero">{{ mov.tipo_cambio }}</td>
+          }
+          <td class="numero">{{ mov.saldo | monto }}</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th [attr.colspan]="m.monetaria_usd ? 8 : 6">Saldo final</th>
+        <th class="numero">{{ m.saldo_final | monto }}</th>
+      </tr>
+    </tfoot>
+  </table>
+}
