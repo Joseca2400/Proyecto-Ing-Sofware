@@ -5,6 +5,8 @@
   columnas del cierre y la llave a la partida que crea `contabilidad`; el tipo de trabajo es un
   texto con CHECK, para agregar tipos en los Sprints 5 y 6 sin rediseñar.
 - `hora_trabajo` (HU-5.03): horas por orden con la tarifa y el costo con que se calcularon.
+- Reglas de contabilización de `orden_trabajo` (HU-5.07): unidad en proceso 1.1.04.01 y mano de
+  obra aplicada 5.2.
 - Bitácora (HU-1.11) en cada tabla nueva, como en `0011`.
 
 Revision ID: 0020
@@ -29,6 +31,10 @@ ORDEN = (
     "id", "vin", "tipo", "estado", "fecha_apertura", "kilometraje", "descripcion", "responsable",
     "abierta_por", "creado_en", "fecha_cierre", "cerrada_por", "costo_total", "justificacion",
     "partida_id",
+)  # fmt: skip
+REGLAS = (
+    ("orden_trabajo", "unidad_en_proceso", "Costo de taller capitalizado en la unidad (unidades en proceso)", "1.1.04.01"),
+    ("orden_trabajo", "mano_obra_aplicada", "Mano de obra de taller aplicada a las órdenes", "5.2"),
 )  # fmt: skip
 HORA = (
     "id", "orden_id", "mecanico", "fecha", "horas", "tarea", "tarifa_hora", "costo", "registrado_por",
@@ -122,8 +128,18 @@ def upgrade() -> None:
     op.create_index("ix_hora_trabajo_orden_id", "hora_trabajo", ["orden_id"])
     _trigger("hora_trabajo", HORA)
 
+    # Reglas de contabilización del cierre de la orden (HU-2.03); el contador las ajusta después.
+    for tipo, concepto, descripcion, cuenta in REGLAS:
+        op.execute(
+            sa.text(
+                "INSERT INTO regla_contabilizacion (documento_tipo, concepto, descripcion, cuenta_codigo)"
+                " VALUES (:tipo, :concepto, :descripcion, :cuenta)"
+            ).bindparams(tipo=tipo, concepto=concepto, descripcion=descripcion, cuenta=cuenta)
+        )
+
 
 def downgrade() -> None:
+    op.execute("DELETE FROM regla_contabilizacion WHERE documento_tipo = 'orden_trabajo'")
     op.drop_table("hora_trabajo")
     op.drop_table("orden_trabajo")
     op.drop_table("tarifa_mano_obra")

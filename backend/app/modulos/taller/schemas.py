@@ -78,6 +78,17 @@ class OrdenSalida(BaseModel):
         return _monto_texto(valor)
 
 
+class CierreEntrada(BaseModel):
+    """Cierre de la orden. La justificación solo es obligatoria si el costo es cero."""
+
+    justificacion: str | None = Field(default=None, max_length=300)
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return (valor.strip() or None) if isinstance(valor, str) else valor
+
+
 # ── HU-5.03: mano de obra ─────────────────────────────────────────────────────
 
 

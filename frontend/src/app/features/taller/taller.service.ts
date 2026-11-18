@@ -44,6 +44,13 @@ export class TallerService {
     return this.http.post<Orden>(`${this.url}/ordenes`, datos);
   }
 
+  cerrarOrden(id: number, justificacion?: string): Observable<Orden> {
+    return this.http.post<Orden>(
+      `${this.url}/ordenes/${id}/cerrar`,
+      justificacion ? { justificacion } : {},
+    );
+  }
+
   horas(ordenId: number): Observable<Hora[]> {
     return this.http.get<Hora[]>(`${this.url}/ordenes/${ordenId}/horas`);
   }

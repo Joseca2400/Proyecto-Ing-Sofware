@@ -96,7 +96,9 @@ class OrdenTrabajo(Base):
 
     @property
     def costo_acumulado(self) -> Decimal:
-        """Mano de obra registrada hasta hoy; por ahora es todo el costo de la orden."""
+        """Costo de la orden: el congelado al cerrar o, abierta, la mano de obra registrada hasta hoy."""
+        if self.costo_total is not None:
+            return self.costo_total
         return sum((hora.costo for hora in self.horas), Decimal(0))
 
 

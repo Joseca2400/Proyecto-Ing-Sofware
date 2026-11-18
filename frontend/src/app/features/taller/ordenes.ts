@@ -10,7 +10,8 @@ const VIN = /^\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}\s*$/;
 // pasa la unidad a "en taller"; la lista muestra la antigüedad y el costo acumulado (HU-5.07,
 // criterio 5, de las abiertas). Diferido: postventa (comprador y venta), contrato de alquiler y
 // los demás tipos de trabajo (Sprints 5 y 6). HU-5.03: en el detalle se registran las horas, que el
-// servidor costea con la tarifa vigente en su fecha.
+// servidor costea con la tarifa vigente en su fecha. HU-5.07: el contador cierra la orden; el
+// servidor genera su partida y pasa la unidad a «lista». Una orden sin costo exige justificación.
 @Component({
   selector: 'app-ordenes-taller',
   imports: [ReactiveFormsModule, MontoPipe],
@@ -40,6 +41,10 @@ export class OrdenesTallerPantalla {
     fecha: [new Date().toLocaleDateString('en-CA'), Validators.required],
     horas: ['', [Validators.required, Validators.pattern(/^\s*\d+(\.\d{1,2})?\s*$/)]],
     tarea: ['', Validators.required],
+  });
+
+  protected readonly formularioCierre = inject(FormBuilder).nonNullable.group({
+    justificacion: [''],
   });
 
   constructor() {
@@ -87,6 +92,22 @@ export class OrdenesTallerPantalla {
         error: (respuesta: HttpErrorResponse) =>
           this.fallo(respuesta, 'No se pudieron registrar las horas'),
       });
+  }
+
+  protected cerrar(orden: Orden): void {
+    this.guardando.set(true);
+    this.error.set(null);
+    this.aviso.set(null);
+    const justificacion = this.formularioCierre.controls.justificacion.value.trim();
+    this.servicio.cerrarOrden(orden.id, justificacion).subscribe({
+      next: (cerrada) => {
+        this.guardando.set(false);
+        this.aviso.set(`Orden ${cerrada.numero} cerrada: la unidad quedó «lista»`);
+        this.formularioCierre.reset();
+        this.recargar(cerrada.id);
+      },
+      error: (respuesta: HttpErrorResponse) => this.fallo(respuesta, 'No se pudo cerrar la orden'),
+    });
   }
 
   /** Vuelve a pedir la orden (su costo acumulado cambió) y sus horas. */

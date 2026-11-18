@@ -137,5 +137,24 @@
       </tbody>
     </table>
     <p class="total">Costo acumulado: {{ orden.costo_acumulado | monto }}</p>
+
+    @if (orden.estado === 'abierta') {
+      <form class="formulario" [formGroup]="formularioCierre" (ngSubmit)="cerrar(orden)">
+        <label class="ancho">
+          Justificación (obligatoria si la orden no tiene costo)
+          <input type="text" formControlName="justificacion" maxlength="300" />
+        </label>
+        <button type="submit" [disabled]="guardando()">Cerrar orden</button>
+      </form>
+    } @else {
+      <p>
+        Cerrada el {{ orden.fecha_cierre }}
+        @if (orden.partida_id) {
+          · Partida {{ orden.partida_id }}
+        } @else {
+          · Sin partida: {{ orden.justificacion }}
+        }
+      </p>
+    }
   </section>
 }

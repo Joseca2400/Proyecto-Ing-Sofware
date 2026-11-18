@@ -154,4 +154,42 @@ describe('OrdenesTallerPantalla', () => {
 
     expect(texto()).toContain('No hay tarifa');
   });
+
+  it('cierra la orden y la muestra cerrada con su partida', async () => {
+    elemento().querySelector<HTMLButtonElement>('table button')!.click();
+    http.expectOne(`${URL}/1/horas`).flush([]);
+    await fixture.whenStable();
+
+    elemento().querySelectorAll('form')[2].dispatchEvent(new Event('submit'));
+    const cierre = http.expectOne({ method: 'POST', url: `${URL}/1/cerrar` });
+    expect(cierre.request.body).toEqual({});
+    const cerrada = { ...ORDEN, estado: 'cerrada', fecha_cierre: '2026-11-18', partida_id: 7 };
+    cierre.flush(cerrada);
+    http.expectOne(`${URL}/1`).flush(cerrada);
+    http.expectOne(`${URL}/1/horas`).flush([]);
+    http.expectOne(URL).flush([cerrada]);
+    await fixture.whenStable();
+
+    expect(texto()).toContain('cerrada');
+    expect(texto()).toContain('Partida 7');
+    expect(elemento().querySelectorAll('form').length).toBe(1);
+  });
+
+  it('envía la justificación y muestra el rechazo del backend', async () => {
+    elemento().querySelector<HTMLButtonElement>('table button')!.click();
+    http.expectOne(`${URL}/1/horas`).flush([]);
+    await fixture.whenStable();
+
+    escribir('input[formControlName=justificacion]', 'Sin trabajos');
+    elemento().querySelectorAll('form')[2].dispatchEvent(new Event('submit'));
+    const cierre = http.expectOne({ method: 'POST', url: `${URL}/1/cerrar` });
+    expect(cierre.request.body).toEqual({ justificacion: 'Sin trabajos' });
+    cierre.flush(
+      { detail: 'Falta la regla de contabilización «orden_trabajo · mano_obra_aplicada»' },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+
+    expect(texto()).toContain('Falta la regla de contabilización');
+  });
 });
