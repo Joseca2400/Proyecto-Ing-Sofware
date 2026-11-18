@@ -9,6 +9,7 @@ from app.modulos.compras.router import router as compras_router
 from app.modulos.configuracion.router import router as configuracion_router
 from app.modulos.contabilidad.router import router as contabilidad_router
 from app.modulos.facturacion.router import router as facturacion_router
+from app.modulos.reportes.router import router as reportes_router
 from app.modulos.seguridad.router import router as seguridad_router
 from app.modulos.sistema.router import router as sistema_router
 from app.modulos.taller.router import router as taller_router
@@ -35,3 +36,4 @@ app.include_router(unidades_router, prefix="/api/v1")
 app.include_router(facturacion_router, prefix="/api/v1")
 app.include_router(alquileres_router, prefix="/api/v1")
 app.include_router(taller_router, prefix="/api/v1")
+app.include_router(reportes_router, prefix="/api/v1")

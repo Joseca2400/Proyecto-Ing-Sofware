@@ -1,0 +1,180 @@
+<section class="encabezado">
+  <h1>Hoja de costo</h1>
+  <p>
+    Costo de una unidad en quetzales: compra, gastos de importación y reacondicionamiento. El IVA de
+    importación es crédito fiscal y se muestra aparte. El total se compara con el saldo de unidades
+    en proceso del VIN en el mayor.
+  </p>
+</section>
+
+<form class="tarjeta formulario no-imprimir" [formGroup]="formulario" (ngSubmit)="consultar()">
+  <label>
+    VIN
+    <input
+      type="text"
+      formControlName="vin"
+      list="vines"
+      maxlength="17"
+      placeholder="1HGCM82633A004352"
+    />
+    <datalist id="vines">
+      @for (u of unidades(); track u.id) {
+        <option [value]="u.vin">{{ u.marca }} {{ u.linea }} {{ u.modelo }}</option>
+      }
+    </datalist>
+    @if (formulario.controls.vin.touched && formulario.controls.vin.invalid) {
+      <small class="falla">17 caracteres, sin I, O ni Q</small>
+    }
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (hoja(); as h) {
+  <section class="tarjeta" aria-label="Hoja de costo">
+    <h2>{{ h.marca }} {{ h.linea }} {{ h.modelo }} · {{ h.vin }}</h2>
+
+    @if (h.cuadra) {
+      <p class="mensaje ok" role="status">
+        Cuadra con el mayor: {{ h.saldo_mayor_gtq | monto }}
+        @if (h.costo_alta_gtq) {
+          (costo trasladado al alta en flota: {{ h.costo_alta_gtq | monto }})
+        }
+      </p>
+    } @else {
+      <p class="mensaje falla" role="alert">
+        No cuadra con el mayor: saldo {{ h.saldo_mayor_gtq | monto }}, diferencia
+        {{ h.diferencia_gtq | monto }}
+      </p>
+    }
+
+    <h3>Compra</h3>
+    @if (h.compra; as c) {
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Documento</th>
+            <th>Proveedor</th>
+            <th class="numero">USD</th>
+            <th class="numero">Tipo de cambio</th>
+            <th class="numero">Quetzales</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ c.fecha }}</td>
+            <td>{{ c.documento }}</td>
+            <td>{{ c.proveedor }}</td>
+            <td class="numero">{{ c.total_usd | monto: 'USD' }}</td>
+            <td class="numero">{{ c.tipo_cambio }}</td>
+            <td class="numero">{{ c.total_gtq | monto }}</td>
+          </tr>
+        </tbody>
+      </table>
+    } @else {
+      <p class="vacio">Sin compra registrada</p>
+    }
+
+    <h3>Importación</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Fecha</th>
+          <th>Documento</th>
+          <th class="numero">Monto original</th>
+          <th class="numero">Tipo de cambio</th>
+          <th class="numero">Quetzales</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (g of h.importacion; track $index) {
+          <tr>
+            <td>
+              {{ g.nombre }}
+              @if (!g.suma_al_costo) {
+                <small>crédito fiscal, no suma</small>
+              }
+            </td>
+            <td>{{ g.fecha }}</td>
+            <td>{{ g.documento }}</td>
+            <td class="numero">{{ g.monto | monto: g.moneda }}</td>
+            <td class="numero">{{ g.tipo_cambio ?? '—' }}</td>
+            <td class="numero">{{ g.monto_gtq | monto }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">Sin gastos de importación</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <h3>Reacondicionamiento</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Fecha</th>
+          <th>Detalle</th>
+          <th class="numero">Quetzales</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of h.mano_obra; track m.numero) {
+          <tr>
+            <td>{{ m.numero }}</td>
+            <td>{{ m.fecha_cierre }}</td>
+            <td>Mano de obra de taller</td>
+            <td class="numero">{{ m.costo_gtq | monto }}</td>
+          </tr>
+        }
+        @for (r of h.repuestos; track $index) {
+          <tr>
+            <td>{{ r.documento }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.descripcion }} · {{ r.proveedor }}</td>
+            <td class="numero">{{ r.monto_gtq | monto }}</td>
+          </tr>
+        }
+        @if (!h.mano_obra.length && !h.repuestos.length) {
+          <tr>
+            <td colspan="4" class="vacio">Sin reacondicionamiento</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <h3>Resumen</h3>
+    <table>
+      <tbody>
+        <tr>
+          <td>Compra</td>
+          <td class="numero">{{ h.compra_gtq | monto }}</td>
+        </tr>
+        <tr>
+          <td>Importación</td>
+          <td class="numero">{{ h.importacion_gtq | monto }}</td>
+        </tr>
+        <tr>
+          <td>Reacondicionamiento</td>
+          <td class="numero">{{ h.reacondicionamiento_gtq | monto }}</td>
+        </tr>
+        <tr>
+          <th>Costo total</th>
+          <th class="numero">{{ h.total_gtq | monto }}</th>
+        </tr>
+        <tr>
+          <td>IVA de importación (crédito fiscal, no es costo)</td>
+          <td class="numero">{{ h.credito_fiscal_gtq | monto }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button type="button" class="secundario no-imprimir" (click)="imprimir()">Imprimir</button>
+  </section>
+}

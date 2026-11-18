@@ -131,6 +131,92 @@
       }
     </dl>
 
+    @if (valor(); as v) {
+      <h3>Depreciación</h3>
+      <div class="cambio">
+        <label>
+          Valor en libros al
+          <input type="date" [formControl]="fechaValor" name="fecha_valor" />
+        </label>
+        <button type="button" class="secundario" (click)="consultarValor()">Consultar</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th class="numero">Costo</th>
+            <th class="numero">Depreciación acumulada</th>
+            <th class="numero">Valor en libros</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              Financiera ({{ v.vida_util_meses }} meses, residual {{ v.valor_residual | monto }})
+            </td>
+            <td class="numero">{{ v.costo | monto }}</td>
+            <td class="numero">{{ v.depreciacion_financiera | monto }}</td>
+            <td class="numero">{{ v.valor_libros_financiero | monto }}</td>
+          </tr>
+          <tr>
+            <td>Fiscal ({{ v.porcentaje_fiscal }} % anual)</td>
+            <td class="numero">{{ v.costo | monto }}</td>
+            <td class="numero">{{ v.depreciacion_fiscal | monto }}</td>
+            <td class="numero">{{ v.valor_libros_fiscal | monto }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <small>
+        Alta en flota el {{ v.fecha_alta }}; {{ v.meses_depreciados }} meses depreciados (el mes del
+        alta no se deprecia).
+      </small>
+
+      <h3>Parámetros de depreciación</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Vigente desde</th>
+            <th class="numero">Vida útil (meses)</th>
+            <th class="numero">Valor residual</th>
+            <th class="numero">Fiscal anual</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of parametros(); track p.id) {
+            <tr>
+              <td>{{ p.vigente_desde }}</td>
+              <td class="numero">{{ p.vida_util_meses }}</td>
+              <td class="numero">{{ p.valor_residual | monto }}</td>
+              <td class="numero">{{ p.porcentaje_fiscal }} %</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <form class="cambio" [formGroup]="version" (ngSubmit)="cambiarParametros()">
+        <label>
+          Vigente desde
+          <input type="date" formControlName="vigente_desde" name="vigente_desde" />
+        </label>
+        <label>
+          Vida útil (meses)
+          <input type="number" formControlName="vida_util_meses" name="vida_util_meses" />
+        </label>
+        <label>
+          Valor residual (Q)
+          <input type="text" formControlName="valor_residual" name="valor_residual" />
+        </label>
+        <label>
+          Fiscal anual (%)
+          <input type="text" formControlName="porcentaje_fiscal" name="porcentaje_fiscal" />
+        </label>
+        <button type="submit" [disabled]="guardando()">Cambiar parámetros</button>
+        @if (version.touched && version.invalid) {
+          <small class="falla">Revisa los parámetros</small>
+        }
+      </form>
+      <small>Un cambio aplica desde su vigencia; lo ya depreciado no se recalcula.</small>
+    }
+
     <form class="cambio" [formGroup]="cambio" (ngSubmit)="cambiarEstado()">
       <label>
         Nuevo estado

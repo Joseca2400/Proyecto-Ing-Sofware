@@ -495,6 +495,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/hoja-costo/{vin}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hoja De Costo */
+        get: operations["hoja_de_costo_api_v1_compras_hoja_costo__vin__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -724,6 +741,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/alta-flota/candidatas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Candidatas Alta
+         * @description HU-3.01: unidades listas con el costo de su hoja de costo y su cuadre con el mayor.
+         */
+        get: operations["candidatas_alta_api_v1_unidades_alta_flota_candidatas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/depreciacion/tipos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Depreciacion Tipos
+         * @description HU-3.02: valores de depreciación por defecto de cada tipo de vehículo.
+         */
+        get: operations["listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/depreciacion/tipos/{tipo_vehiculo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Depreciacion Tipo */
+        put: operations["definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/fin-vida-util": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fin Vida Util
+         * @description HU-3.14: unidades de la flota que alcanzaron o están por alcanzar el fin de su vida útil.
+         */
+        get: operations["fin_vida_util_api_v1_unidades_fin_vida_util_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/fin-vida-util/regla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Regla Fin Vida */
+        put: operations["definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades": {
         parameters: {
             query?: never;
@@ -785,6 +896,61 @@ export interface paths {
         };
         /** Historial */
         get: operations["historial_api_v1_unidades__vin__historial_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/alta-flota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dar De Alta */
+        post: operations["dar_de_alta_api_v1_unidades__vin__alta_flota_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/parametros-depreciacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parametros Depreciacion */
+        get: operations["parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get"];
+        put?: never;
+        /** Cambiar Parametros */
+        post: operations["cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/valor-libros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valor En Libros
+         * @description Depreciación acumulada y valor en libros, financiero y fiscal, a la fecha (hoy si no se indica).
+         */
+        get: operations["valor_en_libros_api_v1_unidades__vin__valor_libros_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1150,10 +1316,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reportes/unidades-por-etapa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unidades Por Etapa
+         * @description HU-7.04: unidades y valor por estado, días promedio y las que superan el plazo.
+         */
+        get: operations["unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AlertaFinVida
+         * @description `situacion`: "alcanzado" o "por_alcanzar" (desde el porcentaje de aviso del límite).
+         */
+        AlertaFinVida: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Kilometraje */
+            kilometraje: number | null;
+            /** Meses En Flota */
+            meses_en_flota: number;
+            /**
+             * Situacion
+             * @enum {string}
+             */
+            situacion: "alcanzado" | "por_alcanzar";
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
+        };
+        /**
+         * AltaFlotaEntrada
+         * @description Fecha del alta y, opcionalmente, los parámetros de depreciación si el contador cambia los
+         *     propuestos (montos y porcentajes como texto).
+         */
+        AltaFlotaEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Vida Util Meses */
+            vida_util_meses?: number | null;
+            /** Valor Residual */
+            valor_residual?: string | null;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal?: string | null;
+        };
+        /** AltaFlotaSalida */
+        AltaFlotaSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Costo */
+            costo: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
         /** AplicacionEntrada */
         AplicacionEntrada: {
             /**
@@ -1231,6 +1495,36 @@ export interface components {
              * Format: date-time
              */
             fecha: string;
+        };
+        /**
+         * CandidataAltaFlota
+         * @description Unidad lista con el costo de su hoja de costo y si se puede dar de alta (cuadra, sin orden).
+         */
+        CandidataAltaFlota: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Costo */
+            costo: string;
+            /** Cuadra */
+            cuadra: boolean;
+            /** Diferencia */
+            diferencia: string;
+            /** Orden Abierta */
+            orden_abierta: boolean;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
         };
         /**
          * Catalogos
@@ -1357,6 +1651,24 @@ export interface components {
              * @description NIT con guion para mostrar; CUI y pasaporte tal cual.
              */
             readonly identificacion_formateada: string;
+        };
+        /** CompraHojaCosto */
+        CompraHojaCosto: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /** Total Usd */
+            total_usd: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Total Gtq */
+            total_gtq: string;
         };
         /**
          * CompraUnidadEntrada
@@ -1839,6 +2151,26 @@ export interface components {
             /** Cuadra */
             cuadra: boolean;
         };
+        /** DepreciacionTipoEntrada */
+        DepreciacionTipoEntrada: {
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** DepreciacionTipoSalida */
+        DepreciacionTipoSalida: {
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
         /** DevolucionDepositoEntrada */
         DevolucionDepositoEntrada: {
             /**
@@ -1880,6 +2212,19 @@ export interface components {
             motor: string | null;
             /** Revision Esquema */
             revision_esquema: string | null;
+        };
+        /** EstadoReporteEtapa */
+        EstadoReporteEtapa: {
+            /** Estado */
+            estado: string;
+            /** Unidades */
+            unidades: number;
+            /** Valor */
+            valor: string;
+            /** Dias Promedio */
+            dias_promedio: number;
+            /** Excedidas */
+            excedidas: number;
         };
         /** EstadoSistema */
         EstadoSistema: {
@@ -2075,6 +2420,42 @@ export interface components {
             /** Saldo Final */
             saldo_final: string;
         };
+        /** FinVidaUtil */
+        FinVidaUtil: {
+            regla: components["schemas"]["ReglaFinVidaSalida"] | null;
+            /** Unidades */
+            unidades: components["schemas"]["AlertaFinVida"][];
+        };
+        /**
+         * GastoHojaCosto
+         * @description Un gasto de importación; `suma_al_costo` es falso para el IVA de importación (crédito fiscal).
+         */
+        GastoHojaCosto: {
+            /** Concepto */
+            concepto: string;
+            /** Nombre */
+            nombre: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Monto Gtq */
+            monto_gtq: string;
+            /** Suma Al Costo */
+            suma_al_costo: boolean;
+        };
         /**
          * GastoImportacionEntrada
          * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
@@ -2155,6 +2536,50 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HojaCosto
+         * @description Hoja de costo (HU-4.08) que calcula el servidor; el front solo da formato a los montos.
+         *
+         *     `saldo_mayor_gtq` es el saldo de unidades en proceso del VIN, más el costo trasladado en el alta
+         *     a la flota (`costo_alta_gtq`) cuando ya la tiene; `cuadra` compara el total con ese saldo.
+         */
+        HojaCosto: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            compra: components["schemas"]["CompraHojaCosto"] | null;
+            /** Importacion */
+            importacion: components["schemas"]["GastoHojaCosto"][];
+            /** Mano Obra */
+            mano_obra: components["schemas"]["ManoObraHojaCosto"][];
+            /** Repuestos */
+            repuestos: components["schemas"]["RepuestoHojaCosto"][];
+            /** Compra Gtq */
+            compra_gtq: string;
+            /** Importacion Gtq */
+            importacion_gtq: string;
+            /** Credito Fiscal Gtq */
+            credito_fiscal_gtq: string;
+            /** Reacondicionamiento Gtq */
+            reacondicionamiento_gtq: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /** Saldo Mayor Gtq */
+            saldo_mayor_gtq: string;
+            /** Costo Alta Gtq */
+            costo_alta_gtq: string | null;
+            /** Diferencia Gtq */
+            diferencia_gtq: string;
+            /** Cuadra */
+            cuadra: boolean;
         };
         /**
          * HoraEntrada
@@ -2331,6 +2756,18 @@ export interface components {
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
         };
+        /** ManoObraHojaCosto */
+        ManoObraHojaCosto: {
+            /** Numero */
+            numero: string;
+            /**
+             * Fecha Cierre
+             * Format: date
+             */
+            fecha_cierre: string;
+            /** Costo Gtq */
+            costo_gtq: string;
+        };
         /** MayorSalida */
         MayorSalida: {
             /** Cuenta Id */
@@ -2452,6 +2889,45 @@ export interface components {
             justificacion: string | null;
             /** Partida Id */
             partida_id: number | null;
+        };
+        /** ParametroDepreciacionEntrada */
+        ParametroDepreciacionEntrada: {
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** ParametroDepreciacionSalida */
+        ParametroDepreciacionSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
         };
         /** PartidaEntrada */
         PartidaEntrada: {
@@ -2688,6 +3164,34 @@ export interface components {
             /** Cuenta Codigo */
             cuenta_codigo: string;
         };
+        /** ReglaFinVidaEntrada */
+        ReglaFinVidaEntrada: {
+            /** Kilometraje Limite */
+            kilometraje_limite?: number | null;
+            /** Meses Limite */
+            meses_limite?: number | null;
+            /**
+             * Porcentaje Aviso
+             * @default 90
+             */
+            porcentaje_aviso: string;
+        };
+        /** ReglaFinVidaSalida */
+        ReglaFinVidaSalida: {
+            /** Kilometraje Limite */
+            kilometraje_limite: number | null;
+            /** Meses Limite */
+            meses_limite: number | null;
+            /** Porcentaje Aviso */
+            porcentaje_aviso: string;
+            /** Actualizado Por */
+            actualizado_por: number | null;
+            /**
+             * Actualizado En
+             * Format: date-time
+             */
+            actualizado_en: string;
+        };
         /** ReglaSalida */
         ReglaSalida: {
             /** Id */
@@ -2700,6 +3204,36 @@ export interface components {
             descripcion: string;
             /** Cuenta Codigo */
             cuenta_codigo: string | null;
+        };
+        /** ReporteUnidadesEtapa */
+        ReporteUnidadesEtapa: {
+            /** Limite Dias */
+            limite_dias: number;
+            /** Valor Total */
+            valor_total: string;
+            /** Estados */
+            estados: components["schemas"]["EstadoReporteEtapa"][];
+            /** Unidades */
+            unidades: components["schemas"]["UnidadReporteEtapa"][];
+        };
+        /**
+         * RepuestoHojaCosto
+         * @description Línea de una factura local cargada a unidades en proceso con el VIN (repuesto o subcontrato).
+         */
+        RepuestoHojaCosto: {
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Descripcion */
+            descripcion: string;
+            /** Monto Gtq */
+            monto_gtq: string;
         };
         /** ResumenEtapa */
         ResumenEtapa: {
@@ -2978,6 +3512,35 @@ export interface components {
             /** Documento */
             documento?: string | null;
         };
+        /**
+         * UnidadReporteEtapa
+         * @description `valor_en_libros` dice si el valor es el en libros (con alta en flota) o el costo acumulado.
+         */
+        UnidadReporteEtapa: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            /**
+             * Desde
+             * Format: date-time
+             */
+            desde: string;
+            /** Dias En Estado */
+            dias_en_estado: number;
+            /** Valor */
+            valor: string;
+            /** Valor En Libros */
+            valor_en_libros: boolean;
+            /** Excede */
+            excede: boolean;
+        };
         /** UnidadSalida */
         UnidadSalida: {
             /** Id */
@@ -3032,6 +3595,42 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * ValorEnLibros
+         * @description Depreciación acumulada y valor en libros a una fecha, financieros y fiscales (línea recta).
+         */
+        ValorEnLibros: {
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Costo */
+            costo: string;
+            /** Meses Depreciados */
+            meses_depreciados: number;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Depreciacion Financiera */
+            depreciacion_financiera: string;
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Depreciacion Fiscal */
+            depreciacion_fiscal: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
         };
     };
     responses: never;
@@ -4264,6 +4863,39 @@ export interface operations {
             };
         };
     };
+    hoja_de_costo_api_v1_compras_hoja_costo__vin__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HojaCosto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_partidas_api_v1_contabilidad_partidas_get: {
         parameters: {
             query?: {
@@ -4782,6 +5414,171 @@ export interface operations {
             };
         };
     };
+    candidatas_alta_api_v1_unidades_alta_flota_candidatas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidataAltaFlota"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                tipo_vehiculo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepreciacionTipoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fin_vida_util_api_v1_unidades_fin_vida_util_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinVidaUtil"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReglaFinVidaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReglaFinVidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_unidades_api_v1_unidades_get: {
         parameters: {
             query?: {
@@ -4941,6 +5738,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CambioEstadoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dar_de_alta_api_v1_unidades__vin__alta_flota_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AltaFlotaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AltaFlotaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParametroDepreciacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    valor_en_libros_api_v1_unidades__vin__valor_libros_get: {
+        parameters: {
+            query?: {
+                fecha?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValorEnLibros"];
                 };
             };
             /** @description Validation Error */
@@ -5901,6 +6840,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get: {
+        parameters: {
+            query?: {
+                limite_dias?: number;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteUnidadesEtapa"];
                 };
             };
             /** @description Validation Error */

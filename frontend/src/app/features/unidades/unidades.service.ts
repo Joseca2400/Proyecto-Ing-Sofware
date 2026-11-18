@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../core/api/api';
+import { components } from '../../core/api/esquema';
 
 // ── HU-1.05: unidades por VIN ──────────────────────────────────────────────────
 
@@ -122,6 +123,26 @@ export interface EtapasImportacion {
   unidades: UnidadEnEtapa[];
 }
 
+// ── HU-3.01: alta en flota ─────────────────────────────────────────────────────
+
+export type CandidataAltaFlota = components['schemas']['CandidataAltaFlota'];
+export type AltaFlota = components['schemas']['AltaFlotaSalida'];
+export type AltaFlotaEntrada = components['schemas']['AltaFlotaEntrada'];
+
+// ── HU-3.02: depreciación ──────────────────────────────────────────────────────
+
+export type DepreciacionTipo = components['schemas']['DepreciacionTipoSalida'];
+export type DepreciacionTipoEntrada = components['schemas']['DepreciacionTipoEntrada'];
+export type ParametroDepreciacion = components['schemas']['ParametroDepreciacionSalida'];
+export type ParametroDepreciacionEntrada = components['schemas']['ParametroDepreciacionEntrada'];
+export type ValorEnLibros = components['schemas']['ValorEnLibros'];
+
+// ── HU-3.14: fin de vida útil en flota ─────────────────────────────────────────
+
+export type FinVidaUtil = components['schemas']['FinVidaUtil'];
+export type ReglaFinVida = components['schemas']['ReglaFinVidaSalida'];
+export type ReglaFinVidaEntrada = components['schemas']['ReglaFinVidaEntrada'];
+
 @Injectable({ providedIn: 'root' })
 export class UnidadesService {
   private readonly http = inject(HttpClient);
@@ -153,5 +174,50 @@ export class UnidadesService {
 
   historial(vin: string): Observable<CambioEstado[]> {
     return this.http.get<CambioEstado[]>(`${this.url}/${vin}/historial`);
+  }
+
+  candidatasAlta(): Observable<CandidataAltaFlota[]> {
+    return this.http.get<CandidataAltaFlota[]>(`${this.url}/alta-flota/candidatas`);
+  }
+
+  darDeAlta(vin: string, datos: AltaFlotaEntrada): Observable<AltaFlota> {
+    return this.http.post<AltaFlota>(`${this.url}/${vin}/alta-flota`, datos);
+  }
+
+  depreciacionTipos(): Observable<DepreciacionTipo[]> {
+    return this.http.get<DepreciacionTipo[]>(`${this.url}/depreciacion/tipos`);
+  }
+
+  definirDepreciacionTipo(
+    tipo: string,
+    datos: DepreciacionTipoEntrada,
+  ): Observable<DepreciacionTipo> {
+    return this.http.put<DepreciacionTipo>(`${this.url}/depreciacion/tipos/${tipo}`, datos);
+  }
+
+  parametrosDepreciacion(vin: string): Observable<ParametroDepreciacion[]> {
+    return this.http.get<ParametroDepreciacion[]>(`${this.url}/${vin}/parametros-depreciacion`);
+  }
+
+  cambiarParametros(
+    vin: string,
+    datos: ParametroDepreciacionEntrada,
+  ): Observable<ParametroDepreciacion> {
+    return this.http.post<ParametroDepreciacion>(
+      `${this.url}/${vin}/parametros-depreciacion`,
+      datos,
+    );
+  }
+
+  finVidaUtil(): Observable<FinVidaUtil> {
+    return this.http.get<FinVidaUtil>(`${this.url}/fin-vida-util`);
+  }
+
+  definirReglaFinVida(datos: ReglaFinVidaEntrada): Observable<ReglaFinVida> {
+    return this.http.put<ReglaFinVida>(`${this.url}/fin-vida-util/regla`, datos);
+  }
+
+  valorEnLibros(vin: string, fecha: string): Observable<ValorEnLibros> {
+    return this.http.get<ValorEnLibros>(`${this.url}/${vin}/valor-libros`, { params: { fecha } });
   }
 }

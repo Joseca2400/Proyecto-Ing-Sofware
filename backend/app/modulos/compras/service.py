@@ -44,6 +44,16 @@ unidad junto con los gastos de importación (`resumen_gastos_unidad`).
 HU-4.02 (diferido): adjuntar la factura, el título y el bill of sale (criterio 4); comprar una
 unidad ya registrada; la compra a particulares en Guatemala (pendiente de la historia).
 
+HU-4.08 (incluido, versión delgada): hoja de costo de la unidad (`hoja_de_costo`) agrupada en
+compra (USD, tipo de cambio y quetzales), importación por concepto (moneda original, tipo de cambio
+y quetzales; el IVA de importación se muestra aparte y no es costo) y reacondicionamiento: la mano
+de obra de las órdenes cerradas (`taller`) y las líneas de facturas locales cargadas a unidades en
+proceso con el VIN (con el IVA de un pequeño contribuyente). El total cuadra con el saldo de
+unidades en proceso del VIN en el mayor (criterio 3). `costos_de_unidades` y
+`resumen_gastos_unidad` usan la misma regla.
+HU-4.08 (diferido): exportar a PDF y Excel (criterio 4, Sprint 5 con HU-7.09); el expediente y los
+gastos compartidos prorrateados (HU-4.03/HU-4.05, Sprint 5).
+
 Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
 - El perfil fiscal valida su NIT con el mismo `comun/nit.py`; no se duplica la regla.
 - Las retenciones diferidas dependen de que la empresa sea agente de retención de IVA o ISR:
@@ -92,6 +102,7 @@ from app.modulos.compras.schemas import (
 from app.modulos.configuracion import service as configuracion
 from app.modulos.contabilidad import service as contabilidad
 from app.modulos.contabilidad.schemas import LineaEntrada
+from app.modulos.taller import service as taller
 from app.modulos.unidades import service as unidades
 from app.modulos.unidades.schemas import UnidadEntrada
 
@@ -526,8 +537,9 @@ def obtener_gasto_importacion(db: Session, gasto_id: int) -> GastoImportacion:
 
 
 def resumen_gastos_unidad(db: Session, vin: str) -> dict:
-    """Costo de una unidad en quetzales: la compra (HU-4.02) más los gastos que suman al costo, y
-    aparte lo que es crédito fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
+    """Costo de una unidad en quetzales: la compra (HU-4.02), los gastos que suman al costo y el
+    reacondicionamiento, con la regla de la hoja de costo (HU-4.08); aparte lo que es crédito
+    fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
     unidad = unidades.obtener_por_vin(db, vin)
     filas = db.execute(
         select(
@@ -540,23 +552,22 @@ def resumen_gastos_unidad(db: Session, vin: str) -> dict:
     ).all()
     totales = {tratamiento: total for tratamiento, _, total in filas}
     compra_gtq = db.scalar(select(CompraUnidad.total_gtq).where(CompraUnidad.vin == unidad.vin))
-    compra_gtq = compra_gtq if compra_gtq is not None else Decimal(0)
-    gastos_costo = totales.get("costo", Decimal(0))
     return {
         "vin": unidad.vin,
         "gastos": sum(cantidad for _, cantidad, _ in filas),
-        "total_costo_gtq": gastos_costo,
+        "total_costo_gtq": totales.get("costo", Decimal(0)),
         "total_credito_fiscal_gtq": totales.get("credito_fiscal", Decimal(0)),
-        "compra_gtq": compra_gtq,
-        "costo_total_gtq": compra_gtq + gastos_costo,
+        "compra_gtq": compra_gtq if compra_gtq is not None else Decimal(0),
+        "costo_total_gtq": costos_de_unidades(db, [unidad.vin])[unidad.vin],
     }
 
 
 def costos_de_unidades(db: Session, vins: list[str]) -> dict[str, Decimal]:
-    """Costo acumulado en quetzales de varias unidades a la vez, con la misma regla que
-    `resumen_gastos_unidad`: la compra más los gastos que suman al costo (sin el IVA de
-    importación). Lo pide `unidades` para el listado por etapa (HU-4.07); un VIN sin compra ni
-    gastos cuesta cero."""
+    """Costo acumulado en quetzales de varias unidades a la vez, con la regla de la hoja de costo
+    (HU-4.08): la compra, los gastos que suman al costo (sin el IVA de importación), la mano de
+    obra de las órdenes cerradas y las líneas de facturas locales cargadas a unidades en proceso
+    con el VIN. Lo piden `unidades` (etapas, HU-4.07; alta, HU-3.01) y `reportes`; un VIN sin
+    nada cuesta cero."""
     costos = dict.fromkeys(vins, Decimal(0))
     if not vins:
         return costos
@@ -568,9 +579,130 @@ def costos_de_unidades(db: Session, vins: list[str]) -> dict[str, Decimal]:
         .where(GastoImportacion.vin.in_(vins), GastoImportacion.tratamiento == "costo")
         .group_by(GastoImportacion.vin)
     ).all()
-    for vin, monto in (*compras, *gastos):
+    lineas = [(linea.vin, _costo_linea(linea, regimen)) for linea, regimen in _lineas_en_proceso(db, vins)]
+    for vin, monto in (*compras, *gastos, *lineas):
         costos[vin] += monto
+    # shortcut: una consulta por VIN a `taller`; agregar una versión por lote si el listado crece.
+    for vin in vins:
+        costos[vin] += taller.costo_taller_de_unidad(db, vin)
     return costos
+
+
+# ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
+
+
+def _cuenta_en_proceso(db: Session) -> int:
+    """Unidades en proceso: la cuenta que carga la compra de la unidad (regla de `contabilidad`)."""
+    return contabilidad.cuenta_regla(db, DOCUMENTO_COMPRA, "unidad_en_transito")
+
+
+def _lineas_en_proceso(db: Session, vins: list[str]) -> list[tuple[LineaFacturaCompra, str]]:
+    """Líneas de facturas locales (HU-4.09) con VIN cargadas a unidades en proceso: repuestos y
+    subcontratos comprados para la unidad, con el régimen del proveedor de su factura."""
+    try:
+        codigo = configuracion.obtener_cuenta(db, _cuenta_en_proceso(db)).codigo
+    except ErrorNegocio:
+        return []  # sin la regla ni el catálogo no puede haber líneas validadas contra él
+    filas = db.execute(
+        select(LineaFacturaCompra, FacturaCompra.regimen_proveedor)
+        .join(FacturaCompra, FacturaCompra.id == LineaFacturaCompra.factura_id)
+        .where(LineaFacturaCompra.vin.in_(vins), LineaFacturaCompra.cuenta == codigo)
+        .order_by(FacturaCompra.fecha, LineaFacturaCompra.id)
+    ).all()
+    return [(linea, regimen) for linea, regimen in filas]
+
+
+def _costo_linea(linea: LineaFacturaCompra, regimen: str) -> Decimal:
+    """Lo que `registrar_factura` carga a la cuenta de la línea: la base, más su IVA cuando el
+    proveedor es pequeño contribuyente (no da crédito fiscal)."""
+    return linea.base + (linea.iva if regimen != "general" else 0)
+
+
+def hoja_de_costo(db: Session, vin: str) -> dict:
+    """Costo de la unidad agrupado en compra, importación y reacondicionamiento, y su cuadre con el
+    mayor (criterio 3).
+
+    Mientras la unidad está en proceso, el total se compara con el saldo de unidades en proceso
+    para su VIN. Al darla de alta en la flota (HU-3.01) ese saldo vuelve a cero: entonces se compara
+    con el saldo más el costo trasladado en el alta, que es todo lo que se cargó a la cuenta.
+    """
+    unidad = unidades.obtener_por_vin(db, vin)
+    compra = db.scalar(select(CompraUnidad).where(CompraUnidad.vin == unidad.vin))
+    orden_concepto = {c.codigo: (c.orden, c.nombre) for c in listar_conceptos(db)}
+    gastos = sorted(
+        listar_gastos_importacion(db, vin=unidad.vin),
+        key=lambda g: (orden_concepto[g.concepto][0], g.fecha, g.id),
+    )
+    importacion = [
+        {
+            "concepto": g.concepto,
+            "nombre": orden_concepto[g.concepto][1],
+            "fecha": g.fecha,
+            "documento": g.documento,
+            "moneda": g.moneda,
+            "monto": g.monto,
+            "tipo_cambio": g.tipo_cambio,
+            "monto_gtq": g.monto_gtq,
+            "suma_al_costo": g.tratamiento == "costo",
+        }
+        for g in gastos
+    ]
+    mano_obra = [
+        {"numero": o.numero, "fecha_cierre": o.fecha_cierre, "costo_gtq": o.costo_total}
+        for o in taller.ordenes_de_unidad(db, unidad.vin)
+        if o.estado == "cerrada" and o.tipo == "reacondicionamiento"
+    ]
+    repuestos = [
+        {
+            "documento": f"{linea.factura.serie}-{linea.factura.numero}",
+            "proveedor": linea.factura.proveedor.nombre,
+            "fecha": linea.factura.fecha,
+            "descripcion": linea.descripcion,
+            "monto_gtq": _costo_linea(linea, regimen),
+        }
+        for linea, regimen in _lineas_en_proceso(db, [unidad.vin])
+    ]
+    compra_gtq = compra.total_gtq if compra else Decimal(0)
+    importacion_gtq = sum((g["monto_gtq"] for g in importacion if g["suma_al_costo"]), Decimal(0))
+    reacondicionamiento_gtq = sum((x["costo_gtq"] for x in mano_obra), Decimal(0)) + sum(
+        (x["monto_gtq"] for x in repuestos), Decimal(0)
+    )
+    total = compra_gtq + importacion_gtq + reacondicionamiento_gtq
+
+    costo_alta = unidades.costo_de_alta(db, unidad.vin)
+    saldo = contabilidad.saldo_cuenta(db, _cuenta_en_proceso(db), vin=unidad.vin)
+    saldo_mayor = saldo + (costo_alta or 0)
+    return {
+        "vin": unidad.vin,
+        "marca": unidad.marca,
+        "linea": unidad.linea,
+        "modelo": unidad.modelo,
+        "estado": unidad.estado,
+        "compra": None
+        if compra is None
+        else {
+            "fecha": compra.fecha,
+            "documento": compra.documento,
+            "proveedor": compra.proveedor.nombre,
+            "total_usd": compra.total_usd,
+            "tipo_cambio": compra.tipo_cambio,
+            "total_gtq": compra.total_gtq,
+        },
+        "importacion": importacion,
+        "mano_obra": mano_obra,
+        "repuestos": repuestos,
+        "compra_gtq": compra_gtq,
+        "importacion_gtq": importacion_gtq,
+        "credito_fiscal_gtq": sum(
+            (g["monto_gtq"] for g in importacion if not g["suma_al_costo"]), Decimal(0)
+        ),
+        "reacondicionamiento_gtq": reacondicionamiento_gtq,
+        "total_gtq": total,
+        "saldo_mayor_gtq": saldo_mayor,
+        "costo_alta_gtq": costo_alta,
+        "diferencia_gtq": total - saldo_mayor,
+        "cuadra": total == saldo_mayor,
+    }
 
 
 # ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────

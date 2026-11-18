@@ -23,3 +23,5 @@ CLAVE_INICIAL = os.getenv("CLAVE_INICIAL")
 FEL_CERTIFICADOR = os.getenv("FEL_CERTIFICADOR", "simulado")
 # Total en quetzales sobre el cual la SAT exige NIT o CUI (no "Consumidor Final"); lo confirma el contador.
 UMBRAL_CONSUMIDOR_FINAL = Decimal(os.getenv("UMBRAL_CONSUMIDOR_FINAL", "2500.00"))
+# Días en un mismo estado a partir de los cuales el reporte por etapa destaca la unidad (HU-7.04).
+DIAS_LIMITE_ETAPA = int(os.getenv("DIAS_LIMITE_ETAPA", "30"))

@@ -11,6 +11,7 @@ from app.modulos.compras.schemas import (
     FacturaCompraSalida,
     GastoImportacionEntrada,
     GastoImportacionSalida,
+    HojaCosto,
     ProveedorEntrada,
     ProveedorSalida,
     ResumenGastosUnidad,
@@ -133,3 +134,11 @@ def registrar_compra_unidad(
 @router.get("/compras-unidades/{compra_id}", response_model=CompraUnidadSalida)
 def consultar_compra_unidad(compra_id: int, db: Session = Depends(get_db)) -> CompraUnidadSalida:
     return CompraUnidadSalida.model_validate(service.obtener_compra_unidad(db, compra_id))
+
+
+# ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
+
+
+@router.get("/hoja-costo/{vin}", response_model=HojaCosto)
+def hoja_de_costo(vin: str, db: Session = Depends(get_db)) -> HojaCosto:
+    return HojaCosto(**service.hoja_de_costo(db, vin))

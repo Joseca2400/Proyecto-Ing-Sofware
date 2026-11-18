@@ -60,6 +60,12 @@ export const routes: Routes = [
           import('./features/compras/gastos-importacion').then((m) => m.GastosImportacionPantalla),
       },
       {
+        path: 'compras/hoja-costo',
+        title: 'Hoja de costo · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/compras/hoja-costo').then((m) => m.HojaCostoPantalla),
+      },
+      {
         path: 'facturacion/clientes',
         title: 'Clientes · Kilómetro Cero',
         loadComponent: () =>
@@ -112,6 +118,33 @@ export const routes: Routes = [
         data: soloRoles('gerente_financiero', 'contador', 'gerencia'),
         loadComponent: () =>
           import('./features/unidades/etapas-importacion').then((m) => m.EtapasImportacionPantalla),
+      },
+      {
+        path: 'unidades/alta-flota',
+        title: 'Alta en flota · Kilómetro Cero',
+        data: soloRoles('contador', 'gerente_financiero', 'gerencia'),
+        loadComponent: () =>
+          import('./features/unidades/alta-flota').then((m) => m.AltaFlotaPantalla),
+      },
+      {
+        path: 'unidades/depreciacion',
+        title: 'Depreciación · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/unidades/depreciacion').then((m) => m.DepreciacionPantalla),
+      },
+      {
+        path: 'unidades/fin-vida-util',
+        title: 'Fin de vida útil · Kilómetro Cero',
+        data: soloRoles('gerente_financiero', 'gerencia', 'contador'),
+        loadComponent: () =>
+          import('./features/unidades/fin-vida-util').then((m) => m.FinVidaUtilPantalla),
+      },
+      {
+        path: 'reportes/unidades-etapa',
+        title: 'Unidades por etapa · Kilómetro Cero',
+        data: soloRoles('gerencia', 'gerente_financiero', 'contador'),
+        loadComponent: () =>
+          import('./features/reportes/unidades-etapa').then((m) => m.UnidadesEtapaPantalla),
       },
       {
         path: 'contabilidad/partidas',
