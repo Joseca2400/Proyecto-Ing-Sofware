@@ -757,6 +757,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/facturacion/facturas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Facturas */
+        get: operations["listar_facturas_api_v1_facturacion_facturas_get"];
+        put?: never;
+        /**
+         * Emitir Factura
+         * @description Certificada o rechazada por el certificador, la factura queda registrada: ver `estado`.
+         */
+        post: operations["emitir_factura_api_v1_facturacion_facturas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/facturas/{factura_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Factura */
+        get: operations["consultar_factura_api_v1_facturacion_facturas__factura_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/alquileres/tarifas/catalogos": {
         parameters: {
             query?: never;
@@ -1169,6 +1207,27 @@ export interface components {
              */
             monetaria_usd: boolean;
         };
+        /** CuentaPorCobrarSalida */
+        CuentaPorCobrarSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Fecha Vencimiento
+             * Format: date
+             */
+            fecha_vencimiento: string;
+            /** Moneda */
+            moneda: string;
+            /** Monto */
+            monto: string;
+            /** Saldo */
+            saldo: string;
+        };
         /** CuentaPorPagarSalida */
         CuentaPorPagarSalida: {
             /** Id */
@@ -1345,6 +1404,96 @@ export interface components {
             readonly genera_credito_fiscal: boolean;
         };
         /**
+         * FacturaEntrada
+         * @description Factura a emitir. Sin `cliente_id` se emite a Consumidor Final; `origen_tipo` y `origen_id`
+         *     (los dos o ninguno) ligan la factura al contrato, la venta o la orden que la origina.
+         */
+        FacturaEntrada: {
+            /** Cliente Id */
+            cliente_id?: number | null;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /**
+             * Dias Credito
+             * @default 0
+             */
+            dias_credito: number;
+            /** Origen Tipo */
+            origen_tipo?: ("contrato" | "venta" | "orden_taller") | null;
+            /** Origen Id */
+            origen_id?: number | null;
+            /** Lineas */
+            lineas: components["schemas"]["LineaFacturaFelEntrada"][];
+        };
+        /** FacturaSalida */
+        FacturaSalida: {
+            /** Id */
+            id: number;
+            /** Cliente Id */
+            cliente_id: number | null;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Moneda */
+            moneda: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Origen Tipo */
+            origen_tipo: string | null;
+            /** Origen Id */
+            origen_id: number | null;
+            /** Dias Credito */
+            dias_credito: number;
+            /** Emisor Nit */
+            emisor_nit: string;
+            /** Emisor Nombre */
+            emisor_nombre: string;
+            /** Receptor Id */
+            receptor_id: string;
+            /** Receptor Nombre */
+            receptor_nombre: string;
+            /** Base */
+            base: string;
+            /** Iva */
+            iva: string;
+            /** Total */
+            total: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "pendiente" | "certificada" | "rechazada";
+            /** Serie */
+            serie: string | null;
+            /** Numero */
+            numero: string | null;
+            /** Autorizacion */
+            autorizacion: string | null;
+            /** Certificada En */
+            certificada_en: string | null;
+            /** Xml */
+            xml: string | null;
+            /** Motivo Rechazo */
+            motivo_rechazo: string | null;
+            /** Partida Id */
+            partida_id: number | null;
+            /** Lineas */
+            lineas: components["schemas"]["LineaFacturaFelSalida"][];
+            cuenta_por_cobrar: components["schemas"]["CuentaPorCobrarSalida"] | null;
+        };
+        /**
          * GastoImportacionEntrada
          * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
          *     `unidades`), el concepto, el proveedor y el tipo de cambio se validan en el service.
@@ -1471,6 +1620,44 @@ export interface components {
             base: string;
             /** Iva */
             iva: string;
+        };
+        /**
+         * LineaFacturaFelEntrada
+         * @description Línea de la factura. Cantidad y precio unitario (con IVA) llegan como texto ("1120.00");
+         *     se validan en el service, igual que la línea de negocio y el VIN.
+         */
+        LineaFacturaFelEntrada: {
+            /** Descripcion */
+            descripcion: string;
+            /** Cantidad */
+            cantidad: string;
+            /** Precio Unitario */
+            precio_unitario: string;
+            /** Linea Negocio */
+            linea_negocio: string;
+            /** Vin */
+            vin?: string | null;
+        };
+        /** LineaFacturaFelSalida */
+        LineaFacturaFelSalida: {
+            /** Numero Linea */
+            numero_linea: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Cantidad */
+            cantidad: string;
+            /** Precio Unitario */
+            precio_unitario: string;
+            /** Total */
+            total: string;
+            /** Base */
+            base: string;
+            /** Iva */
+            iva: string;
+            /** Linea Negocio */
+            linea_negocio: string;
+            /** Vin */
+            vin: string | null;
         };
         /** LineaFacturaSalida */
         LineaFacturaSalida: {
@@ -3926,6 +4113,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClienteSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_facturas_api_v1_facturacion_facturas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    emitir_factura_api_v1_facturacion_facturas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FacturaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_factura_api_v1_facturacion_facturas__factura_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                factura_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
                 };
             };
             /** @description Validation Error */

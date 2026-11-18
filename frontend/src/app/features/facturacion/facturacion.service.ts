@@ -24,4 +24,24 @@ export class FacturacionService {
   registrarCliente(entrada: ClienteEntrada): Observable<Cliente> {
     return this.http.post<Cliente>(`${this.url}/clientes`, entrada);
   }
+
+  facturas(): Observable<Factura[]> {
+    return this.http.get<Factura[]>(`${this.url}/facturas`);
+  }
+
+  emitirFactura(entrada: FacturaEntrada): Observable<Factura> {
+    return this.http.post<Factura>(`${this.url}/facturas`, entrada);
+  }
 }
+
+// ── HU-6.02: facturas FEL ──────────────────────────────────────────────────────
+
+export type Factura = components['schemas']['FacturaSalida'];
+export type FacturaEntrada = components['schemas']['FacturaEntrada'];
+
+// Líneas de negocio con regla de ingreso para la factura (las demás las rechaza el servidor).
+export const LINEAS_FACTURA = [
+  { valor: 'alquiler', etiqueta: 'Alquiler' },
+  { valor: 'venta', etiqueta: 'Venta' },
+  { valor: 'taller', etiqueta: 'Taller' },
+] as const;

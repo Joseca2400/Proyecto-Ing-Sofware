@@ -1,6 +1,7 @@
 """Configuración tomada de variables de entorno."""
 
 import os
+from decimal import Decimal
 
 APP_NOMBRE = "Sistema administrativo y financiero"
 APP_VERSION = "0.1.0"
@@ -20,3 +21,5 @@ CLAVE_INICIAL = os.getenv("CLAVE_INICIAL")
 
 # Certificador FEL (`comun/fel.py`): "simulado" hasta que se contrate el real (Sprint 3).
 FEL_CERTIFICADOR = os.getenv("FEL_CERTIFICADOR", "simulado")
+# Total en quetzales sobre el cual la SAT exige NIT o CUI (no "Consumidor Final"); lo confirma el contador.
+UMBRAL_CONSUMIDOR_FINAL = Decimal(os.getenv("UMBRAL_CONSUMIDOR_FINAL", "2500.00"))

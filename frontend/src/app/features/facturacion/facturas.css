@@ -1,0 +1,51 @@
+fieldset.lineas {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 12px 16px 16px;
+  margin: 0;
+}
+
+.linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.linea .descripcion {
+  flex: 1 1 220px;
+}
+
+button.agregar {
+  align-self: flex-start;
+}
+
+.detalle {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.detalle dl {
+  display: grid;
+  grid-template-columns: max-content auto;
+  gap: 4px 24px;
+  margin: 12px 0;
+}
+
+.detalle dd {
+  margin: 0;
+}
+
+.uuid,
+pre {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
