@@ -1,7 +1,8 @@
 """Catálogo semilla: `python -m app.modulos.configuracion.semilla`.
 
-BORRADOR para la compra en USD, la importación y las partidas manuales; el contador lo valida
-(sesión del 04/11). El padre de cada cuenta es su código sin el último segmento ("1.1.01.02" → "1.1.01").
+BORRADOR para la compra en USD, la importación, el taller, el alquiler y las partidas manuales; el
+contador lo valida (sesión del 04/11). El padre de cada cuenta es su código sin el último segmento
+("1.1.01.02" → "1.1.01").
 """
 
 from sqlalchemy import select
@@ -47,6 +48,7 @@ CATALOGO = (
     ("2.1.01.02", "Proveedores locales", "pasivo", A, True, _OPC),
     ("2.1.02", "Impuestos por pagar", "pasivo", A, False, {}),
     ("2.1.02.01", "IVA débito fiscal", "pasivo", A, True, {}),
+    ("2.1.03", "Depósitos en garantía de clientes", "pasivo", A, True, _linea("alquiler", **_OPC)),
     ("3", "Patrimonio", "patrimonio", A, False, {}),
     ("3.1", "Capital social", "patrimonio", A, True, _ADMIN),
     ("3.2", "Resultados acumulados", "patrimonio", A, True, _ADMIN),
@@ -54,12 +56,16 @@ CATALOGO = (
     ("4.1", "Ingresos por alquiler", "ingreso", A, True, _linea("alquiler", **_VIN)),
     ("4.2", "Ingresos por venta de vehículos", "ingreso", A, True, _linea("venta", **_VIN)),
     ("4.3", "Ingresos por servicios de taller", "ingreso", A, True, _linea("taller")),
+    ("4.4", "Ganancia por diferencial cambiario", "ingreso", A, True, _linea("administracion")),
     ("5", "Costos", "costo", D, False, {}),
     ("5.1", "Costo de vehículos vendidos", "costo", D, True, _linea("venta", **_VIN)),
+    ("5.2", "Mano de obra de taller aplicada", "costo", A, True, _linea("taller", **_OPC)),
     ("6", "Gastos", "gasto", D, False, {}),
     ("6.1", "Gastos de administración", "gasto", D, False, {}),
     ("6.1.01", "Sueldos y salarios", "gasto", D, True, _linea("administracion")),
     ("6.1.02", "Servicios y suministros", "gasto", D, True, _linea("administracion")),
+    ("6.2", "Mantenimiento de la flota", "gasto", D, True, _linea("alquiler", **_VIN)),
+    ("6.3", "Pérdida por diferencial cambiario", "gasto", D, True, _linea("administracion")),
 )  # fmt: skip
 
 
