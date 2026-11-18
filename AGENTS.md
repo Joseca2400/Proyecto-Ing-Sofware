@@ -44,12 +44,12 @@ Plan y PDF: después de cambiar `docs/planning/sprints.json` o `user-stories/`, 
 
 Monolito modular: **Angular → (Nginx, proxy `/api`) → FastAPI → PostgreSQL 16**. Diseño completo, diagramas C4 y decisiones (ADR, sección 8) en `docs/arquitectura/Arquitectura.md`; lo construido en el Sprint 0 en `docs/arquitectura/Sprint0-HelloWorld.md`.
 
-El backend y el front se organizan por **los mismos módulos de negocio** (uno o más por épica: `seguridad`, `configuracion`, `contabilidad`, `unidades`, `compras`, `taller`, `facturacion`, `alquileres`, `ventas`, `financiamiento`, `arranque`, `reportes`), para que cada equipo trabaje sus módulos de punta a punta. Hoy solo existe el módulo `sistema` (hello world: `GET /api/v1/sistema/estado`).
+El backend y el front se organizan por **los mismos módulos de negocio** (uno o más por épica: `seguridad`, `configuracion`, `contabilidad`, `unidades`, `compras`, `taller`, `facturacion`, `alquileres`, `ventas`, `financiamiento`, `arranque`, `reportes`), para que cada equipo trabaje sus módulos de punta a punta. Ya existen `sistema`, `seguridad`, `configuracion`, `contabilidad`, `unidades`, `compras`, `taller`, `facturacion`, `alquileres` y `reportes`.
 
 ### Backend (`backend/app/`)
 
 - `main.py` crea la app, define `/health` y registra cada router bajo `/api/v1`.
-- `comun/` no depende de ningún módulo: `config.py` (variables de entorno), `db.py` (`Base`, `get_db`), `dinero.py`, `errores.py` (`ErrorNegocio` → `{"detail": ...}`).
+- `comun/` no depende de ningún módulo: `config.py` (variables de entorno), `db.py` (`Base`, `get_db`), `dinero.py`, `errores.py` (`ErrorNegocio` → `{"detail": ...}`), `auditoria.py`, `nit.py`, `fel.py` (adaptador del certificador FEL, con su simulador).
 - `modulos/<modulo>/` con `router.py` → `service.py` → `models.py`, más `schemas.py` (Pydantic).
 
 Reglas de dependencia:
@@ -61,10 +61,18 @@ Reglas de dependencia:
 
 Para agregar un módulo: crear la carpeta, registrar el router en `main.py`, importar sus `models` en `app/modulos/__init__.py` (Alembic los descubre desde ahí) y generar la migración.
 
+Convenciones que ya usan todos los módulos:
+- **Permisos en cada ruta:** `APIRouter(..., dependencies=[Depends(usuario_actual)])` y `requiere_rol(...)` en las altas, ambos de `seguridad.service`; el router pasa `usuario.id` al service.
+- **Documento y partida juntos:** el módulo pide la partida con `contabilidad.service.registrar_automatica(...)` (no confirma) y confirma una sola vez; ejemplo: `registrar_gasto_importacion` en `compras/service.py`.
+- **Cuentas por regla, no fijas en el código:** `contabilidad.service.cuenta_regla(db, documento_tipo, concepto)`; cada módulo siembra las reglas de sus documentos en su migración (`INSERT INTO regla_contabilizacion`) y el contador las cambia desde la pantalla. Si falta, el documento no se registra.
+- **Dependencias circulares:** si `unidades` necesita a `compras`, `taller` o `alquileres` (que ya lo importan), el import va dentro de la función.
+- **Nombres de esquemas únicos:** dos módulos con un esquema Pydantic del mismo nombre rompen los tipos generados del front (lo vigila `tests/test_sistema.py`).
+- **Pruebas con sesión:** `tests/conftest.py` da `cliente_contador` (sesión de contador) y `cliente` (sin sesión); las que crean documentos con partida siembran el catálogo y vacían `partida` como `tests/test_gastos_importacion.py`.
+
 ### Frontend (`frontend/src/app/`)
 
-- `core/`: se carga una vez (`api/api.ts` con el prefijo `/api/v1`, `layout/` con barra y menú; luego `auth/` con interceptor y guard por rol).
-- `shared/`: sin lógica de negocio (componentes, `pipes/monto.pipe.ts`).
+- `core/`: se carga una vez (`api/api.ts` con el prefijo `/api/v1`, `layout/` con barra y menú, `auth/` con la sesión, el interceptor del token, el guard y la pantalla de entrada). Todo lo que cuelga del layout exige sesión; una ruta con `data: soloRoles(...)` solo la ven esos roles y el menú la oculta a los demás.
+- `shared/`: sin lógica de negocio (componentes, `pipes/monto.pipe.ts`). Los estilos comunes de pantalla (encabezado, tarjeta, formulario, tabla, mensajes, impresión) están en `src/styles/pantalla.css`; una pantalla solo agrega CSS propio para lo que le es único.
 - `features/<modulo>/`: una carpeta por módulo, cargada con `loadComponent` en `app.routes.ts` como hija del `Layout`; su entrada de menú va en `core/layout/layout.ts`.
 - Convenciones de Angular 22: componentes standalone, `inject()`, signals, `@if`/`@for`; archivos sin sufijo `.component` (`inicio.ts`, `inicio.html`).
 - Un componente usa el servicio de su módulo (`features/<modulo>/<modulo>.service.ts`), nunca `HttpClient` directo.
