@@ -65,6 +65,10 @@ export class ContabilidadService {
     return this.http.post<Partida>(`${this.url}/${id}/devolver`, { comentario });
   }
 
+  revertir(id: number, fecha: string, motivo: string): Observable<Partida> {
+    return this.http.post<Partida>(`${this.url}/${id}/revertir`, { fecha, motivo });
+  }
+
   balance(filtros: FiltrosLibro): Observable<Balance> {
     return this.http.get<Balance>(`${API_URL}/contabilidad/balance`, {
       params: sinVacios(filtros),

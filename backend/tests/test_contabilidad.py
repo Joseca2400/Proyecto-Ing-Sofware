@@ -345,3 +345,95 @@ def test_una_regla_sin_cuenta_avisa_cual_falta(db):
     with pytest.raises(ErrorNegocio, match="Falta la regla de contabilización «factura_compra · no_existe»"):
         service.cuenta_regla(db, "factura_compra", "no_existe")
     assert service.cuenta_regla(db, "factura_compra", "por_pagar_gtq") == _id("2.1.01.02")
+
+
+# ── HU-2.05: reversión ────────────────────────────────────────────────────────
+
+
+def _contabilizada(db, datos=None) -> Partida:
+    partida = service.crear_borrador(db, datos or _cuadrada())
+    service.enviar_a_revision(db, partida.id)
+    return service.contabilizar(db, partida.id)
+
+
+def test_la_reversion_invierte_las_lineas_y_queda_ligada_sin_tocar_la_original(db):
+    original = _contabilizada(
+        db,
+        _datos(_linea("1.1.01.03", "debe", "10.00", "USD"), _linea("2.1.01.01", "haber", "10.00", "USD")),
+    )
+    reversion = service.revertir(db, original.id, FECHA, "  Proveedor equivocado ")
+    assert (reversion.estado, reversion.revierte_a, reversion.comentario) == (
+        "contabilizada",
+        original.id,
+        "Proveedor equivocado",
+    )
+    assert reversion.numero > original.numero
+    invertidas = [(x.cuenta_id, x.debe, x.haber, x.monto_usd, x.tipo_cambio) for x in reversion.lineas]
+    assert invertidas == [(x.cuenta_id, x.haber, x.debe, x.monto_usd, x.tipo_cambio) for x in original.lineas]
+    db.expire_all()
+    assert service.obtener_partida(db, original.id).revertida_por == reversion.id
+
+    with pytest.raises(ErrorNegocio, match="ya fue revertida"):
+        service.revertir(db, original.id, FECHA, "otra vez")
+    with pytest.raises(ErrorNegocio, match="reversión no se revierte"):
+        service.revertir(db, reversion.id, FECHA, "deshacer")
+
+
+@pytest.mark.parametrize(
+    ("fecha", "motivo", "mensaje"),
+    [
+        (FECHA, "   ", "motivo"),
+        (date(2999, 1, 1), "x", "futura"),
+        (date(2026, 1, 14), "x", "anterior a la partida original"),
+    ],
+)
+def test_la_reversion_exige_motivo_y_fecha_valida(db, fecha, motivo, mensaje):
+    original = _contabilizada(db)
+    with pytest.raises(ErrorNegocio, match=mensaje):
+        service.revertir(db, original.id, fecha, motivo)
+    db.rollback()
+
+
+def test_solo_se_revierte_lo_contabilizado(db):
+    borrador = service.crear_borrador(db, _cuadrada())
+    with pytest.raises(ErrorNegocio, match="revertir una partida borrador"):
+        service.revertir(db, borrador.id, FECHA, "x")
+
+
+def test_la_automatica_se_revierte_desde_su_documento_y_no_a_mano(db):
+    original = _automatica(db, 9101)
+    db.commit()
+    with pytest.raises(ErrorNegocio, match="anule o corrija el documento factura_compra 9101"):
+        service.revertir(db, original.id, FECHA, "x")
+    db.rollback()
+
+    reversion = service.revertir_automatica(db, "factura_compra", 9101, FECHA, "Factura anulada")
+    assert (reversion.origen, reversion.documento_id, reversion.revierte_a) == (
+        "automatica",
+        "9101",
+        original.id,
+    )
+    db.rollback()  # el módulo no confirmó la anulación: la reversión se va con ella
+    assert db.query(Partida).filter_by(revierte_a=original.id).count() == 0
+
+    service.revertir_automatica(db, "factura_compra", "9101", FECHA, "Factura anulada")
+    db.commit()
+    assert service.partida_de_documento(db, "factura_compra", 9101).id == original.id
+    with pytest.raises(ErrorNegocio, match="ya fue revertida"):
+        service.revertir_automatica(db, "factura_compra", 9101, FECHA, "otra vez")
+
+
+def test_solo_el_contador_revierte_por_la_api(cliente, db):
+    original = _contabilizada(db)
+    url = f"{URL}/{original.id}/revertir"
+    cuerpo = {"fecha": FECHA.isoformat(), "motivo": "Duplicada"}
+    assert cliente.post(url, json=cuerpo).status_code == 401
+    for correo in (AUXILIAR, GERENTE):
+        assert cliente.post(url, json=cuerpo, headers=_entrar(cliente, correo)).status_code == 403
+    contador = _entrar(cliente, CONTADOR)
+    assert cliente.post(url, json={**cuerpo, "motivo": " "}, headers=contador).status_code == 422
+    respuesta = cliente.post(url, json=cuerpo, headers=contador)
+    assert respuesta.status_code == 201 and respuesta.json()["revierte_a"] == original.id
+    revertida = cliente.get(f"{URL}/{original.id}", headers=contador).json()
+    assert revertida["revertida_por"] == respuesta.json()["id"]
+    assert cliente.post(url, json=cuerpo, headers=contador).status_code == 409

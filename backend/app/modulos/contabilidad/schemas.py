@@ -59,6 +59,11 @@ class DevolucionEntrada(BaseModel):
     comentario: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 
 
+class ReversionEntrada(BaseModel):
+    fecha: date
+    motivo: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+
+
 class LineaSalida(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -97,6 +102,8 @@ class PartidaSalida(BaseModel):
     creado_por: int | None
     contabilizada_por: int | None
     contabilizada_en: datetime | None
+    revierte_a: int | None
+    revertida_por: int | None
     lineas: list[LineaSalida]
 
     # El front no suma montos: la bandeja de revisión muestra estos totales.

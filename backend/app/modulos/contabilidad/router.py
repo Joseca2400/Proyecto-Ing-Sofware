@@ -13,6 +13,7 @@ from app.modulos.contabilidad.schemas import (
     PartidaSalida,
     ReglaEntrada,
     ReglaSalida,
+    ReversionEntrada,
 )
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
@@ -70,6 +71,16 @@ def devolver(
     partida_id: int, datos: DevolucionEntrada, _: Usuario = Depends(REVISION), db: Session = Depends(get_db)
 ):
     return service.devolver(db, partida_id, datos.comentario)
+
+
+@router.post("/partidas/{partida_id}/revertir", response_model=PartidaSalida, status_code=201)
+def revertir(
+    partida_id: int,
+    datos: ReversionEntrada,
+    usuario: Usuario = Depends(requiere_rol(CONTADOR)),
+    db: Session = Depends(get_db),
+):
+    return service.revertir(db, partida_id, datos.fecha, datos.motivo, usuario.id)
 
 
 # ── HU-2.03: reglas de contabilización ────────────────────────────────────────

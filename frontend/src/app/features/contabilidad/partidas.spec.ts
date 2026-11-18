@@ -278,6 +278,41 @@ describe('PartidasPantalla', () => {
     expect(fixture.nativeElement.querySelector('.ficha').textContent).toContain('Partida No. 3');
   });
 
+  it('revierte una partida contabilizada con motivo y muestra el vínculo', async () => {
+    const contabilizada = { ...PARTIDA, estado: 'contabilizada', numero: 3 };
+    const fixture = await crear([contabilizada]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    await fixture.whenStable();
+    boton(el, 'Revertir').click();
+    await fixture.whenStable();
+    http.expectNone({ method: 'POST', url: `${URL}/7/revertir` });
+    expect(el.textContent).toContain('Indica el motivo');
+
+    escribir(el, 'fecha_reversion', '2026-11-03');
+    escribir(el, 'motivo_reversion', ' Duplicada ');
+    boton(el, 'Revertir').click();
+    const envio = http.expectOne({ method: 'POST', url: `${URL}/7/revertir` });
+    expect(envio.request.body).toEqual({ fecha: '2026-11-03', motivo: 'Duplicada' });
+    envio.flush({ ...contabilizada, id: 8, numero: 4, revierte_a: 7, comentario: 'Duplicada' });
+    lista().flush([]);
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Partida revertida con la partida No. 4');
+    expect(el.textContent).toContain('Motivo de la reversión: Duplicada');
+    expect(boton(el, 'Revertir')).toBeUndefined();
+  });
+
+  it('no ofrece revertir una automática', async () => {
+    const fixture = await crear([
+      { ...PARTIDA, estado: 'contabilizada', numero: 3, origen: 'automatica' },
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+    el.querySelector<HTMLButtonElement>('tbody button')!.click();
+    await fixture.whenStable();
+    expect(boton(el, 'Revertir')).toBeUndefined();
+  });
+
   it('filtra la bandeja por estado', async () => {
     const fixture = await crear();
     const el = fixture.nativeElement as HTMLElement;

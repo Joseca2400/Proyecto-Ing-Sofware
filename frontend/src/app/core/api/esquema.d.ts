@@ -478,6 +478,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/partidas/{partida_id}/revertir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revertir */
+        post: operations["revertir_api_v1_contabilidad_partidas__partida_id__revertir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/reglas": {
         parameters: {
             query?: never;
@@ -1354,6 +1371,10 @@ export interface components {
             contabilizada_por: number | null;
             /** Contabilizada En */
             contabilizada_en: string | null;
+            /** Revierte A */
+            revierte_a: number | null;
+            /** Revertida Por */
+            revertida_por: number | null;
             /** Lineas */
             lineas: components["schemas"]["LineaSalida"][];
             /** Total Debe */
@@ -1523,6 +1544,16 @@ export interface components {
             compra_gtq: string;
             /** Costo Total Gtq */
             costo_total_gtq: string;
+        };
+        /** ReversionEntrada */
+        ReversionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Motivo */
+            motivo: string;
         };
         /**
          * TipoCambioEntrada
@@ -2887,6 +2918,43 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revertir_api_v1_contabilidad_partidas__partida_id__revertir_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                partida_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReversionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

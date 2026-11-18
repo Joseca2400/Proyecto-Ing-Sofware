@@ -13,7 +13,12 @@ HU-1.10 (incluido): quien registra una partida manual no la contabiliza ni otro 
 HU-2.16 (incluido): balance de comprobación y mayor sobre partidas contabilizadas, con filtros de
 fechas, línea de negocio y VIN; `saldo_cuenta` para que otros módulos concilien contra el mayor.
 Pendiente: exportar el balance y el mayor (Sprint 5, con HU-7.09).
-Pendiente: límites monetarios de aprobación; lotes; adjuntos; reversión (HU-2.05); período abierto.
+HU-2.05 (incluido): reversión con motivo y fecha elegida, en una partida nueva contabilizada que
+invierte las líneas y apunta a la original (`revierte_a`); la original no se toca y no se revierte
+dos veces. Solo el contador revierte a mano y solo partidas manuales; la de un documento la pide
+su módulo con `revertir_automatica`.
+Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
+(HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
 """
 
 from datetime import UTC, date, datetime, timedelta
@@ -270,6 +275,104 @@ def registrar_automatica(
                 f"El documento {documento_tipo} {documento_id} ya tiene su partida", 409
             ) from error
         raise
+    return partida
+
+
+# ── HU-2.05: reversión de una partida contabilizada ───────────────────────────
+
+
+def _revertir(db: Session, original: Partida, fecha: date, motivo: str, usuario_id: int | None) -> Partida:
+    """Crea y contabiliza la reversión, sin confirmar. `original` debe venir bloqueada."""
+    _exigir_estado(original, "contabilizada", accion="revertir")
+    if original.revierte_a is not None:
+        raise ErrorNegocio("Una partida de reversión no se revierte", 409)
+    # Consulta fresca tras el candado: la relación cargada en la sesión puede estar vieja.
+    previa = db.scalar(select(Partida.numero).where(Partida.revierte_a == original.id))
+    if previa is not None:
+        raise ErrorNegocio(f"La partida No. {original.numero} ya fue revertida por la No. {previa}", 409)
+    motivo = motivo.strip()
+    if not motivo:
+        raise ErrorNegocio("La reversión necesita un motivo")
+    if fecha > date.today():
+        raise ErrorNegocio("La fecha de la reversión no puede ser futura")
+    if fecha < original.fecha:
+        raise ErrorNegocio("La reversión no puede tener fecha anterior a la partida original")
+    reversion = Partida(
+        fecha=fecha,
+        concepto=f"Reversión de la partida No. {original.numero}",
+        comentario=motivo,
+        origen=original.origen,
+        documento_tipo=original.documento_tipo,
+        documento_id=original.documento_id,
+        revierte_a=original.id,
+        creado_por=usuario_id,
+        # Mismos quetzales invertidos: una línea en USD no se vuelve a convertir con otra tasa.
+        lineas=[
+            LineaPartida(
+                numero_linea=linea.numero_linea,
+                cuenta_id=linea.cuenta_id,
+                debe=linea.haber,
+                haber=linea.debe,
+                moneda=linea.moneda,
+                monto_usd=linea.monto_usd,
+                tipo_cambio=linea.tipo_cambio,
+                linea_negocio=linea.linea_negocio,
+                vin=linea.vin,
+            )
+            for linea in original.lineas
+        ],
+    )
+    db.add(reversion)
+    db.flush()
+    _contabilizar(db, reversion, usuario_id)
+    return reversion
+
+
+def revertir(
+    db: Session, partida_id: int, fecha: date, motivo: str, usuario_id: int | None = None
+) -> Partida:
+    """Reversión manual por el contador. Las automáticas se revierten desde su documento."""
+    original = _obtener(db, partida_id, bloquear=True)
+    if original.origen == "automatica":
+        raise ErrorNegocio(
+            "Una partida automática no se revierte a mano: anule o corrija el documento "
+            f"{original.documento_tipo} {original.documento_id}",
+            409,
+        )
+    reversion = _revertir(db, original, fecha, motivo, usuario_id)
+    db.commit()
+    db.refresh(reversion)
+    return reversion
+
+
+def revertir_automatica(
+    db: Session,
+    documento_tipo: str,
+    documento_id: str | int,
+    fecha: date,
+    motivo: str,
+    usuario_id: int | None = None,
+) -> Partida:
+    """Revierte la partida de un documento, sin confirmar (como `registrar_automatica`).
+
+    La llama el módulo dueño del documento al anularlo; él confirma la anulación y la reversión
+    juntas, o revierte todo si esto lanza `ErrorNegocio`.
+    """
+    original = partida_de_documento(db, documento_tipo, documento_id)
+    return _revertir(db, _obtener(db, original.id, bloquear=True), fecha, motivo, usuario_id)
+
+
+def partida_de_documento(db: Session, documento_tipo: str, documento_id: str | int) -> Partida:
+    """La partida automática que originó un documento (no su reversión)."""
+    partida = db.scalar(
+        select(Partida).where(
+            Partida.documento_tipo == documento_tipo,
+            Partida.documento_id == str(documento_id),
+            Partida.revierte_a.is_(None),
+        )
+    )
+    if partida is None:
+        raise ErrorNegocio(f"El documento {documento_tipo} {documento_id} no tiene partida", 404)
     return partida
 
 
