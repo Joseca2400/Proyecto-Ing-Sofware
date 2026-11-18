@@ -66,6 +66,12 @@ export const routes: Routes = [
           import('./features/facturacion/clientes').then((m) => m.ClientesPantalla),
       },
       {
+        path: 'facturacion/facturas',
+        title: 'Facturas · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/facturacion/facturas').then((m) => m.FacturasPantalla),
+      },
+      {
         path: 'alquileres/tarifario',
         title: 'Tarifario · Kilómetro Cero',
         loadComponent: () =>
