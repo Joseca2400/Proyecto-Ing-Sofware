@@ -636,6 +636,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taller/ordenes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Ordenes */
+        get: operations["listar_ordenes_api_v1_taller_ordenes_get"];
+        put?: never;
+        /** Abrir Orden */
+        post: operations["abrir_orden_api_v1_taller_ordenes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Orden */
+        get: operations["consultar_orden_api_v1_taller_ordenes__orden_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1211,6 +1246,70 @@ export interface components {
             /** Token */
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
+        };
+        /**
+         * OrdenEntrada
+         * @description Apertura de la orden. El VIN y la coherencia con el estado de la unidad se validan en el service.
+         */
+        OrdenEntrada: {
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+        };
+        /** OrdenSalida */
+        OrdenSalida: {
+            /** Id */
+            id: number;
+            /** Numero */
+            numero: string;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "abierta" | "cerrada";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+            /** Dias */
+            dias: number;
+            /** Costo Acumulado */
+            costo_acumulado: string;
+            /** Fecha Cierre */
+            fecha_cierre: string | null;
+            /** Justificacion */
+            justificacion: string | null;
+            /** Partida Id */
+            partida_id: number | null;
         };
         /** PartidaEntrada */
         PartidaEntrada: {
@@ -3195,6 +3294,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TarifaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_ordenes_api_v1_taller_ordenes_get: {
+        parameters: {
+            query?: {
+                estado?: ("abierta" | "cerrada") | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrir_orden_api_v1_taller_ordenes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrdenEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_orden_api_v1_taller_ordenes__orden_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
                 };
             };
             /** @description Validation Error */

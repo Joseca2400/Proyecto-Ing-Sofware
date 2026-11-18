@@ -22,8 +22,8 @@ al taller (mantenimiento y postventa, que regula HU-5.01). El listado por etapa
 historial, y su costo acumulado (compra más gastos que suman al costo, calculado por `compras` con
 la misma regla de la ficha), con el total de cada etapa.
 HU-4.07 (diferido):
-- Criterio 2: el paso a "en taller" lo hará la orden de reacondicionamiento al abrirse (HU-5.01),
-  llamando a `cambiar_estado`; mientras no exista, se registra a mano con su documento.
+- Criterio 2: hecho. La orden de reacondicionamiento (HU-5.01) pasa la unidad a "en taller" al
+  abrirse y a "lista" al cerrarse (HU-5.07), con `cambiar_estado(..., confirmar=False)`.
 - Criterio 3: el paso a "lista" exigirá la DUCA registrada (HU-4.06) y que no haya órdenes de
   reacondicionamiento abiertas (HU-5.01); ver `_validar_paso_a_lista`.
 - Las métricas de la etapa (promedios de días, unidades detenidas) quedan para HU-7.04.
@@ -215,6 +215,11 @@ def _en_importacion(db: Session, unidad: Unidad) -> bool:
     return not db.scalar(select(_ya_salio_de_importacion(unidad.id)))
 
 
+def esta_en_importacion(db: Session, vin: str) -> bool:
+    """Para otros módulos: si la unidad sigue en la importación (aún no llega a lista ni a la flota)."""
+    return _en_importacion(db, obtener_por_vin(db, vin))
+
+
 def _validar_paso_a_lista(db: Session, unidad: Unidad) -> None:
     """Diferido (HU-4.07, criterio 3): aquí se exigirá que la DUCA de la unidad esté registrada
     (service de `compras`, HU-4.06) y que no tenga órdenes de reacondicionamiento abiertas
@@ -242,12 +247,17 @@ def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
 
 
 def cambiar_estado(
-    db: Session, vin: str, estado: str, documento: str, usuario_id: int | None = None
+    db: Session,
+    vin: str,
+    estado: str,
+    documento: str,
+    usuario_id: int | None = None,
+    confirmar: bool = True,
 ) -> Unidad:
     """Cambia el estado vigente y guarda el cambio en el historial, en la misma transacción.
 
-    Diferido (HU-4.07, criterio 2): la orden de reacondicionamiento (HU-5.01) llamará a esta
-    función al abrirse para pasar la unidad a "en taller"; hoy el paso se registra a mano.
+    Con `confirmar=False` solo lo escribe (flush): lo confirma el llamador junto con su documento
+    (la orden de reacondicionamiento, HU-5.01 y HU-5.07, lo usa para abrir y cerrar con su partida).
     """
     if not documento:
         raise ErrorNegocio("Indique el documento que origina el cambio de estado")
@@ -268,6 +278,9 @@ def cambiar_estado(
         )
     )
     unidad.estado = estado
+    if not confirmar:
+        db.flush()
+        return unidad
     db.commit()
     db.refresh(unidad)
     return unidad

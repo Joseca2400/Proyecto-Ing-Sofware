@@ -1,0 +1,86 @@
+<section class="encabezado">
+  <h1>Órdenes de taller</h1>
+  <p>
+    Reacondicionamiento de las unidades importadas. Abrir una orden pasa la unidad a «en taller»;
+    cada orden lleva su antigüedad y el costo de mano de obra acumulado.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="abrir()">
+  <label>
+    VIN de la unidad
+    <input type="text" formControlName="vin" maxlength="17" placeholder="1HGCM82633A004352" />
+    @if (formulario.controls.vin.touched && formulario.controls.vin.invalid) {
+      <small class="falla">17 caracteres, sin I, O ni Q</small>
+    }
+  </label>
+  <label>
+    Fecha de apertura
+    <input type="date" formControlName="fecha_apertura" />
+  </label>
+  <label>
+    Kilometraje
+    <input type="number" min="0" formControlName="kilometraje" />
+  </label>
+  <label>
+    Responsable
+    <input type="text" formControlName="responsable" maxlength="100" />
+    @if (formulario.controls.responsable.touched && formulario.controls.responsable.invalid) {
+      <small class="falla">Indica el responsable</small>
+    }
+  </label>
+  <label class="ancho">
+    Descripción del trabajo
+    <input type="text" formControlName="descripcion" maxlength="500" />
+    @if (formulario.controls.descripcion.touched && formulario.controls.descripcion.invalid) {
+      <small class="falla">Describe el trabajo</small>
+    }
+  </label>
+  <button type="submit" [disabled]="guardando()">Abrir orden</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Orden</th>
+      <th>VIN</th>
+      <th>Estado</th>
+      <th class="numero">Días</th>
+      <th class="numero">Costo acumulado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (orden of ordenes(); track orden.id) {
+      <tr>
+        <td>{{ orden.numero }}</td>
+        <td>{{ orden.vin }}</td>
+        <td>{{ orden.estado === 'abierta' ? 'Abierta' : 'Cerrada' }}</td>
+        <td class="numero">{{ orden.dias }}</td>
+        <td class="numero">{{ orden.costo_acumulado | monto }}</td>
+        <td><button type="button" class="secundario" (click)="abrirDetalle(orden)">Ver</button></td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6" class="vacio">Todavía no hay órdenes de trabajo</td>
+      </tr>
+    }
+  </tbody>
+</table>
+
+@if (seleccionada(); as orden) {
+  <section class="tarjeta detalle" aria-label="Detalle de la orden">
+    <h2>{{ orden.numero }} · {{ orden.vin }}</h2>
+    <p>
+      {{ orden.descripcion }} · Responsable: {{ orden.responsable }} · Abierta el
+      {{ orden.fecha_apertura }} con {{ orden.kilometraje }} km
+    </p>
+  </section>
+}

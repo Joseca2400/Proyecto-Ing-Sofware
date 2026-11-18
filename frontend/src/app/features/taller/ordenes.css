@@ -1,0 +1,13 @@
+.ancho {
+  flex: 1 1 320px;
+}
+
+.detalle {
+  margin-top: 16px;
+  padding: 20px;
+}
+
+.detalle p {
+  color: var(--gray);
+  margin-top: 4px;
+}
