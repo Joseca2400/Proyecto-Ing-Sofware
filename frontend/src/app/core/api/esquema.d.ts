@@ -217,6 +217,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/configuracion/perfil-fiscal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Perfil Fiscal Vigente */
+        get: operations["perfil_fiscal_vigente_api_v1_configuracion_perfil_fiscal_get"];
+        put?: never;
+        /** Registrar Perfil Fiscal */
+        post: operations["registrar_perfil_fiscal_api_v1_configuracion_perfil_fiscal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/perfil-fiscal/historial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial Perfil Fiscal */
+        get: operations["historial_perfil_fiscal_api_v1_configuracion_perfil_fiscal_historial_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Cuentas Bancarias */
+        get: operations["listar_cuentas_bancarias_api_v1_configuracion_cuentas_bancarias_get"];
+        put?: never;
+        /** Crear Cuenta Bancaria */
+        post: operations["crear_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/cheques": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Numeracion Cheques */
+        put: operations["definir_numeracion_cheques_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__cheques_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/inactivar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inactivar Cuenta Bancaria */
+        post: operations["inactivar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__inactivar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/activar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activar Cuenta Bancaria */
+        post: operations["activar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__activar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/compras/proveedores": {
         parameters: {
             query?: never;
@@ -798,6 +902,52 @@ export interface components {
              */
             readonly suma_al_costo: boolean;
         };
+        /** CuentaBancariaEntrada */
+        CuentaBancariaEntrada: {
+            /** Banco */
+            banco: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "monetaria" | "ahorro";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Siguiente Cheque */
+            siguiente_cheque?: number | null;
+        };
+        /** CuentaBancariaSalida */
+        CuentaBancariaSalida: {
+            /** Id */
+            id: number;
+            /** Banco */
+            banco: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "monetaria" | "ahorro";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Siguiente Cheque */
+            siguiente_cheque: number | null;
+            /** Activa */
+            activa: boolean;
+        };
         /** CuentaEntrada */
         CuentaEntrada: {
             /**
@@ -1194,6 +1344,11 @@ export interface components {
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
         };
+        /** NumeracionChequesEntrada */
+        NumeracionChequesEntrada: {
+            /** Siguiente Cheque */
+            siguiente_cheque?: number | null;
+        };
         /** PartidaEntrada */
         PartidaEntrada: {
             /**
@@ -1245,6 +1400,68 @@ export interface components {
             readonly total_debe: string;
             /** Total Haber */
             readonly total_haber: string;
+        };
+        /** PerfilFiscalEntrada */
+        PerfilFiscalEntrada: {
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Razon Social */
+            razon_social: string;
+            /** Nombre Comercial */
+            nombre_comercial: string;
+            /** Nit */
+            nit: string;
+            /** Direccion Fiscal */
+            direccion_fiscal: string;
+            /** Establecimiento */
+            establecimiento: string;
+            /**
+             * Regimen Isr
+             * @enum {string}
+             */
+            regimen_isr: "utilidades" | "simplificado";
+            /**
+             * Agente Retencion Iva
+             * @default false
+             */
+            agente_retencion_iva: boolean;
+            /**
+             * Agente Retencion Isr
+             * @default false
+             */
+            agente_retencion_isr: boolean;
+        };
+        /** PerfilFiscalSalida */
+        PerfilFiscalSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Razon Social */
+            razon_social: string;
+            /** Nombre Comercial */
+            nombre_comercial: string;
+            /** Nit */
+            nit: string;
+            /** Direccion Fiscal */
+            direccion_fiscal: string;
+            /** Establecimiento */
+            establecimiento: string;
+            /**
+             * Regimen Isr
+             * @enum {string}
+             */
+            regimen_isr: "utilidades" | "simplificado";
+            /** Agente Retencion Iva */
+            agente_retencion_iva: boolean;
+            /** Agente Retencion Isr */
+            agente_retencion_isr: boolean;
         };
         /**
          * ProveedorEntrada
@@ -2064,6 +2281,277 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransaccionUSDSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    perfil_fiscal_vigente_api_v1_configuracion_perfil_fiscal_get: {
+        parameters: {
+            query?: {
+                fecha?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_perfil_fiscal_api_v1_configuracion_perfil_fiscal_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerfilFiscalEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    historial_perfil_fiscal_api_v1_configuracion_perfil_fiscal_historial_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_cuentas_bancarias_api_v1_configuracion_cuentas_bancarias_get: {
+        parameters: {
+            query?: {
+                moneda?: string | null;
+                solo_activas?: boolean;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crear_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CuentaBancariaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_numeracion_cheques_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__cheques_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NumeracionChequesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inactivar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__inactivar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__activar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
                 };
             };
             /** @description Validation Error */

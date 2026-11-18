@@ -54,6 +54,8 @@ export class Layout {
     { etiqueta: 'Reportes' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
+    { etiqueta: 'Perfil fiscal', ruta: '/configuracion/perfil-fiscal' },
+    { etiqueta: 'Cuentas bancarias', ruta: '/configuracion/cuentas-bancarias' },
   ];
 
   protected salir(): void {

@@ -7,9 +7,14 @@ from app.comun.db import get_db
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service
 from app.modulos.configuracion.schemas import (
+    CuentaBancariaEntrada,
+    CuentaBancariaSalida,
     CuentaEntrada,
     CuentaSalida,
     DimensionesEntrada,
+    NumeracionChequesEntrada,
+    PerfilFiscalEntrada,
+    PerfilFiscalSalida,
     TipoCambioEntrada,
     TipoCambioSalida,
     TransaccionUSDEntrada,
@@ -117,3 +122,74 @@ def registrar_transaccion_usd(
             datos.justificacion,
         )
     )
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+
+@router.get("/perfil-fiscal", response_model=PerfilFiscalSalida)
+def perfil_fiscal_vigente(
+    fecha: date | None = None, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    perfil = service.perfil_fiscal_vigente(db, fecha)
+    if perfil is None:
+        raise ErrorNegocio("Todavía no hay un perfil fiscal registrado", status=404)
+    return PerfilFiscalSalida.model_validate(perfil)
+
+
+@router.get("/perfil-fiscal/historial", response_model=list[PerfilFiscalSalida])
+def historial_perfil_fiscal(
+    _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> list[PerfilFiscalSalida]:
+    return [PerfilFiscalSalida.model_validate(p) for p in service.historial_perfil_fiscal(db)]
+
+
+@router.post("/perfil-fiscal", response_model=PerfilFiscalSalida, status_code=201)
+def registrar_perfil_fiscal(
+    datos: PerfilFiscalEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    return PerfilFiscalSalida.model_validate(service.registrar_perfil_fiscal(db, **datos.model_dump()))
+
+
+# ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+
+@router.get("/cuentas-bancarias", response_model=list[CuentaBancariaSalida])
+def listar_cuentas_bancarias(
+    moneda: str | None = None,
+    solo_activas: bool = False,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
+    return service.listar_cuentas_bancarias(db, moneda, solo_activas)
+
+
+@router.post("/cuentas-bancarias", response_model=CuentaBancariaSalida, status_code=201)
+def crear_cuenta_bancaria(
+    datos: CuentaBancariaEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.crear_cuenta_bancaria(db, **datos.model_dump())
+
+
+@router.put("/cuentas-bancarias/{cuenta_bancaria_id}/cheques", response_model=CuentaBancariaSalida)
+def definir_numeracion_cheques(
+    cuenta_bancaria_id: int,
+    datos: NumeracionChequesEntrada,
+    _: Usuario = Depends(CAMBIARIO),
+    db: Session = Depends(get_db),
+):
+    return service.definir_numeracion_cheques(db, cuenta_bancaria_id, datos.siguiente_cheque)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/inactivar", response_model=CuentaBancariaSalida)
+def inactivar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, False)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/activar", response_model=CuentaBancariaSalida)
+def activar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, True)

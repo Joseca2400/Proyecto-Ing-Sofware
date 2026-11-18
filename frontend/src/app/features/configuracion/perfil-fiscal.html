@@ -1,0 +1,111 @@
+<section class="encabezado">
+  <h1>Perfil fiscal</h1>
+  <p>
+    Datos fiscales de la empresa. Un cambio no sobrescribe el perfil anterior: queda como una
+    versión nueva desde su fecha de vigencia.
+  </p>
+</section>
+
+<section class="tarjeta">
+  <h2>Perfil vigente</h2>
+  @if (vigente(); as perfil) {
+    <p>
+      <strong>{{ perfil.razon_social }}</strong> ({{ perfil.nombre_comercial }}) · NIT
+      {{ perfil.nit }}
+    </p>
+    <p>
+      {{ perfil.direccion_fiscal }} · Establecimiento {{ perfil.establecimiento }} · ISR
+      {{ regimenes[perfil.regimen_isr] }} · Agente de retención de IVA:
+      {{ perfil.agente_retencion_iva ? 'sí' : 'no' }} · de ISR:
+      {{ perfil.agente_retencion_isr ? 'sí' : 'no' }} · Desde el {{ perfil.vigente_desde }}
+    </p>
+  } @else {
+    <p class="vacio">Todavía no hay un perfil fiscal registrado</p>
+  }
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <h2>Registrar un cambio</h2>
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" />
+  </label>
+  <label>
+    Razón social
+    <input type="text" formControlName="razon_social" />
+  </label>
+  <label>
+    Nombre comercial
+    <input type="text" formControlName="nombre_comercial" />
+  </label>
+  <label>
+    NIT
+    <input type="text" formControlName="nit" placeholder="1234567-9" />
+  </label>
+  <label>
+    Dirección fiscal
+    <input type="text" formControlName="direccion_fiscal" />
+  </label>
+  <label>
+    Establecimiento ante la SAT
+    <input type="text" formControlName="establecimiento" />
+  </label>
+  <label>
+    Régimen de ISR
+    <select formControlName="regimen_isr">
+      <option value="utilidades">Sobre utilidades</option>
+      <option value="simplificado">Opcional simplificado</option>
+    </select>
+  </label>
+  <label>
+    <input type="checkbox" formControlName="agente_retencion_iva" />
+    Agente de retención de IVA
+  </label>
+  <label>
+    <input type="checkbox" formControlName="agente_retencion_isr" />
+    Agente de retención de ISR
+  </label>
+  @if (formulario.touched && formulario.invalid) {
+    <small class="falla">Complete todos los datos</small>
+  }
+  <button type="submit" [disabled]="guardando()">Guardar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <caption>
+    Historial
+  </caption>
+  <thead>
+    <tr>
+      <th>Vigente desde</th>
+      <th>Razón social</th>
+      <th>NIT</th>
+      <th>Régimen ISR</th>
+      <th>Retención IVA</th>
+      <th>Retención ISR</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (perfil of historial(); track perfil.id) {
+      <tr>
+        <td>{{ perfil.vigente_desde }}</td>
+        <td>{{ perfil.razon_social }}</td>
+        <td>{{ perfil.nit }}</td>
+        <td>{{ regimenes[perfil.regimen_isr] }}</td>
+        <td>{{ perfil.agente_retencion_iva ? 'Sí' : 'No' }}</td>
+        <td>{{ perfil.agente_retencion_isr ? 'Sí' : 'No' }}</td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6" class="vacio">Sin versiones registradas</td>
+      </tr>
+    }
+  </tbody>
+</table>
