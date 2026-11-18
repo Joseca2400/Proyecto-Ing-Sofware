@@ -535,7 +535,7 @@ def saldo_cuenta(
             vin,
         )
     )
-    return Decimal(neto) * _signo(cuenta.naturaleza)
+    return Decimal(neto) * _signo(cuenta.naturaleza) + 0  # `+ 0`: sin cero negativo ("-0.00")
 
 
 def saldo_cuenta_usd(db: Session, cuenta_id: int, hasta: date | None = None) -> Decimal:
@@ -553,7 +553,7 @@ def saldo_cuenta_usd(db: Session, cuenta_id: int, hasta: date | None = None) -> 
             None,
         )
     )
-    return Decimal(neto) * _signo(cuenta.naturaleza)
+    return Decimal(neto) * _signo(cuenta.naturaleza) + 0  # `+ 0`: sin cero negativo ("-0.00")
 
 
 def balance_comprobacion(
@@ -594,10 +594,10 @@ def balance_comprobacion(
                 "codigo": cuenta.codigo,
                 "nombre": cuenta.nombre,
                 "naturaleza": cuenta.naturaleza,
-                "saldo_inicial": previo * signo,
+                "saldo_inicial": previo * signo + 0,
                 "debe": debe,
                 "haber": haber,
-                "saldo_final": (previo + debe - haber) * signo,
+                "saldo_final": (previo + debe - haber) * signo + 0,
             }
         )
     resultado.sort(key=lambda fila: fila["codigo"])

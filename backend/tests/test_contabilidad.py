@@ -459,3 +459,8 @@ def test_solo_el_contador_revierte_por_la_api(cliente, db):
     revertida = cliente.get(f"{URL}/{original.id}", headers=contador).json()
     assert revertida["revertida_por"] == respuesta.json()["id"]
     assert cliente.post(url, json=cuerpo, headers=contador).status_code == 409
+
+
+def test_un_saldo_en_cero_de_una_cuenta_acreedora_no_sale_negativo(db):
+    for saldo in (service.saldo_cuenta(db, _id("2.1.04")), service.saldo_cuenta_usd(db, _id("2.1.04"))):
+        assert saldo == 0 and not saldo.is_signed()
