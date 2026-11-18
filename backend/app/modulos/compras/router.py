@@ -17,19 +17,19 @@ from app.modulos.compras.schemas import (
     RubroProveedor,
     TipoProveedor,
 )
+from app.modulos.seguridad.service import (
+    AUXILIAR_CONTABLE,
+    CONTADOR,
+    Usuario,
+    requiere_rol,
+    usuario_actual,
+)
 
-# Pendiente (HU-1.09/HU-1.10): las rutas siguen abiertas porque el front aún no tiene login
-# (tarea C1 del equipo C); exigir sesión hoy dejaría sin funcionar las pantallas de compras.
-# Cuando exista el login del front, proteger con `app.modulos.seguridad.service`:
-# - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
-# - Altas de proveedores y facturas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR))`.
-# - Alta de gastos de importación (POST; en HU-4.04 la hace el auxiliar contable):
-#   `_: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE, CONTADOR))`.
-# - Alta de compras en EE. UU. (POST; en HU-4.02 la hace el auxiliar contable):
-#   `usuario: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE, CONTADOR))`, y pasar `usuario.id`
-#   al service para el alta de la unidad y la partida.
-# Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
-router = APIRouter(prefix="/compras", tags=["Compras"])
+# HU-1.09: todas las rutas exigen sesión; las altas, además, el rol que registra el documento.
+CONTADOR_ = requiere_rol(CONTADOR)
+CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
+
+router = APIRouter(prefix="/compras", tags=["Compras"], dependencies=[Depends(usuario_actual)])
 
 
 # ── HU-4.01: proveedores ───────────────────────────────────────────────────────
@@ -46,7 +46,9 @@ def listar_proveedores(
 
 
 @router.post("/proveedores", response_model=ProveedorSalida, status_code=201)
-def registrar_proveedor(datos: ProveedorEntrada, db: Session = Depends(get_db)) -> ProveedorSalida:
+def registrar_proveedor(
+    datos: ProveedorEntrada, _: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
+) -> ProveedorSalida:
     return ProveedorSalida.model_validate(service.registrar_proveedor(db, datos))
 
 
@@ -66,7 +68,9 @@ def listar_facturas(
 
 
 @router.post("/facturas", response_model=FacturaCompraSalida, status_code=201)
-def registrar_factura(datos: FacturaCompraEntrada, db: Session = Depends(get_db)) -> FacturaCompraSalida:
+def registrar_factura(
+    datos: FacturaCompraEntrada, _: Usuario = Depends(CONTADOR_), db: Session = Depends(get_db)
+) -> FacturaCompraSalida:
     return FacturaCompraSalida.model_validate(service.registrar_factura(db, datos))
 
 
@@ -98,7 +102,7 @@ def listar_gastos_importacion(
 
 @router.post("/gastos-importacion", response_model=GastoImportacionSalida, status_code=201)
 def registrar_gasto_importacion(
-    datos: GastoImportacionEntrada, db: Session = Depends(get_db)
+    datos: GastoImportacionEntrada, _: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
 ) -> GastoImportacionSalida:
     return GastoImportacionSalida.model_validate(service.registrar_gasto_importacion(db, datos))
 
@@ -120,8 +124,10 @@ def listar_compras_unidad(
 
 
 @router.post("/compras-unidades", response_model=CompraUnidadSalida, status_code=201)
-def registrar_compra_unidad(datos: CompraUnidadEntrada, db: Session = Depends(get_db)) -> CompraUnidadSalida:
-    return CompraUnidadSalida.model_validate(service.registrar_compra_unidad(db, datos))
+def registrar_compra_unidad(
+    datos: CompraUnidadEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+) -> CompraUnidadSalida:
+    return CompraUnidadSalida.model_validate(service.registrar_compra_unidad(db, datos, usuario.id))
 
 
 @router.get("/compras-unidades/{compra_id}", response_model=CompraUnidadSalida)

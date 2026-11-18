@@ -1,10 +1,17 @@
-"""HU-1.11 en las tablas del equipo B: sin sesión (las rutas aún están abiertas) la bitácora
-registra el cambio con el actor vacío y no falla."""
+"""HU-1.11 en las tablas del equipo B: la bitácora registra cada cambio con el usuario de la sesión."""
 
+import pytest
 from sqlalchemy import select, text
 
 from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
+
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
 
 VIN = "1HGCM82633A004352"
 PROVEEDOR = {
@@ -39,7 +46,7 @@ def _registros(desde: int, entidad: str, registro_id: int) -> list[RegistroBitac
         )
 
 
-def test_tipo_cambio_y_transaccion_usd_se_auditan_sin_actor(cliente):
+def test_tipo_cambio_y_transaccion_usd_se_auditan_con_su_actor(cliente):
     with SessionLocal() as db:
         db.execute(text("DELETE FROM transaccion_usd"))
         db.execute(text("DELETE FROM tipo_cambio"))
@@ -55,11 +62,11 @@ def test_tipo_cambio_y_transaccion_usd_se_auditan_sin_actor(cliente):
 
     [alta_tipo] = _registros(desde, "tipo_cambio", tipo.json()["id"])
     assert alta_tipo.accion == "crear"
-    assert alta_tipo.usuario_id is None
+    assert alta_tipo.usuario_id is not None
     assert alta_tipo.nuevos["origen"] == "manual"
 
     [alta_transaccion] = _registros(desde, "transaccion_usd", transaccion.json()["id"])
-    assert alta_transaccion.usuario_id is None
+    assert alta_transaccion.usuario_id is not None
     assert alta_transaccion.nuevos["monto_gtq"] == 775
 
 
@@ -97,11 +104,11 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     cuerpo = factura.json()
 
     [alta_proveedor] = _registros(desde, "proveedor", proveedor.json()["id"])
-    assert alta_proveedor.usuario_id is None
+    assert alta_proveedor.usuario_id is not None
     assert alta_proveedor.nuevos["nit"] == "12345679"  # se guarda normalizado
 
     [alta_factura] = _registros(desde, "factura_compra", cuerpo["id"])
-    assert alta_factura.usuario_id is None
+    assert alta_factura.usuario_id is not None
 
     with SessionLocal() as db:
         linea_id = db.scalar(
@@ -116,4 +123,4 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     assert alta_linea.nuevos["vin"] == VIN
 
     [alta_cxp] = _registros(desde, "cuenta_por_pagar", cxp_id)
-    assert alta_cxp.usuario_id is None
+    assert alta_cxp.usuario_id is not None

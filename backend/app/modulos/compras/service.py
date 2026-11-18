@@ -529,7 +529,9 @@ def _cuentas_compra(db: Session) -> tuple[int, int]:
     return ids[CUENTA_EN_TRANSITO], ids[CUENTA_PROVEEDORES_EXTERIOR]
 
 
-def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUnidad:
+def registrar_compra_unidad(
+    db: Session, datos: CompraUnidadEntrada, usuario_id: int | None = None
+) -> CompraUnidad:
     """Crea la unidad, la compra, su cuenta por pagar y su partida en una transacción, o nada."""
     proveedor = obtener_proveedor(db, datos.proveedor_id)
     if proveedor.tipo != "exterior":
@@ -566,6 +568,7 @@ def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUn
                 estado="en_transito",
                 documento=f"Compra {datos.documento} a {proveedor.nombre}"[:200],
             ),
+            usuario_id=usuario_id,
             confirmar=False,
         )
         # El id se reserva antes: la partida se liga a la compra y la compra a su partida.
@@ -595,6 +598,7 @@ def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUn
             ],
             documento_tipo=DOCUMENTO_COMPRA,
             documento_id=compra_id,
+            usuario_id=usuario_id,
         )
         compra = CompraUnidad(
             id=compra_id,

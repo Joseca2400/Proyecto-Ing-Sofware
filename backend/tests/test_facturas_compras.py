@@ -7,6 +7,13 @@ from sqlalchemy import text
 
 from app.comun.db import SessionLocal
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/compras/facturas"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
 URL_UNIDADES = "/api/v1/unidades"

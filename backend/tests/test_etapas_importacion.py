@@ -9,6 +9,13 @@ from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
 from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/unidades"
 URL_ETAPAS = f"{URL}/etapas-importacion"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"

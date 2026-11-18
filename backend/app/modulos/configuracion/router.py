@@ -15,7 +15,13 @@ from app.modulos.configuracion.schemas import (
     TransaccionUSDEntrada,
     TransaccionUSDSalida,
 )
-from app.modulos.seguridad.service import CONTADOR, Usuario, requiere_rol, usuario_actual
+from app.modulos.seguridad.service import (
+    CONTADOR,
+    GERENTE_FINANCIERO,
+    Usuario,
+    requiere_rol,
+    usuario_actual,
+)
 
 router = APIRouter(prefix="/configuracion", tags=["Configuración"])
 
@@ -53,27 +59,30 @@ def definir_dimensiones(
 
 
 # ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
-# Pendiente (HU-1.09/HU-1.10): las rutas del equipo B (tipo de cambio y transacciones en USD)
-# siguen abiertas porque el front aún no tiene login (tarea C1 del equipo C). Cuando exista:
-# - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
-# - Altas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR, GERENTE_FINANCIERO))`.
-# Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
+CAMBIARIO = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
 
 
 @router.get("/tipos-cambio", response_model=list[TipoCambioSalida])
 def listar_tipos_cambio(
-    desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
+    desde: date | None = None,
+    hasta: date | None = None,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
 ) -> list[TipoCambioSalida]:
     return [TipoCambioSalida.model_validate(t) for t in service.listar(db, desde, hasta)]
 
 
 @router.post("/tipos-cambio", response_model=TipoCambioSalida, status_code=201)
-def registrar_tipo_cambio(datos: TipoCambioEntrada, db: Session = Depends(get_db)) -> TipoCambioSalida:
+def registrar_tipo_cambio(
+    datos: TipoCambioEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+) -> TipoCambioSalida:
     return TipoCambioSalida.model_validate(service.registrar_manual(db, datos.fecha, datos.valor))
 
 
 @router.get("/tipos-cambio/{fecha}", response_model=TipoCambioSalida)
-def consultar_tipo_cambio(fecha: date, db: Session = Depends(get_db)) -> TipoCambioSalida:
+def consultar_tipo_cambio(
+    fecha: date, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> TipoCambioSalida:
     tipo = service.buscar(db, fecha)
     if tipo is None:
         raise ErrorNegocio(f"No existe tipo de cambio para el {fecha:%d/%m/%Y}", status=404)
@@ -85,7 +94,10 @@ def consultar_tipo_cambio(fecha: date, db: Session = Depends(get_db)) -> TipoCam
 
 @router.get("/transacciones-usd", response_model=list[TransaccionUSDSalida])
 def listar_transacciones_usd(
-    desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
+    desde: date | None = None,
+    hasta: date | None = None,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
 ) -> list[TransaccionUSDSalida]:
     return [
         TransaccionUSDSalida.model_validate(t) for t in service.listar_transacciones_usd(db, desde, hasta)
@@ -94,7 +106,7 @@ def listar_transacciones_usd(
 
 @router.post("/transacciones-usd", response_model=TransaccionUSDSalida, status_code=201)
 def registrar_transaccion_usd(
-    datos: TransaccionUSDEntrada, db: Session = Depends(get_db)
+    datos: TransaccionUSDEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
 ) -> TransaccionUSDSalida:
     return TransaccionUSDSalida.model_validate(
         service.registrar_transaccion_usd(

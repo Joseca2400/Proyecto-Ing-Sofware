@@ -12,6 +12,13 @@ from app.comun.errores import ErrorNegocio
 from app.modulos.compras import service as compras
 from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/compras/compras-unidades"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
 URL_UNIDADES = "/api/v1/unidades"

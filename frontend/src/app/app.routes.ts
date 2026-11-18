@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
+import { conSesion, soloRoles } from './core/auth/auth.guard';
 import { Layout } from './core/layout/layout';
 
-// Cada módulo de negocio se agrega como hijo del layout y se carga solo cuando se usa.
+// Cada módulo de negocio se agrega como hijo del layout y se carga solo cuando se usa. Todo lo que
+// cuelga del layout exige sesión; una ruta con `data: soloRoles(...)` solo la ven esos roles (y el
+// menú la oculta a los demás). El servidor aplica los permisos de todas formas.
 export const routes: Routes = [
   {
     path: 'mockup',
@@ -9,8 +12,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/mockup/mockup').then((m) => m.Mockup),
   },
   {
+    path: 'entrar',
+    title: 'Iniciar sesión · Kilómetro Cero',
+    loadComponent: () => import('./core/auth/entrar').then((m) => m.Entrar),
+  },
+  {
     path: '',
     component: Layout,
+    canActivate: [conSesion],
+    canActivateChild: [conSesion],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
       {
@@ -50,6 +60,7 @@ export const routes: Routes = [
       {
         path: 'unidades/etapas-importacion',
         title: 'Etapas de importación · Kilómetro Cero',
+        data: soloRoles('gerente_financiero', 'contador', 'gerencia'),
         loadComponent: () =>
           import('./features/unidades/etapas-importacion').then((m) => m.EtapasImportacionPantalla),
       },

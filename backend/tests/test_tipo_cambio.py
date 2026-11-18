@@ -10,6 +10,13 @@ from app.comun.db import SessionLocal
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/configuracion/tipos-cambio"
 
 

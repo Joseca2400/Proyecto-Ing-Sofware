@@ -1,5 +1,12 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import {
+  ActivatedRoute,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { AuthService, NOMBRE_ROL } from '../auth/auth.service';
 
 interface EntradaMenu {
   etiqueta: string;
@@ -13,8 +20,26 @@ interface EntradaMenu {
   styleUrl: './layout.css',
 })
 export class Layout {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  // Los roles de cada pantalla se declaran una sola vez, en `data` de su ruta (app.routes.ts).
+  private readonly rolesPorRuta = new Map<string, string[] | undefined>(
+    (inject(ActivatedRoute).routeConfig?.children ?? []).map((hija) => [
+      `/${hija.path}`,
+      hija.data?.['roles'],
+    ]),
+  );
+
+  protected readonly usuario = this.auth.usuario;
+  protected readonly rol = computed(() => NOMBRE_ROL[this.usuario()?.rol ?? ''] ?? '');
+  protected readonly menu = computed(() =>
+    this.entradas.filter(
+      (entrada) => !entrada.ruta || this.auth.tieneRol(this.rolesPorRuta.get(entrada.ruta)),
+    ),
+  );
+
   // Los módulos sin ruta se muestran deshabilitados hasta que se construyan.
-  protected readonly menu: EntradaMenu[] = [
+  private readonly entradas: EntradaMenu[] = [
     { etiqueta: 'Inicio', ruta: '/inicio' },
     { etiqueta: 'Mockup del proyecto', ruta: '/mockup' },
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
@@ -30,4 +55,9 @@ export class Layout {
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
   ];
+
+  protected salir(): void {
+    this.auth.salir();
+    void this.router.navigate(['/entrar']);
+  }
 }

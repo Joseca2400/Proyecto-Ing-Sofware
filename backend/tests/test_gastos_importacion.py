@@ -9,6 +9,13 @@ from sqlalchemy.exc import IntegrityError
 from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/compras/gastos-importacion"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
 URL_UNIDADES = "/api/v1/unidades"
@@ -332,7 +339,7 @@ def test_el_gasto_y_su_cuenta_por_pagar_se_auditan_con_el_vin(cliente, naviera):
         )
     alta_gasto = next(r for r in registros if r.entidad == "gasto_importacion")
     assert alta_gasto.registro_id == str(gasto["id"])
-    assert alta_gasto.usuario_id is None
+    assert alta_gasto.usuario_id is not None
     assert alta_gasto.vin == VIN
     assert alta_gasto.nuevos["tratamiento"] == "costo"
     assert alta_gasto.nuevos["monto_gtq"] == 775
