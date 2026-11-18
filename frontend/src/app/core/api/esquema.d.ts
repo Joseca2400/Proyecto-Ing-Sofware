@@ -584,6 +584,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/facturacion/clientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Clientes */
+        get: operations["listar_clientes_api_v1_facturacion_clientes_get"];
+        put?: never;
+        /** Registrar Cliente */
+        post: operations["registrar_cliente_api_v1_facturacion_clientes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/clientes/{cliente_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Cliente */
+        get: operations["consultar_cliente_api_v1_facturacion_clientes__cliente_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -658,6 +693,86 @@ export interface components {
             tipos_vehiculo: string[];
             /** Lineas Negocio */
             lineas_negocio: string[];
+        };
+        /**
+         * ClienteEntrada
+         * @description Alta de cliente. El verificador del NIT y las reglas que cruzan campos (empresa solo con
+         *     NIT, país solo con pasaporte) se validan en el service.
+         */
+        ClienteEntrada: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "individual" | "empresa";
+            /** Nombre */
+            nombre: string;
+            /**
+             * Tipo Identificacion
+             * @enum {string}
+             */
+            tipo_identificacion: "nit" | "cui" | "pasaporte";
+            /** Identificacion */
+            identificacion: string;
+            /** Pais */
+            pais?: string | null;
+            /** Direccion */
+            direccion?: string | null;
+            /** Telefono */
+            telefono?: string | null;
+            /** Correo */
+            correo?: string | null;
+            /**
+             * Agente Retencion Iva
+             * @default false
+             */
+            agente_retencion_iva: boolean;
+            /**
+             * Agente Retencion Isr
+             * @default false
+             */
+            agente_retencion_isr: boolean;
+        };
+        /** ClienteSalida */
+        ClienteSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "individual" | "empresa";
+            /** Nombre */
+            nombre: string;
+            /**
+             * Tipo Identificacion
+             * @enum {string}
+             */
+            tipo_identificacion: "nit" | "cui" | "pasaporte";
+            /** Identificacion */
+            identificacion: string;
+            /** Pais */
+            pais: string | null;
+            /** Direccion */
+            direccion: string | null;
+            /** Telefono */
+            telefono: string | null;
+            /** Correo */
+            correo: string | null;
+            /** Agente Retencion Iva */
+            agente_retencion_iva: boolean;
+            /** Agente Retencion Isr */
+            agente_retencion_isr: boolean;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /**
+             * Identificacion Formateada
+             * @description NIT con guion para mostrar; CUI y pasaporte tal cual.
+             */
+            readonly identificacion_formateada: string;
         };
         /**
          * CompraUnidadEntrada
@@ -1860,7 +1975,9 @@ export interface operations {
                 desde?: string | null;
                 hasta?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1889,7 +2006,9 @@ export interface operations {
     registrar_tipo_cambio_api_v1_configuracion_tipos_cambio_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1922,7 +2041,9 @@ export interface operations {
     consultar_tipo_cambio_api_v1_configuracion_tipos_cambio__fecha__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 fecha: string;
             };
@@ -1956,7 +2077,9 @@ export interface operations {
                 desde?: string | null;
                 hasta?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1985,7 +2108,9 @@ export interface operations {
     registrar_transaccion_usd_api_v1_configuracion_transacciones_usd_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2022,7 +2147,9 @@ export interface operations {
                 rubro?: ("subasta" | "dealer" | "naviera" | "agente_aduanal" | "repuestos" | "seguros" | "servicios" | "otros") | null;
                 buscar?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2051,7 +2178,9 @@ export interface operations {
     registrar_proveedor_api_v1_compras_proveedores_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2084,7 +2213,9 @@ export interface operations {
     consultar_proveedor_api_v1_compras_proveedores__proveedor_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 proveedor_id: number;
             };
@@ -2117,7 +2248,9 @@ export interface operations {
             query?: {
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2146,7 +2279,9 @@ export interface operations {
     registrar_factura_api_v1_compras_facturas_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2179,7 +2314,9 @@ export interface operations {
     consultar_factura_api_v1_compras_facturas__factura_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 factura_id: number;
             };
@@ -2210,7 +2347,9 @@ export interface operations {
     listar_conceptos_api_v1_compras_gastos_importacion_conceptos_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2225,12 +2364,23 @@ export interface operations {
                     "application/json": components["schemas"]["ConceptoGastoSalida"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     resumen_gastos_unidad_api_v1_compras_gastos_importacion_unidad__vin__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2264,7 +2414,9 @@ export interface operations {
                 vin?: string | null;
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2293,7 +2445,9 @@ export interface operations {
     registrar_gasto_importacion_api_v1_compras_gastos_importacion_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2326,7 +2480,9 @@ export interface operations {
     consultar_gasto_importacion_api_v1_compras_gastos_importacion__gasto_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 gasto_id: number;
             };
@@ -2360,7 +2516,9 @@ export interface operations {
                 vin?: string | null;
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2389,7 +2547,9 @@ export interface operations {
     registrar_compra_unidad_api_v1_compras_compras_unidades_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2422,7 +2582,9 @@ export interface operations {
     consultar_compra_unidad_api_v1_compras_compras_unidades__compra_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 compra_id: number;
             };
@@ -2694,7 +2856,9 @@ export interface operations {
     catalogos_api_v1_unidades_catalogos_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2709,6 +2873,15 @@ export interface operations {
                     "application/json": components["schemas"]["Catalogos"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     etapas_importacion_api_v1_unidades_etapas_importacion_get: {
@@ -2716,7 +2889,9 @@ export interface operations {
             query?: {
                 etapa?: ("en_transito" | "en_aduana" | "en_taller" | "lista") | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2748,7 +2923,9 @@ export interface operations {
                 estado?: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada") | null;
                 buscar?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2777,7 +2954,9 @@ export interface operations {
     registrar_unidad_api_v1_unidades_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2810,7 +2989,9 @@ export interface operations {
     consultar_unidad_api_v1_unidades__vin__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2841,7 +3022,9 @@ export interface operations {
     cambiar_estado_api_v1_unidades__vin__estado_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2876,7 +3059,9 @@ export interface operations {
     historial_api_v1_unidades__vin__historial_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2891,6 +3076,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CambioEstadoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_clientes_api_v1_facturacion_clientes_get: {
+        parameters: {
+            query?: {
+                buscar?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_cliente_api_v1_facturacion_clientes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_cliente_api_v1_facturacion_clientes__cliente_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cliente_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"];
                 };
             };
             /** @description Validation Error */

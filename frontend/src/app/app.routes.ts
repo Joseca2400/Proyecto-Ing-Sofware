@@ -53,6 +53,12 @@ export const routes: Routes = [
           import('./features/compras/gastos-importacion').then((m) => m.GastosImportacionPantalla),
       },
       {
+        path: 'facturacion/clientes',
+        title: 'Clientes · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/facturacion/clientes').then((m) => m.ClientesPantalla),
+      },
+      {
         path: 'unidades',
         title: 'Unidades · Kilómetro Cero',
         loadComponent: () => import('./features/unidades/unidades').then((m) => m.UnidadesPantalla),

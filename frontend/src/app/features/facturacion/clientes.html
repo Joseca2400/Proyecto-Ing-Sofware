@@ -1,0 +1,142 @@
+<section class="encabezado">
+  <h1>Clientes</h1>
+  <p>
+    Registra a los clientes de alquiler, venta y taller. Se identifican con NIT (validado con su
+    verificador), CUI o, si son extranjeros, pasaporte y país. No se repite una identificación.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Tipo de cliente
+    <select formControlName="tipo" name="tipo">
+      <option value="individual">Individual</option>
+      <option value="empresa">Empresa</option>
+    </select>
+  </label>
+
+  <label>
+    Nombre o razón social
+    <input type="text" formControlName="nombre" name="nombre" />
+    @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+      <small class="falla">El nombre es obligatorio</small>
+    }
+  </label>
+
+  <label>
+    Identificación
+    <select formControlName="tipo_identificacion" name="tipo_identificacion">
+      <option value="nit">NIT</option>
+      @if (tipo() === 'individual') {
+        <option value="cui">CUI</option>
+        <option value="pasaporte">Pasaporte</option>
+      }
+    </select>
+  </label>
+  <label>
+    Número
+    <input type="text" formControlName="identificacion" name="identificacion" />
+    @if (formulario.controls.identificacion.touched && formulario.controls.identificacion.invalid) {
+      <small class="falla">La identificación es obligatoria</small>
+    }
+  </label>
+  @if (tipoIdentificacion() === 'pasaporte') {
+    <label>
+      País (2 letras)
+      <input type="text" formControlName="pais" name="pais" maxlength="2" placeholder="US" />
+    </label>
+  }
+
+  <label>
+    Dirección
+    <input type="text" formControlName="direccion" name="direccion" />
+  </label>
+  <label>
+    Teléfono
+    <input type="text" formControlName="telefono" name="telefono" />
+  </label>
+  <label>
+    Correo
+    <input type="email" formControlName="correo" name="correo" />
+    @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
+      <small class="falla">Correo no válido</small>
+    }
+  </label>
+
+  <label>
+    <span>
+      <input type="checkbox" formControlName="agente_retencion_iva" name="agente_retencion_iva" />
+      Agente de retención de IVA
+    </span>
+  </label>
+  <label>
+    <span>
+      <input type="checkbox" formControlName="agente_retencion_isr" name="agente_retencion_isr" />
+      Agente de retención de ISR
+    </span>
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<form class="formulario" [formGroup]="filtro" (ngSubmit)="cargar()">
+  <input
+    type="search"
+    formControlName="buscar"
+    name="buscar"
+    placeholder="Buscar por nombre o identificación"
+    aria-label="Buscar cliente"
+  />
+  <button type="submit" class="secundario">Consultar</button>
+</form>
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Tipo</th>
+      <th>Identificación</th>
+      <th>Contacto</th>
+      <th>Retenciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (c of clientes(); track c.id) {
+      <tr>
+        <td>{{ c.nombre }}</td>
+        <td>{{ c.tipo === 'empresa' ? 'Empresa' : 'Individual' }}</td>
+        <td>
+          {{ c.tipo_identificacion.toUpperCase() }} {{ c.identificacion_formateada }}
+          @if (c.pais) {
+            <small>· {{ c.pais }}</small>
+          }
+        </td>
+        <td>
+          {{ c.telefono }}
+          @if (c.correo) {
+            <small>· {{ c.correo }}</small>
+          }
+        </td>
+        <td>
+          @if (c.agente_retencion_iva) {
+            IVA
+          }
+          @if (c.agente_retencion_isr) {
+            ISR
+          }
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="5" class="vacio">No hay clientes que coincidan</td>
+      </tr>
+    }
+  </tbody>
+</table>
