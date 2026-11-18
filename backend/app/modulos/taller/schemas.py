@@ -76,3 +76,41 @@ class OrdenSalida(BaseModel):
     @field_serializer("costo_acumulado")
     def costo_a_texto(self, valor: Decimal) -> str:
         return _monto_texto(valor)
+
+
+# ── HU-5.03: mano de obra ─────────────────────────────────────────────────────
+
+
+class HoraEntrada(BaseModel):
+    """Horas de un mecánico en la orden. Las horas viajan como texto ("2.50"); el service las valida."""
+
+    mecanico: str = Field(min_length=1, max_length=100)
+    fecha: date
+    horas: str
+    tarea: str = Field(min_length=1, max_length=300)
+
+    @field_validator("mecanico", "tarea", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return valor.strip() if isinstance(valor, str) else valor
+
+
+class HoraSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    orden_id: int
+    mecanico: str
+    fecha: date
+    horas: Decimal
+    tarea: str
+    tarifa_hora: Decimal
+    costo: Decimal
+
+    @field_serializer("horas")
+    def horas_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"
+
+    @field_serializer("tarifa_hora", "costo")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)

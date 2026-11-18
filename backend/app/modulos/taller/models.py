@@ -9,12 +9,13 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Numeric,
     String,
     UniqueConstraint,
     func,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.comun.db import Base
 from app.comun.dinero import MONTO
@@ -89,6 +90,35 @@ class OrdenTrabajo(Base):
         """Antigüedad: días desde la apertura hasta el cierre o, si sigue abierta, hasta hoy."""
         return ((self.fecha_cierre or date.today()) - self.fecha_apertura).days
 
+    horas: Mapped[list["HoraTrabajo"]] = relationship(
+        back_populates="orden", order_by="HoraTrabajo.id", lazy="selectin"
+    )
+
     @property
     def costo_acumulado(self) -> Decimal:
-        return Decimal(0)  # lo reemplaza la mano de obra registrada (HU-5.03)
+        """Mano de obra registrada hasta hoy; por ahora es todo el costo de la orden."""
+        return sum((hora.costo for hora in self.horas), Decimal(0))
+
+
+class HoraTrabajo(Base):
+    """Mano de obra de una orden (HU-5.03): guarda la tarifa y el costo con que se calculó, así un
+    cambio de tarifa posterior no altera lo ya costeado."""
+
+    __tablename__ = "hora_trabajo"
+    __table_args__ = (
+        CheckConstraint("horas > 0 AND horas <= 24", name="ck_hora_trabajo_horas"),
+        CheckConstraint("tarifa_hora > 0 AND costo > 0", name="ck_hora_trabajo_montos"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    orden_id: Mapped[int] = mapped_column(ForeignKey("orden_trabajo.id"), index=True)
+    mecanico: Mapped[str] = mapped_column(String(100))
+    fecha: Mapped[date] = mapped_column(Date)
+    horas: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    tarea: Mapped[str] = mapped_column(String(300))
+    tarifa_hora: Mapped[Decimal] = mapped_column(MONTO)
+    costo: Mapped[Decimal] = mapped_column(MONTO)
+    registrado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    orden: Mapped[OrdenTrabajo] = relationship(back_populates="horas")

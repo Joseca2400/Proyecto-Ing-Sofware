@@ -11,6 +11,12 @@ se abre únicamente para una unidad en aduana o ya en taller de la importación 
 taller" (`unidades.cambiar_estado`, en la misma transacción); una sola orden abierta por unidad.
 HU-5.01 (diferido): ligar la postventa al comprador y a la venta (criterio 4), ligar la orden a
 un contrato de alquiler (criterio 5) y los demás tipos de trabajo (Sprints 5 y 6).
+
+HU-5.03 (incluido): horas por mecánico (nombre), fecha, horas (hasta 24 por registro y 2
+decimales) y tarea; el costo es horas por la tarifa vigente en la fecha de las horas, redondeado
+a centavos, y se guarda con su tarifa. No se registran horas en una orden cerrada ni anteriores a
+su apertura. El crédito a "mano de obra aplicada" (criterio 3) lo genera el cierre (HU-5.07).
+HU-5.03 (diferido): comparar al cierre de mes lo aplicado con el costo real del taller (criterio 3).
 """
 
 from datetime import date
@@ -20,9 +26,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.taller.models import OrdenTrabajo, TarifaManoObra
-from app.modulos.taller.schemas import OrdenEntrada, TarifaEntrada
+from app.modulos.taller.models import HoraTrabajo, OrdenTrabajo, TarifaManoObra
+from app.modulos.taller.schemas import HoraEntrada, OrdenEntrada, TarifaEntrada
 from app.modulos.unidades import service as unidades
 
 _LIMITE_MONTO = Decimal(10) ** 12
@@ -141,3 +148,56 @@ def obtener_orden(db: Session, orden_id: int) -> OrdenTrabajo:
     if orden is None:
         raise ErrorNegocio(f"No existe la orden de trabajo {orden_id}", 404)
     return orden
+
+
+# ── HU-5.03: mano de obra ─────────────────────────────────────────────────────
+
+
+def _horas(texto: str) -> Decimal:
+    try:
+        valor = Decimal(texto)
+    except InvalidOperation:
+        raise ErrorNegocio("Las horas no son un número válido") from None
+    if not valor.is_finite() or valor <= 0:
+        raise ErrorNegocio("Las horas deben ser un número mayor que cero")
+    if -valor.as_tuple().exponent > 2:  # type: ignore[operator]
+        raise ErrorNegocio("Las horas admiten hasta 2 decimales")
+    if valor > 24:
+        raise ErrorNegocio("Un registro no puede pasar de 24 horas")
+    return valor
+
+
+def registrar_horas(
+    db: Session, orden_id: int, datos: HoraEntrada, usuario_id: int | None = None
+) -> HoraTrabajo:
+    """Costea las horas con la tarifa vigente en su fecha y las guarda con esa tarifa."""
+    horas = _horas(datos.horas)
+    # Bloquea la orden: un cierre simultáneo no deja horas sin partida.
+    orden = db.get(OrdenTrabajo, orden_id, with_for_update=True)
+    if orden is None:
+        raise ErrorNegocio(f"No existe la orden de trabajo {orden_id}", 404)
+    if orden.estado != "abierta":
+        raise ErrorNegocio(f"La orden {orden.numero} está cerrada: no admite más horas", 409)
+    if datos.fecha > date.today():
+        raise ErrorNegocio("La fecha de las horas no puede ser futura")
+    if datos.fecha < orden.fecha_apertura:
+        raise ErrorNegocio("Las horas no pueden ser anteriores a la apertura de la orden")
+    tarifa = tarifa_costo_vigente(db, datos.fecha)
+    hora = HoraTrabajo(
+        orden_id=orden.id,
+        mecanico=datos.mecanico,
+        fecha=datos.fecha,
+        horas=horas,
+        tarea=datos.tarea,
+        tarifa_hora=tarifa,
+        costo=redondear(horas * tarifa, 2),
+        registrado_por=usuario_id,
+    )
+    db.add(hora)
+    db.commit()
+    db.refresh(hora)
+    return hora
+
+
+def listar_horas(db: Session, orden_id: int) -> list[HoraTrabajo]:
+    return list(obtener_orden(db, orden_id).horas)

@@ -11,3 +11,13 @@
   color: var(--gray);
   margin-top: 4px;
 }
+
+.detalle h3 {
+  margin-top: 16px;
+}
+
+.total {
+  text-align: right;
+  font-weight: 600;
+  color: inherit;
+}

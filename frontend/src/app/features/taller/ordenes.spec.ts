@@ -101,4 +101,57 @@ describe('OrdenesTallerPantalla', () => {
 
     expect(texto()).toContain('17 caracteres');
   });
+
+  it('registra horas en el detalle y recarga la orden con su costo', async () => {
+    elemento().querySelector<HTMLButtonElement>('table button')!.click();
+    http.expectOne(`${URL}/1/horas`).flush([]);
+    await fixture.whenStable();
+
+    escribir('input[formControlName=mecanico]', 'Luis Pérez');
+    escribir('input[formControlName=horas]', '2.5');
+    escribir('input[formControlName=tarea]', 'Cambio de frenos');
+    elemento().querySelectorAll('form')[1].dispatchEvent(new Event('submit'));
+    const envio = http.expectOne({ method: 'POST', url: `${URL}/1/horas` });
+    expect(envio.request.body).toMatchObject({
+      mecanico: 'Luis Pérez',
+      horas: '2.5',
+      tarea: 'Cambio de frenos',
+    });
+    envio.flush({});
+    http.expectOne(`${URL}/1`).flush({ ...ORDEN, costo_acumulado: '112.500000' });
+    http.expectOne(`${URL}/1/horas`).flush([
+      {
+        id: 1,
+        orden_id: 1,
+        mecanico: 'Luis Pérez',
+        fecha: '2026-11-12',
+        horas: '2.50',
+        tarea: 'Cambio de frenos',
+        tarifa_hora: '45.000000',
+        costo: '112.500000',
+      },
+    ]);
+    http.expectOne(URL).flush([{ ...ORDEN, costo_acumulado: '112.500000' }]);
+    await fixture.whenStable();
+
+    expect(texto()).toContain('Cambio de frenos');
+    expect(texto()).toContain('112.50');
+  });
+
+  it('muestra el error del backend al registrar horas en una orden sin tarifa', async () => {
+    elemento().querySelector<HTMLButtonElement>('table button')!.click();
+    http.expectOne(`${URL}/1/horas`).flush([]);
+    await fixture.whenStable();
+
+    escribir('input[formControlName=mecanico]', 'Luis Pérez');
+    escribir('input[formControlName=horas]', '2');
+    escribir('input[formControlName=tarea]', 'Frenos');
+    elemento().querySelectorAll('form')[1].dispatchEvent(new Event('submit'));
+    http
+      .expectOne({ method: 'POST', url: `${URL}/1/horas` })
+      .flush({ detail: 'No hay tarifa de mano de obra vigente' }, { status: 409, statusText: 'x' });
+    await fixture.whenStable();
+
+    expect(texto()).toContain('No hay tarifa');
+  });
 });

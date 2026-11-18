@@ -12,7 +12,14 @@ from app.modulos.seguridad.service import (
     usuario_actual,
 )
 from app.modulos.taller import service
-from app.modulos.taller.schemas import OrdenEntrada, OrdenSalida, TarifaEntrada, TarifaSalida
+from app.modulos.taller.schemas import (
+    HoraEntrada,
+    HoraSalida,
+    OrdenEntrada,
+    OrdenSalida,
+    TarifaEntrada,
+    TarifaSalida,
+)
 
 # Todas las rutas exigen sesión; las tarifas y el cierre los hace el contador, y el auxiliar
 # contable con el contador abren las órdenes y registran las horas.
@@ -51,3 +58,15 @@ def abrir_orden(
 @router.get("/ordenes/{orden_id}", response_model=OrdenSalida)
 def consultar_orden(orden_id: int, db: Session = Depends(get_db)) -> OrdenSalida:
     return OrdenSalida.model_validate(service.obtener_orden(db, orden_id))
+
+
+@router.get("/ordenes/{orden_id}/horas", response_model=list[HoraSalida])
+def listar_horas(orden_id: int, db: Session = Depends(get_db)) -> list[HoraSalida]:
+    return [HoraSalida.model_validate(h) for h in service.listar_horas(db, orden_id)]
+
+
+@router.post("/ordenes/{orden_id}/horas", response_model=HoraSalida, status_code=201)
+def registrar_horas(
+    orden_id: int, datos: HoraEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+) -> HoraSalida:
+    return HoraSalida.model_validate(service.registrar_horas(db, orden_id, datos, usuario.id))

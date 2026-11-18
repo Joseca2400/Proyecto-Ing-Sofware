@@ -82,5 +82,60 @@
       {{ orden.descripcion }} · Responsable: {{ orden.responsable }} · Abierta el
       {{ orden.fecha_apertura }} con {{ orden.kilometraje }} km
     </p>
+
+    <h3>Mano de obra</h3>
+    @if (orden.estado === 'abierta') {
+      <form class="formulario" [formGroup]="formularioHoras" (ngSubmit)="registrarHoras(orden)">
+        <label>
+          Mecánico
+          <input type="text" formControlName="mecanico" maxlength="100" />
+        </label>
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" />
+        </label>
+        <label>
+          Horas
+          <input type="text" inputmode="decimal" formControlName="horas" placeholder="2.5" />
+          @if (formularioHoras.controls.horas.touched && formularioHoras.controls.horas.invalid) {
+            <small class="falla">Número positivo con hasta 2 decimales</small>
+          }
+        </label>
+        <label class="ancho">
+          Tarea
+          <input type="text" formControlName="tarea" maxlength="300" />
+        </label>
+        <button type="submit" [disabled]="guardando()">Registrar horas</button>
+      </form>
+    }
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Mecánico</th>
+          <th>Tarea</th>
+          <th class="numero">Horas</th>
+          <th class="numero">Tarifa</th>
+          <th class="numero">Costo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (hora of horas(); track hora.id) {
+          <tr>
+            <td>{{ hora.fecha }}</td>
+            <td>{{ hora.mecanico }}</td>
+            <td>{{ hora.tarea }}</td>
+            <td class="numero">{{ hora.horas }}</td>
+            <td class="numero">{{ hora.tarifa_hora | monto }}</td>
+            <td class="numero">{{ hora.costo | monto }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">Sin horas registradas</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p class="total">Costo acumulado: {{ orden.costo_acumulado | monto }}</p>
   </section>
 }

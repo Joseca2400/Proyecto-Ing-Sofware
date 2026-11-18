@@ -14,6 +14,11 @@ export type TarifaEntrada = components['schemas']['TarifaEntrada'];
 export type Orden = components['schemas']['OrdenSalida'];
 export type OrdenEntrada = components['schemas']['OrdenEntrada'];
 
+// ── HU-5.03: mano de obra ─────────────────────────────────────────────────────
+
+export type Hora = components['schemas']['HoraSalida'];
+export type HoraEntrada = components['schemas']['HoraEntrada'];
+
 @Injectable({ providedIn: 'root' })
 export class TallerService {
   private readonly http = inject(HttpClient);
@@ -37,5 +42,13 @@ export class TallerService {
 
   abrirOrden(datos: OrdenEntrada): Observable<Orden> {
     return this.http.post<Orden>(`${this.url}/ordenes`, datos);
+  }
+
+  horas(ordenId: number): Observable<Hora[]> {
+    return this.http.get<Hora[]>(`${this.url}/ordenes/${ordenId}/horas`);
+  }
+
+  registrarHoras(ordenId: number, datos: HoraEntrada): Observable<Hora> {
+    return this.http.post<Hora>(`${this.url}/ordenes/${ordenId}/horas`, datos);
   }
 }

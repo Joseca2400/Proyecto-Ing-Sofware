@@ -4,6 +4,7 @@
 - `orden_trabajo` (HU-5.01 y HU-5.07): una orden abierta por VIN (índice parcial único), con las
   columnas del cierre y la llave a la partida que crea `contabilidad`; el tipo de trabajo es un
   texto con CHECK, para agregar tipos en los Sprints 5 y 6 sin rediseñar.
+- `hora_trabajo` (HU-5.03): horas por orden con la tarifa y el costo con que se calcularon.
 - Bitácora (HU-1.11) en cada tabla nueva, como en `0011`.
 
 Revision ID: 0020
@@ -28,6 +29,10 @@ ORDEN = (
     "id", "vin", "tipo", "estado", "fecha_apertura", "kilometraje", "descripcion", "responsable",
     "abierta_por", "creado_en", "fecha_cierre", "cerrada_por", "costo_total", "justificacion",
     "partida_id",
+)  # fmt: skip
+HORA = (
+    "id", "orden_id", "mecanico", "fecha", "horas", "tarea", "tarifa_hora", "costo", "registrado_por",
+    "creado_en",
 )  # fmt: skip
 
 
@@ -99,7 +104,26 @@ def upgrade() -> None:
     )
     _trigger("orden_trabajo", ORDEN)
 
+    op.create_table(
+        "hora_trabajo",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("orden_id", sa.Integer(), sa.ForeignKey("orden_trabajo.id"), nullable=False),
+        sa.Column("mecanico", sa.String(100), nullable=False),
+        sa.Column("fecha", sa.Date(), nullable=False),
+        sa.Column("horas", sa.Numeric(5, 2), nullable=False),
+        sa.Column("tarea", sa.String(300), nullable=False),
+        sa.Column("tarifa_hora", MONTO, nullable=False),
+        sa.Column("costo", MONTO, nullable=False),
+        sa.Column("registrado_por", sa.Integer(), sa.ForeignKey("usuarios.id"), nullable=True),
+        sa.Column("creado_en", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.CheckConstraint("horas > 0 AND horas <= 24", name="ck_hora_trabajo_horas"),
+        sa.CheckConstraint("tarifa_hora > 0 AND costo > 0", name="ck_hora_trabajo_montos"),
+    )
+    op.create_index("ix_hora_trabajo_orden_id", "hora_trabajo", ["orden_id"])
+    _trigger("hora_trabajo", HORA)
+
 
 def downgrade() -> None:
+    op.drop_table("hora_trabajo")
     op.drop_table("orden_trabajo")
     op.drop_table("tarifa_mano_obra")

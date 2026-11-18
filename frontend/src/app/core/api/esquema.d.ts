@@ -671,6 +671,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taller/ordenes/{orden_id}/horas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Horas */
+        get: operations["listar_horas_api_v1_taller_ordenes__orden_id__horas_get"];
+        put?: never;
+        /** Registrar Horas */
+        post: operations["registrar_horas_api_v1_taller_ordenes__orden_id__horas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1148,6 +1166,45 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HoraEntrada
+         * @description Horas de un mecánico en la orden. Las horas viajan como texto ("2.50"); el service las valida.
+         */
+        HoraEntrada: {
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+        };
+        /** HoraSalida */
+        HoraSalida: {
+            /** Id */
+            id: number;
+            /** Orden Id */
+            orden_id: number;
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /** Costo */
+            costo: string;
         };
         JsonValue: unknown;
         /**
@@ -3396,6 +3453,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_horas_api_v1_taller_ordenes__orden_id__horas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_horas_api_v1_taller_ordenes__orden_id__horas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoraEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"];
                 };
             };
             /** @description Validation Error */
