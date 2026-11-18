@@ -133,6 +133,13 @@ export const routes: Routes = [
           import('./features/unidades/depreciacion').then((m) => m.DepreciacionPantalla),
       },
       {
+        path: 'unidades/fin-vida-util',
+        title: 'Fin de vida útil · Kilómetro Cero',
+        data: soloRoles('gerente_financiero', 'gerencia', 'contador'),
+        loadComponent: () =>
+          import('./features/unidades/fin-vida-util').then((m) => m.FinVidaUtilPantalla),
+      },
+      {
         path: 'reportes/unidades-etapa',
         title: 'Unidades por etapa · Kilómetro Cero',
         data: soloRoles('gerencia', 'gerente_financiero', 'contador'),

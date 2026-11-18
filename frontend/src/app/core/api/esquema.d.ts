@@ -798,6 +798,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/fin-vida-util": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fin Vida Util
+         * @description HU-3.14: unidades de la flota que alcanzaron o están por alcanzar el fin de su vida útil.
+         */
+        get: operations["fin_vida_util_api_v1_unidades_fin_vida_util_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/fin-vida-util/regla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Regla Fin Vida */
+        put: operations["definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades": {
         parameters: {
             query?: never;
@@ -1283,6 +1320,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AlertaFinVida
+         * @description `situacion`: "alcanzado" o "por_alcanzar" (desde el porcentaje de aviso del límite).
+         */
+        AlertaFinVida: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Kilometraje */
+            kilometraje: number | null;
+            /** Meses En Flota */
+            meses_en_flota: number;
+            /**
+             * Situacion
+             * @enum {string}
+             */
+            situacion: "alcanzado" | "por_alcanzar";
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
+        };
         /**
          * AltaFlotaEntrada
          * @description Fecha del alta y, opcionalmente, los parámetros de depreciación si el contador cambia los
@@ -2317,6 +2391,12 @@ export interface components {
             /** Saldo Final */
             saldo_final: string;
         };
+        /** FinVidaUtil */
+        FinVidaUtil: {
+            regla: components["schemas"]["ReglaFinVidaSalida"] | null;
+            /** Unidades */
+            unidades: components["schemas"]["AlertaFinVida"][];
+        };
         /**
          * GastoHojaCosto
          * @description Un gasto de importación; `suma_al_costo` es falso para el IVA de importación (crédito fiscal).
@@ -3054,6 +3134,34 @@ export interface components {
         ReglaEntrada: {
             /** Cuenta Codigo */
             cuenta_codigo: string;
+        };
+        /** ReglaFinVidaEntrada */
+        ReglaFinVidaEntrada: {
+            /** Kilometraje Limite */
+            kilometraje_limite?: number | null;
+            /** Meses Limite */
+            meses_limite?: number | null;
+            /**
+             * Porcentaje Aviso
+             * @default 90
+             */
+            porcentaje_aviso: string;
+        };
+        /** ReglaFinVidaSalida */
+        ReglaFinVidaSalida: {
+            /** Kilometraje Limite */
+            kilometraje_limite: number | null;
+            /** Meses Limite */
+            meses_limite: number | null;
+            /** Porcentaje Aviso */
+            porcentaje_aviso: string;
+            /** Actualizado Por */
+            actualizado_por: number | null;
+            /**
+             * Actualizado En
+             * Format: date-time
+             */
+            actualizado_en: string;
         };
         /** ReglaSalida */
         ReglaSalida: {
@@ -5363,6 +5471,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DepreciacionTipoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fin_vida_util_api_v1_unidades_fin_vida_util_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinVidaUtil"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReglaFinVidaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReglaFinVidaSalida"];
                 };
             };
             /** @description Validation Error */

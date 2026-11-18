@@ -59,6 +59,7 @@ export class Layout {
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },
     { etiqueta: 'Alta en flota', ruta: '/unidades/alta-flota' },
     { etiqueta: 'Depreciación', ruta: '/unidades/depreciacion' },
+    { etiqueta: 'Fin de vida útil', ruta: '/unidades/fin-vida-util' },
     { etiqueta: 'Contabilidad', ruta: '/contabilidad/partidas' },
     { etiqueta: 'Reglas de contabilización', ruta: '/contabilidad/reglas' },
     { etiqueta: 'Balance de comprobación', ruta: '/contabilidad/balance' },

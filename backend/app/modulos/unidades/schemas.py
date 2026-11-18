@@ -269,3 +269,51 @@ class ValorEnLibros(BaseModel):
     @field_serializer("porcentaje_fiscal")
     def porcentaje_a_texto(self, valor: Decimal) -> str:
         return f"{valor:.2f}"
+
+
+# ── HU-3.14: fin de vida útil en flota ────────────────────────────────────────
+
+
+class ReglaFinVidaEntrada(BaseModel):
+    kilometraje_limite: int | None = None
+    meses_limite: int | None = None
+    porcentaje_aviso: str = Field(default="90", max_length=10)
+
+
+class ReglaFinVidaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    kilometraje_limite: int | None
+    meses_limite: int | None
+    porcentaje_aviso: Decimal
+    actualizado_por: int | None
+    actualizado_en: datetime
+
+    @field_serializer("porcentaje_aviso")
+    def porcentaje_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.2f}"
+
+
+class AlertaFinVida(BaseModel):
+    """`situacion`: "alcanzado" o "por_alcanzar" (desde el porcentaje de aviso del límite)."""
+
+    vin: str
+    marca: str
+    linea: str
+    modelo: int
+    estado: Estado
+    fecha_alta: date
+    kilometraje: int | None
+    meses_en_flota: int
+    situacion: Literal["alcanzado", "por_alcanzar"]
+    valor_libros_financiero: Decimal
+    valor_libros_fiscal: Decimal
+
+    @field_serializer("valor_libros_financiero", "valor_libros_fiscal")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class FinVidaUtil(BaseModel):
+    regla: ReglaFinVidaSalida | None
+    unidades: list[AlertaFinVida]

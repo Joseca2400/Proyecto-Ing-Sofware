@@ -114,6 +114,33 @@ class AltaFlota(Base):
 PORCENTAJE = Numeric(5, 2)
 
 
+class ReglaFinVida(Base):
+    """Regla vigente de fin de vida útil en flota (HU-3.14): por kilometraje, por meses desde el
+    alta, o ambas; una sola fila (id 1) que se edita y la bitácora guarda cada cambio. El aviso
+    "por alcanzar" empieza en `porcentaje_aviso` del límite."""
+
+    __tablename__ = "regla_fin_vida"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="ck_regla_fin_vida_unica"),
+        CheckConstraint(
+            "num_nonnulls(kilometraje_limite, meses_limite) >= 1"
+            " AND (kilometraje_limite IS NULL OR kilometraje_limite > 0)"
+            " AND (meses_limite IS NULL OR meses_limite > 0)"
+            " AND porcentaje_aviso > 0 AND porcentaje_aviso <= 100",
+            name="ck_regla_fin_vida_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kilometraje_limite: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meses_limite: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    porcentaje_aviso: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    actualizado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    actualizado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class DepreciacionTipoVehiculo(Base):
     """Parámetros de depreciación por defecto de un tipo de vehículo (HU-3.02, criterio 2): se
     proponen al dar de alta la unidad. El residual es un porcentaje del costo."""

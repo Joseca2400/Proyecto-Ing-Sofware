@@ -15,6 +15,7 @@ from app.modulos.seguridad.service import (
 )
 from app.modulos.unidades import service
 from app.modulos.unidades.schemas import (
+    AlertaFinVida,
     AltaFlotaEntrada,
     AltaFlotaSalida,
     CambioEstadoEntrada,
@@ -26,8 +27,11 @@ from app.modulos.unidades.schemas import (
     Estado,
     Etapa,
     EtapasImportacion,
+    FinVidaUtil,
     ParametroDepreciacionEntrada,
     ParametroDepreciacionSalida,
+    ReglaFinVidaEntrada,
+    ReglaFinVidaSalida,
     UnidadEntrada,
     UnidadSalida,
     ValorEnLibros,
@@ -85,6 +89,31 @@ def definir_depreciacion_tipo(
         usuario.id,
     )
     return DepreciacionTipoSalida.model_validate(tipo)
+
+
+# HU-3.14: el gerente financiero, la gerencia y el contador ven la alerta; la regla la fijan el
+# gerente financiero o el contador.
+REGLA_FIN_VIDA = requiere_rol(GERENTE_FINANCIERO, CONTADOR)
+
+
+@router.get("/fin-vida-util", response_model=FinVidaUtil)
+def fin_vida_util(_: Usuario = Depends(ETAPAS), db: Session = Depends(get_db)) -> FinVidaUtil:
+    """HU-3.14: unidades de la flota que alcanzaron o están por alcanzar el fin de su vida útil."""
+    regla = service.regla_fin_vida(db)
+    return FinVidaUtil(
+        regla=ReglaFinVidaSalida.model_validate(regla) if regla else None,
+        unidades=[AlertaFinVida(**a) for a in service.alertas_fin_vida(db)],
+    )
+
+
+@router.put("/fin-vida-util/regla", response_model=ReglaFinVidaSalida)
+def definir_regla_fin_vida(
+    datos: ReglaFinVidaEntrada, usuario: Usuario = Depends(REGLA_FIN_VIDA), db: Session = Depends(get_db)
+) -> ReglaFinVidaSalida:
+    regla = service.definir_regla_fin_vida(
+        db, datos.kilometraje_limite, datos.meses_limite, datos.porcentaje_aviso, usuario.id
+    )
+    return ReglaFinVidaSalida.model_validate(regla)
 
 
 @router.get("", response_model=list[UnidadSalida])

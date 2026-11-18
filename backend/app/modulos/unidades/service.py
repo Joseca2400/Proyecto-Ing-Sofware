@@ -43,6 +43,12 @@ mes en curso): las cuotas ya devengadas no se recalculan; la bitácora guarda ca
 `valor_en_libros` da la depreciación acumulada y el valor en libros a cualquier fecha (sin partidas:
 la depreciación mensual contabilizada es HU-2.07, Sprint 3). Convención de meses (supuesto que
 confirma el contador): el mes del alta no se deprecia; cada fin de mes posterior devenga una cuota.
+
+HU-3.14 (incluido): regla de fin de vida útil en flota por kilometraje, por meses desde el alta, o
+ambas (una sola regla vigente, auditada), con un porcentaje de aviso (90 % por defecto) para las
+que están por alcanzarla. `alertas_fin_vida` lista las unidades en flota o alquiladas que la
+alcanzaron o están por alcanzarla, con su valor en libros; la alerta no cambia la unidad (la baja
+la decide la gerencia). Pendiente: confirmar la regla con la gerencia (pregunta 5 de las épicas).
 """
 
 import re
@@ -65,6 +71,7 @@ from app.modulos.unidades.models import (
     CambioEstadoUnidad,
     DepreciacionTipoVehiculo,
     ParametroDepreciacion,
+    ReglaFinVida,
     Unidad,
 )
 from app.modulos.unidades.schemas import UnidadEntrada
@@ -763,6 +770,92 @@ def cambiar_parametros(
     db.commit()
     db.refresh(version)
     return version
+
+
+# ── HU-3.14: alerta de fin de vida útil en flota ──────────────────────────────
+
+EN_FLOTA = ("en_flota", "alquilada")
+
+
+def regla_fin_vida(db: Session) -> ReglaFinVida | None:
+    return db.get(ReglaFinVida, 1)
+
+
+def definir_regla_fin_vida(
+    db: Session,
+    kilometraje_limite: int | None,
+    meses_limite: int | None,
+    porcentaje_aviso: str,
+    usuario_id: int | None = None,
+) -> ReglaFinVida:
+    """Fija la regla vigente (criterio 1); la bitácora guarda la anterior."""
+    if kilometraje_limite is None and meses_limite is None:
+        raise ErrorNegocio("Indique el límite por kilometraje, por meses en flota o ambos")
+    if (kilometraje_limite is not None and kilometraje_limite <= 0) or (
+        meses_limite is not None and meses_limite <= 0
+    ):
+        raise ErrorNegocio("Los límites deben ser mayores que cero")
+    aviso = _decimal(porcentaje_aviso, "El porcentaje de aviso", 2)
+    if not 0 < aviso <= 100:
+        raise ErrorNegocio("El porcentaje de aviso debe ser mayor que 0 y hasta 100")
+    regla = regla_fin_vida(db) or ReglaFinVida(id=1)
+    regla.kilometraje_limite = kilometraje_limite
+    regla.meses_limite = meses_limite
+    regla.porcentaje_aviso = aviso
+    regla.actualizado_por = usuario_id
+    db.add(regla)
+    db.commit()
+    db.refresh(regla)
+    return regla
+
+
+def meses_en_flota(fecha_alta: date, fecha: date) -> int:
+    """Meses completos desde el alta (del 15 de enero al 14 de febrero no cumple el primero)."""
+    meses = _indice_mes(fecha) - _indice_mes(fecha_alta) - (1 if fecha.day < fecha_alta.day else 0)
+    return max(meses, 0)
+
+
+def alertas_fin_vida(db: Session, fecha: date | None = None) -> list[dict]:
+    """Unidades de la flota que alcanzaron el límite o están por alcanzarlo (desde el porcentaje de
+    aviso), con su valor en libros (criterio 2). Solo consulta: nunca cambia la unidad (criterio 3).
+    Una unidad en flota sin alta (cargada así antes de HU-3.01) no tiene fecha ni valor y no aparece."""
+    regla = regla_fin_vida(db)
+    if regla is None:
+        return []
+    fecha = fecha or date.today()
+    aviso = regla.porcentaje_aviso / 100
+    alertas = []
+    for unidad in db.scalars(select(Unidad).where(Unidad.estado.in_(EN_FLOTA)).order_by(Unidad.vin)):
+        alta = alta_de_unidad(db, unidad.vin)
+        if alta is None:
+            continue
+        km = unidad.kilometraje or 0
+        meses = meses_en_flota(alta.fecha, fecha)
+        medidas = [(km, regla.kilometraje_limite), (meses, regla.meses_limite)]
+        if any(limite and valor >= limite for valor, limite in medidas):
+            situacion = "alcanzado"
+        elif any(limite and valor >= limite * aviso for valor, limite in medidas):
+            situacion = "por_alcanzar"
+        else:
+            continue
+        libros = valor_en_libros(db, unidad.vin, fecha)
+        alertas.append(
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "estado": unidad.estado,
+                "fecha_alta": alta.fecha,
+                "kilometraje": unidad.kilometraje,
+                "meses_en_flota": meses,
+                "situacion": situacion,
+                "valor_libros_financiero": libros["valor_libros_financiero"],
+                "valor_libros_fiscal": libros["valor_libros_fiscal"],
+            }
+        )
+    alertas.sort(key=lambda a: a["situacion"] != "alcanzado")
+    return alertas
 
 
 def catalogos() -> dict[str, list[str]]:

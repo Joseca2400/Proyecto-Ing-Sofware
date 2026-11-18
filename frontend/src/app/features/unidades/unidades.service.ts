@@ -137,6 +137,12 @@ export type ParametroDepreciacion = components['schemas']['ParametroDepreciacion
 export type ParametroDepreciacionEntrada = components['schemas']['ParametroDepreciacionEntrada'];
 export type ValorEnLibros = components['schemas']['ValorEnLibros'];
 
+// ── HU-3.14: fin de vida útil en flota ─────────────────────────────────────────
+
+export type FinVidaUtil = components['schemas']['FinVidaUtil'];
+export type ReglaFinVida = components['schemas']['ReglaFinVidaSalida'];
+export type ReglaFinVidaEntrada = components['schemas']['ReglaFinVidaEntrada'];
+
 @Injectable({ providedIn: 'root' })
 export class UnidadesService {
   private readonly http = inject(HttpClient);
@@ -201,6 +207,14 @@ export class UnidadesService {
       `${this.url}/${vin}/parametros-depreciacion`,
       datos,
     );
+  }
+
+  finVidaUtil(): Observable<FinVidaUtil> {
+    return this.http.get<FinVidaUtil>(`${this.url}/fin-vida-util`);
+  }
+
+  definirReglaFinVida(datos: ReglaFinVidaEntrada): Observable<ReglaFinVida> {
+    return this.http.put<ReglaFinVida>(`${this.url}/fin-vida-util/regla`, datos);
   }
 
   valorEnLibros(vin: string, fecha: string): Observable<ValorEnLibros> {
