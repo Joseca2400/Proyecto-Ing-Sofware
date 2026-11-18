@@ -50,6 +50,8 @@ export class Layout {
     { etiqueta: 'Clientes', ruta: '/facturacion/clientes' },
     { etiqueta: 'Facturas', ruta: '/facturacion/facturas' },
     { etiqueta: 'Tarifario', ruta: '/alquileres/tarifario' },
+    { etiqueta: 'Contratos', ruta: '/alquileres/contratos' },
+    { etiqueta: 'Depósitos en garantía', ruta: '/alquileres/depositos' },
     { etiqueta: 'Órdenes de taller', ruta: '/taller/ordenes' },
     { etiqueta: 'Tarifas de taller', ruta: '/taller/tarifas' },
     { etiqueta: 'Unidades', ruta: '/unidades' },

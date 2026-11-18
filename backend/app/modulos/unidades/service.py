@@ -43,7 +43,8 @@ from app.modulos.unidades.models import ESTADOS, CambioEstadoUnidad, Unidad
 from app.modulos.unidades.schemas import UnidadEntrada
 
 TIPOS_VEHICULO = ("sedan", "hatchback", "suv", "pickup", "camioneta", "microbus", "motocicleta", "otro")
-ESTADOS_INICIALES = tuple(e for e in ESTADOS if e not in ("vendida", "recuperada"))
+# "alquilada" solo la pone el contrato de alquiler (HU-3.06).
+ESTADOS_INICIALES = tuple(e for e in ESTADOS if e not in ("vendida", "recuperada", "alquilada"))
 MODELO_MINIMO = 1981  # el VIN de 17 caracteres es obligatorio desde los modelos 1981
 
 # ── Validación del VIN (norma de EE. UU., 49 CFR 565) ─────────────────────────
@@ -113,7 +114,7 @@ def registrar_unidad(
         raise ErrorNegocio(f"Tipo de vehículo desconocido. Use uno de: {', '.join(TIPOS_VEHICULO)}")
     _validar_linea_negocio(datos.linea_negocio)
     if datos.estado not in ESTADOS_INICIALES:
-        raise ErrorNegocio("Una unidad nueva no puede darse de alta como vendida ni recuperada")
+        raise ErrorNegocio("Una unidad nueva no puede darse de alta como vendida, recuperada ni alquilada")
     if db.scalar(select(Unidad.id).where(Unidad.vin == vin)) is not None:
         raise _vin_repetido(vin)
 
@@ -185,6 +186,19 @@ def existe_vin(db: Session, vin: str) -> bool:
     return buscar_por_vin(db, vin) is not None
 
 
+def fijar_kilometraje(db: Session, vin: str, kilometraje: int) -> Unidad:
+    """Para la devolución de un alquiler (HU-3.08): actualiza el kilometraje sin confirmar; lo
+    confirma el llamador con su documento. El kilometraje no retrocede."""
+    unidad = obtener_por_vin(db, vin)
+    if unidad.kilometraje is not None and kilometraje < unidad.kilometraje:
+        raise ErrorNegocio(
+            f"El kilometraje {kilometraje} es menor que el registrado en la unidad ({unidad.kilometraje} km)"
+        )
+    unidad.kilometraje = kilometraje
+    db.flush()
+    return unidad
+
+
 # ── HU-4.07: etapas de importación ────────────────────────────────────────────
 
 ETAPAS_IMPORTACION = ("en_transito", "en_aduana", "en_taller", "lista")
@@ -237,6 +251,11 @@ def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
         raise ErrorNegocio("Una unidad vendida solo puede pasar a recuperada")
     if nuevo == "recuperada" and actual != "vendida":
         raise ErrorNegocio("Solo una unidad vendida puede pasar a recuperada")
+    # HU-3.06/HU-3.08: en flota → alquilada → en flota, o al taller si regresa con daños.
+    if nuevo == "alquilada" and actual != "en_flota":
+        raise ErrorNegocio("Solo una unidad en flota puede alquilarse")
+    if actual == "alquilada" and nuevo not in ("en_flota", "en_taller"):
+        raise ErrorNegocio("Una unidad alquilada solo puede volver a la flota o pasar al taller")
     if en_importacion:
         siguiente = _SIGUIENTE_ETAPA[actual]
         if nuevo != siguiente:
@@ -261,7 +280,7 @@ def cambiar_estado(
     """Cambia el estado vigente y guarda el cambio en el historial, en la misma transacción.
 
     Con `confirmar=False` solo lo escribe (flush): lo confirma el llamador junto con su documento
-    (la orden de reacondicionamiento, HU-5.01 y HU-5.07, lo usa para abrir y cerrar con su partida).
+    (la orden de reacondicionamiento, HU-5.01 y HU-5.07, y el contrato de alquiler, HU-3.06).
     """
     if not documento:
         raise ErrorNegocio("Indique el documento que origina el cambio de estado")

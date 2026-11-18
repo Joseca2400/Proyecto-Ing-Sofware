@@ -1,5 +1,15 @@
 /* Estilos comunes de las pantallas que viven dentro del layout (encabezado, tarjeta, formulario,
    tabla y mensajes). Una pantalla nueva usa estas clases y solo agrega en su CSS lo que le es propio. */
+
+/* Al imprimir (por ejemplo, un contrato) solo queda el documento: sin barra, menú ni lo marcado. */
+@media print {
+  .topbar,
+  .menu,
+  .no-imprimir {
+    display: none !important;
+  }
+}
+
 .contenido {
   .encabezado {
     margin-bottom: 24px;

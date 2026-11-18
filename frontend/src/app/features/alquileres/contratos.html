@@ -1,0 +1,311 @@
+<section class="encabezado no-imprimir">
+  <h1>Contratos de alquiler</h1>
+  <p>
+    El contrato se registra al salir la unidad: copia la tarifa vigente de ese día, la unidad pasa a
+    alquilada y el monto estimado lo calcula el sistema según la tarifa y los días.
+  </p>
+</section>
+
+<form class="tarjeta formulario no-imprimir" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Cliente
+    <select formControlName="cliente_id" name="cliente_id">
+      <option [value]="0" disabled>Seleccione…</option>
+      @for (c of clientes(); track c.id) {
+        <option [value]="c.id">{{ c.nombre }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Unidad en flota
+    <select formControlName="vin" name="vin">
+      <option value="" disabled>Seleccione…</option>
+      @for (u of unidades(); track u.vin) {
+        <option [value]="u.vin">{{ u.vin }} · {{ u.marca }} {{ u.linea }} {{ u.modelo }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Salida
+    <input type="datetime-local" formControlName="salida" name="salida" />
+  </label>
+  <label>
+    Devolución prevista
+    <input type="date" formControlName="devolucion_prevista" name="devolucion_prevista" />
+  </label>
+  <label>
+    Modalidad
+    <select formControlName="modalidad" name="modalidad">
+      @for (m of modalidades; track m) {
+        <option [value]="m">{{ etiquetas[m] }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">Quetzales (GTQ)</option>
+      <option value="USD">Dólares (USD)</option>
+    </select>
+  </label>
+  <label>
+    Kilometraje de salida
+    <input type="number" min="0" formControlName="km_salida" name="km_salida" />
+  </label>
+  <label>
+    Combustible de salida (octavos)
+    <input
+      type="number"
+      min="0"
+      max="8"
+      formControlName="combustible_salida"
+      name="combustible_salida"
+    />
+  </label>
+  <label>
+    Depósito en garantía esperado
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="deposito_esperado"
+      name="deposito_esperado"
+    />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar contrato</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla no-imprimir" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok no-imprimir" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionado(); as c) {
+  <section class="tarjeta impresion">
+    <h2>Contrato de alquiler No. {{ c.numero }}</h2>
+    <dl>
+      <dt>Cliente</dt>
+      <dd>{{ nombreCliente(c.cliente_id) }}</dd>
+      <dt>Unidad (VIN)</dt>
+      <dd>{{ c.vin }}</dd>
+      <dt>Salida</dt>
+      <dd>{{ c.salida | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      <dt>Devolución prevista</dt>
+      <dd>{{ c.devolucion_prevista | date: 'dd/MM/yyyy' }} ({{ c.dias_previstos }} días)</dd>
+      <dt>Tarifa</dt>
+      <dd>
+        {{ etiquetas[c.modalidad] }}, {{ c.tarifa_monto | monto: c.moneda }}; {{ c.km_incluido }} km
+        incluidos, km adicional {{ c.precio_km_adicional | monto: c.moneda }}
+      </dd>
+      <dt>Kilometraje y combustible de salida</dt>
+      <dd>{{ c.km_salida }} km · {{ c.combustible_salida }}/8 de tanque</dd>
+      <dt>Depósito en garantía</dt>
+      <dd>{{ c.deposito_esperado | monto: c.moneda }}</dd>
+      <dt>Monto estimado</dt>
+      <dd>{{ c.monto_estimado | monto: c.moneda }}</dd>
+      <dt>Estado</dt>
+      <dd>{{ c.estado }}</dd>
+      @if (c.estado === 'cerrado') {
+        <dt>Devolución</dt>
+        <dd>
+          {{ c.devolucion | date: 'dd/MM/yyyy HH:mm' }} · {{ c.dias_efectivos }} días efectivos
+        </dd>
+        <dt>Kilometraje</dt>
+        <dd>
+          {{ c.km_devolucion }} km de entrada · {{ c.km_recorridos }} recorridos ·
+          {{ c.km_excedentes }} excedentes
+        </dd>
+        <dt>Combustible</dt>
+        <dd>
+          {{ c.combustible_devolucion }}/8 de entrada · faltan {{ c.combustible_faltante }}/8 (su
+          cobro llega con los cargos adicionales, HU-3.09)
+        </dd>
+        <dt>Daños</dt>
+        <dd>{{ c.observaciones_danos ?? 'Sin observaciones' }}</dd>
+        <dt>Monto final</dt>
+        <dd>{{ c.monto_final | monto: c.moneda }}</dd>
+      }
+    </dl>
+    <button type="button" class="secundario no-imprimir" (click)="imprimir()">Imprimir</button>
+  </section>
+
+  @if (c.estado === 'abierto') {
+    <form class="tarjeta formulario no-imprimir cierre" [formGroup]="cierre" (ngSubmit)="cerrar(c)">
+      <h3>Devolución de la unidad</h3>
+      <label>
+        Fecha y hora de devolución
+        <input type="datetime-local" formControlName="devolucion" name="devolucion" />
+      </label>
+      <label>
+        Kilometraje de entrada
+        <input type="number" min="0" formControlName="km_devolucion" name="km_devolucion" />
+      </label>
+      <label>
+        Combustible de entrada (octavos)
+        <input
+          type="number"
+          min="0"
+          max="8"
+          formControlName="combustible_devolucion"
+          name="combustible_devolucion"
+        />
+      </label>
+      <label>
+        Observaciones de daños
+        <input
+          type="text"
+          maxlength="1000"
+          formControlName="observaciones_danos"
+          name="observaciones_danos"
+        />
+      </label>
+      <button type="submit">Cerrar contrato</button>
+    </form>
+  }
+
+  <section class="tarjeta no-imprimir depositos">
+    <h3>Depósitos en garantía</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Forma</th>
+          <th class="numero">Monto</th>
+          <th class="numero">Saldo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (d of depositos(); track d.id) {
+          <tr>
+            <td>{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              {{ d.tipo === 'deposito' ? 'Depósito' : 'Autorización de tarjeta ' + d.referencia }}
+              {{ d.devuelto ? '(devuelto)' : '' }}
+            </td>
+            <td class="numero">{{ d.monto | monto: d.moneda }}</td>
+            <td class="numero">{{ d.saldo | monto: d.moneda }}</td>
+            <td>
+              @if (c.estado === 'cerrado' && d.tipo === 'deposito' && d.saldo !== '0.000000') {
+                <button type="button" class="secundario" (click)="mover(c, d, 'aplicar')">
+                  Aplicar
+                </button>
+                @if (!d.devuelto) {
+                  <button type="button" class="secundario" (click)="mover(c, d, 'devolver')">
+                    Devolver
+                  </button>
+                }
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="vacio">Sin depósitos</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (c.estado === 'abierto') {
+      <form class="formulario" [formGroup]="deposito" (ngSubmit)="recibir(c)">
+        <label>
+          Forma
+          <select formControlName="tipo" name="dep_tipo">
+            <option value="deposito">Depósito en dinero</option>
+            <option value="autorizacion_tarjeta">Autorización de tarjeta (sin cobro)</option>
+          </select>
+        </label>
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" name="dep_fecha" />
+        </label>
+        <label>
+          Moneda
+          <select formControlName="moneda" name="dep_moneda">
+            <option value="GTQ">Quetzales (GTQ)</option>
+            <option value="USD">Dólares (USD)</option>
+          </select>
+        </label>
+        <label>
+          Monto
+          <input type="text" inputmode="decimal" formControlName="monto" name="dep_monto" />
+        </label>
+        @if (tipoDeposito() === 'deposito') {
+          <label>
+            Cuenta bancaria
+            <select formControlName="cuenta_bancaria_id" name="dep_cuenta">
+              <option [value]="0" disabled>Seleccione…</option>
+              @for (b of cuentasEn(monedaDeposito()); track b.id) {
+                <option [value]="b.id">{{ b.banco }} {{ b.numero }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label>
+          Referencia
+          <input type="text" maxlength="100" formControlName="referencia" name="dep_referencia" />
+        </label>
+        <button type="submit">Recibir depósito</button>
+      </form>
+    } @else {
+      <form class="formulario" [formGroup]="movimiento">
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" name="mov_fecha" />
+        </label>
+        <label>
+          Monto a aplicar o devolver
+          <input type="text" inputmode="decimal" formControlName="monto" name="mov_monto" />
+        </label>
+        <label>
+          Cuenta bancaria (devolución)
+          <select formControlName="cuenta_bancaria_id" name="mov_cuenta">
+            <option [value]="0" disabled>Seleccione…</option>
+            @for (b of cuentas(); track b.id) {
+              <option [value]="b.id">{{ b.banco }} {{ b.numero }} ({{ b.moneda }})</option>
+            }
+          </select>
+        </label>
+      </form>
+      <p class="vacio">
+        La aplicación se contabiliza contra la cuenta por cobrar del cliente; bajar el saldo de la
+        factura llega con los cobros (HU-6.07).
+      </p>
+    }
+  </section>
+}
+
+<table class="tarjeta no-imprimir">
+  <thead>
+    <tr>
+      <th>No.</th>
+      <th>Cliente</th>
+      <th>VIN</th>
+      <th>Salida</th>
+      <th>Devolución prevista</th>
+      <th class="numero">Monto estimado</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (c of contratos(); track c.id) {
+      <tr>
+        <td>{{ c.numero }}</td>
+        <td>{{ nombreCliente(c.cliente_id) }}</td>
+        <td>{{ c.vin }}</td>
+        <td>{{ c.salida | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ c.devolucion_prevista | date: 'dd/MM/yyyy' }}</td>
+        <td class="numero">{{ c.monto_estimado | monto: c.moneda }}</td>
+        <td>{{ c.estado }}</td>
+        <td><button type="button" class="secundario" (click)="ver(c)">Ver</button></td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="8" class="vacio">No hay contratos registrados</td>
+      </tr>
+    }
+  </tbody>
+</table>

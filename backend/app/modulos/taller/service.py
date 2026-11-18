@@ -41,7 +41,7 @@ from app.comun.errores import ErrorNegocio
 from app.modulos.contabilidad import service as contabilidad
 from app.modulos.contabilidad.schemas import LineaEntrada
 from app.modulos.taller.models import HoraTrabajo, OrdenTrabajo, TarifaManoObra
-from app.modulos.taller.schemas import CierreEntrada, HoraEntrada, OrdenEntrada, TarifaManoObraEntrada
+from app.modulos.taller.schemas import CierreOrdenEntrada, HoraEntrada, OrdenEntrada, TarifaManoObraEntrada
 from app.modulos.unidades import service as unidades
 
 _LIMITE_MONTO = Decimal(10) ** 12
@@ -221,7 +221,7 @@ DOCUMENTO_ORDEN = "orden_trabajo"
 
 
 def cerrar_orden(
-    db: Session, orden_id: int, datos: CierreEntrada, usuario_id: int | None = None
+    db: Session, orden_id: int, datos: CierreOrdenEntrada, usuario_id: int | None = None
 ) -> OrdenTrabajo:
     """Cierra la orden con su partida y pasa la unidad a "lista", en una transacción, o no guarda nada."""
     orden = db.get(OrdenTrabajo, orden_id, with_for_update=True)

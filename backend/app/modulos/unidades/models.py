@@ -16,6 +16,7 @@ ESTADOS = (
     "en_taller",
     "lista",
     "en_flota",
+    "alquilada",
     "en_venta",
     "vendida",
     "recuperada",
@@ -35,6 +36,7 @@ class Unidad(Base):
         CheckConstraint("vin ~ '^[A-HJ-NPR-Z0-9]{17}$'", name="ck_unidad_vin"),
         CheckConstraint(f"estado IN ({_ESTADOS_SQL})", name="ck_unidad_estado"),
         CheckConstraint("modelo BETWEEN 1900 AND 2100", name="ck_unidad_modelo"),
+        CheckConstraint("kilometraje IS NULL OR kilometraje >= 0", name="ck_unidad_kilometraje"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -46,6 +48,8 @@ class Unidad(Base):
     tipo_vehiculo: Mapped[str] = mapped_column(String(20))
     linea_negocio: Mapped[str | None] = mapped_column(String(20), nullable=True)
     estado: Mapped[str] = mapped_column(String(20), index=True)
+    # Último kilometraje conocido; lo actualiza la devolución de un alquiler (HU-3.08).
+    kilometraje: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

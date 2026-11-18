@@ -185,7 +185,8 @@ def test_catalogos_usan_las_lineas_de_negocio_de_configuracion(cliente):
 
     assert cuerpo["lineas_negocio"] == list(LINEAS_NEGOCIO)
     assert cuerpo["estados"] == [
-        "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "en_venta", "vendida", "recuperada",
+        "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "alquilada", "en_venta", "vendida",
+        "recuperada",
     ]  # fmt: skip
     assert "sedan" in cuerpo["tipos_vehiculo"]
 

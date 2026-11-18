@@ -78,6 +78,18 @@ export const routes: Routes = [
           import('./features/alquileres/tarifario').then((m) => m.TarifarioPantalla),
       },
       {
+        path: 'alquileres/contratos',
+        title: 'Contratos · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/contratos').then((m) => m.ContratosPantalla),
+      },
+      {
+        path: 'alquileres/depositos',
+        title: 'Depósitos en garantía · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/depositos').then((m) => m.DepositosPantalla),
+      },
+      {
         path: 'taller/ordenes',
         title: 'Órdenes de taller · Kilómetro Cero',
         loadComponent: () =>

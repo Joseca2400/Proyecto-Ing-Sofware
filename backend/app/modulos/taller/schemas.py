@@ -78,7 +78,7 @@ class OrdenSalida(BaseModel):
         return _monto_texto(valor)
 
 
-class CierreEntrada(BaseModel):
+class CierreOrdenEntrada(BaseModel):
     """Cierre de la orden. La justificación solo es obligatoria si el costo es cero."""
 
     justificacion: str | None = Field(default=None, max_length=300)

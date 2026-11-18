@@ -921,6 +921,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alquileres/contratos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Contratos */
+        get: operations["listar_contratos_api_v1_alquileres_contratos_get"];
+        put?: never;
+        /** Registrar Contrato */
+        post: operations["registrar_contrato_api_v1_alquileres_contratos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Contrato */
+        get: operations["obtener_contrato_api_v1_alquileres_contratos__contrato_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}/cierre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cerrar Contrato */
+        post: operations["cerrar_contrato_api_v1_alquileres_contratos__contrato_id__cierre_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos De Contrato */
+        get: operations["depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get"];
+        put?: never;
+        /** Recibir Deposito */
+        post: operations["recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos Vigentes */
+        get: operations["depositos_vigentes_api_v1_alquileres_depositos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/aplicacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar Deposito */
+        post: operations["aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/devolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Devolver Deposito */
+        post: operations["devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taller/tarifas": {
         parameters: {
             query?: never;
@@ -1013,6 +1134,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AplicacionEntrada */
+        AplicacionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+        };
         /** BalanceSalida */
         BalanceSalida: {
             /** Filas */
@@ -1056,7 +1187,7 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento: string;
         };
@@ -1065,12 +1196,12 @@ export interface components {
             /** Id */
             id: number;
             /** Estado Anterior */
-            estado_anterior: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada") | null;
+            estado_anterior: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada") | null;
             /**
              * Estado Nuevo
              * @enum {string}
              */
-            estado_nuevo: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado_nuevo: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento: string;
             /** Usuario Id */
@@ -1102,11 +1233,28 @@ export interface components {
             /** Tipos Vehiculo */
             tipos_vehiculo: string[];
         };
+        /** CierreContratoEntrada */
+        CierreContratoEntrada: {
+            /**
+             * Devolucion
+             * Format: date-time
+             */
+            devolucion: string;
+            /** Km Devolucion */
+            km_devolucion: number;
+            /**
+             * Combustible Devolucion
+             * @description Octavos de tanque, de 0 (vacío) a 8 (lleno)
+             */
+            combustible_devolucion: number;
+            /** Observaciones Danos */
+            observaciones_danos?: string | null;
+        };
         /**
-         * CierreEntrada
+         * CierreOrdenEntrada
          * @description Cierre de la orden. La justificación solo es obligatoria si el costo es cero.
          */
-        CierreEntrada: {
+        CierreOrdenEntrada: {
             /** Justificacion */
             justificacion?: string | null;
         };
@@ -1295,6 +1443,126 @@ export interface components {
              */
             readonly suma_al_costo: boolean;
         };
+        /**
+         * ContratoEntrada
+         * @description Registro del contrato al salir la unidad. La tarifa se toma del tarifario vigente el día de
+         *     salida para la modalidad y moneda indicadas; el depósito esperado llega como texto.
+         */
+        ContratoEntrada: {
+            /** Cliente Id */
+            cliente_id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Salida
+             * Format: date-time
+             */
+            salida: string;
+            /**
+             * Devolucion Prevista
+             * Format: date
+             */
+            devolucion_prevista: string;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Km Salida */
+            km_salida: number;
+            /**
+             * Combustible Salida
+             * @description Octavos de tanque, de 0 (vacío) a 8 (lleno)
+             */
+            combustible_salida: number;
+            /**
+             * Deposito Esperado
+             * @default 0
+             */
+            deposito_esperado: string;
+        };
+        /** ContratoSalida */
+        ContratoSalida: {
+            /** Id */
+            id: number;
+            /** Numero */
+            numero: number;
+            /** Cliente Id */
+            cliente_id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Salida
+             * Format: date-time
+             */
+            salida: string;
+            /**
+             * Devolucion Prevista
+             * Format: date
+             */
+            devolucion_prevista: string;
+            /** Tarifa Id */
+            tarifa_id: number;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Tarifa Monto */
+            tarifa_monto: string | null;
+            /** Km Incluido */
+            km_incluido: number;
+            /** Precio Km Adicional */
+            precio_km_adicional: string | null;
+            /** Km Salida */
+            km_salida: number;
+            /** Combustible Salida */
+            combustible_salida: number;
+            /** Deposito Esperado */
+            deposito_esperado: string | null;
+            /** Dias Previstos */
+            dias_previstos: number;
+            /** Monto Estimado */
+            monto_estimado: string | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "abierto" | "cerrado";
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Devolucion */
+            devolucion: string | null;
+            /** Km Devolucion */
+            km_devolucion: number | null;
+            /** Combustible Devolucion */
+            combustible_devolucion: number | null;
+            /** Observaciones Danos */
+            observaciones_danos: string | null;
+            /** Dias Efectivos */
+            dias_efectivos: number | null;
+            /** Km Recorridos */
+            km_recorridos: number | null;
+            /** Km Excedentes */
+            km_excedentes: number | null;
+            /** Combustible Faltante */
+            combustible_faltante: number | null;
+            /** Monto Final */
+            monto_final: string | null;
+        };
         /** CuentaBancariaEntrada */
         CuentaBancariaEntrada: {
             /** Banco */
@@ -1463,6 +1731,96 @@ export interface components {
             vin: "obligatorio" | "opcional" | "no_aplica";
             /** Linea Defecto */
             linea_defecto: ("alquiler" | "venta" | "taller" | "financiamiento" | "administracion") | null;
+        };
+        /**
+         * DepositoEntrada
+         * @description Depósito en dinero (con su cuenta bancaria) o autorización de tarjeta sin cobro (con su
+         *     referencia). La moneda de la cuenta bancaria se valida en el service.
+         */
+        DepositoEntrada: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id?: number | null;
+            /** Referencia */
+            referencia?: string | null;
+        };
+        /** DepositoSalida */
+        DepositoSalida: {
+            /** Id */
+            id: number;
+            /** Contrato Id */
+            contrato_id: number;
+            /** Contrato Numero */
+            contrato_numero: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Saldo */
+            saldo: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number | null;
+            /** Referencia */
+            referencia: string | null;
+            /** Devuelto */
+            devuelto: boolean;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /** DepositosVigentes */
+        DepositosVigentes: {
+            /** Depositos */
+            depositos: components["schemas"]["DepositoSalida"][];
+            /** Totales */
+            totales: {
+                [key: string]: string;
+            };
+        };
+        /** DevolucionDepositoEntrada */
+        DevolucionDepositoEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number;
         };
         /** DevolucionEntrada */
         DevolucionEntrada: {
@@ -2587,7 +2945,7 @@ export interface components {
              * @default en_transito
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento?: string | null;
         };
@@ -2613,7 +2971,9 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
+            /** Kilometraje */
+            kilometraje?: number | null;
             /**
              * Creado En
              * Format: date-time
@@ -4396,7 +4756,7 @@ export interface operations {
     listar_unidades_api_v1_unidades_get: {
         parameters: {
             query?: {
-                estado?: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada") | null;
+                estado?: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada") | null;
                 buscar?: string | null;
             };
             header?: {
@@ -4903,6 +5263,320 @@ export interface operations {
             };
         };
     };
+    listar_contratos_api_v1_alquileres_contratos_get: {
+        parameters: {
+            query?: {
+                estado?: ("abierto" | "cerrado") | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_contrato_api_v1_alquileres_contratos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContratoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    obtener_contrato_api_v1_alquileres_contratos__contrato_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_contrato_api_v1_alquileres_contratos__contrato_id__cierre_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CierreContratoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_vigentes_api_v1_alquileres_depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositosVigentes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AplicacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevolucionDepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_tarifas_api_v1_taller_tarifas_get: {
         parameters: {
             query?: never;
@@ -5154,7 +5828,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["CierreEntrada"] | null;
+                "application/json": components["schemas"]["CierreOrdenEntrada"] | null;
             };
         };
         responses: {

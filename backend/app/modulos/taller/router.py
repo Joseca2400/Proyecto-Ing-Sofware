@@ -13,7 +13,7 @@ from app.modulos.seguridad.service import (
 )
 from app.modulos.taller import service
 from app.modulos.taller.schemas import (
-    CierreEntrada,
+    CierreOrdenEntrada,
     HoraEntrada,
     HoraSalida,
     OrdenEntrada,
@@ -76,9 +76,9 @@ def registrar_horas(
 @router.post("/ordenes/{orden_id}/cerrar", response_model=OrdenSalida)
 def cerrar_orden(
     orden_id: int,
-    datos: CierreEntrada | None = None,
+    datos: CierreOrdenEntrada | None = None,
     usuario: Usuario = Depends(CONTADOR_),
     db: Session = Depends(get_db),
 ) -> OrdenSalida:
-    cierre = datos or CierreEntrada()
+    cierre = datos or CierreOrdenEntrada()
     return OrdenSalida.model_validate(service.cerrar_orden(db, orden_id, cierre, usuario.id))
