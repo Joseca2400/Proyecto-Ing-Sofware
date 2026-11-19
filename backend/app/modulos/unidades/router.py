@@ -8,6 +8,8 @@ from app.modulos.unidades.schemas import (
     CambioEstadoSalida,
     Catalogos,
     Estado,
+    Etapa,
+    EtapasImportacion,
     UnidadEntrada,
     UnidadSalida,
 )
@@ -16,8 +18,11 @@ from app.modulos.unidades.schemas import (
 # (tarea C1 del equipo C); exigir sesión hoy dejaría sin funcionar la pantalla de unidades.
 # Cuando exista el login del front, proteger con `app.modulos.seguridad.service`:
 # - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
-# - Alta y cambio de estado (POST): `usuario: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE,
-#   CONTADOR))`, y pasar `usuario.id` al service para que el historial guarde quién hizo el cambio.
+# - Alta (POST): `usuario: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE, CONTADOR))`.
+# - Cambio de estado (POST): `requiere_rol(AUXILIAR_CONTABLE, CONTADOR, GERENTE_FINANCIERO)`; el
+#   gerente financiero sigue las etapas de importación (HU-4.07). En ambos POST, pasar `usuario.id`
+#   al service para que el historial guarde quién hizo el cambio.
+# - Etapas de importación (GET, HU-4.07): `requiere_rol(GERENTE_FINANCIERO, CONTADOR, GERENCIA)`.
 # Sin sesión, el historial y la bitácora (HU-1.11) guardan el cambio con el usuario vacío.
 router = APIRouter(prefix="/unidades", tags=["Unidades"])
 
@@ -25,6 +30,12 @@ router = APIRouter(prefix="/unidades", tags=["Unidades"])
 @router.get("/catalogos", response_model=Catalogos)
 def catalogos() -> Catalogos:
     return Catalogos(**service.catalogos())
+
+
+@router.get("/etapas-importacion", response_model=EtapasImportacion)
+def etapas_importacion(etapa: Etapa | None = None, db: Session = Depends(get_db)) -> EtapasImportacion:
+    """HU-4.07: unidades por etapa con los días en su etapa actual y su costo acumulado."""
+    return EtapasImportacion(**service.etapas_importacion(db, etapa))
 
 
 @router.get("", response_model=list[UnidadSalida])

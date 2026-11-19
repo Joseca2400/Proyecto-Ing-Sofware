@@ -1,0 +1,111 @@
+<section class="encabezado">
+  <h1>Etapas de importación</h1>
+  <p>
+    Unidades en camino a la flota: en tránsito, en aduana, en taller y listas. Cada una avanza solo
+    a la etapa siguiente, sin saltarse ninguna ni regresar. El costo acumulado es la compra más los
+    gastos de importación que suman al costo.
+  </p>
+</section>
+
+<div class="etapas" role="group" aria-label="Filtrar por etapa">
+  <button
+    type="button"
+    class="tarjeta etapa"
+    [class.activa]="filtro() === null"
+    [attr.aria-pressed]="filtro() === null"
+    (click)="filtrar(null)"
+  >
+    <span class="nombre">Todas</span>
+    <strong>{{ datos()?.unidades?.length ?? 0 }}</strong>
+    <small>unidades</small>
+  </button>
+  @for (e of datos()?.etapas ?? []; track e.estado) {
+    <button
+      type="button"
+      class="tarjeta etapa"
+      [class.activa]="filtro() === e.estado"
+      [attr.aria-pressed]="filtro() === e.estado"
+      [attr.data-estado]="e.estado"
+      (click)="filtrar(e.estado)"
+    >
+      <span class="nombre">{{ etiqueta(e.estado) }}</span>
+      <strong>{{ e.unidades }}</strong>
+      <small>{{ e.costo_total_gtq | monto }}</small>
+    </button>
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>VIN</th>
+        <th>Unidad</th>
+        <th>Etapa</th>
+        <th>Desde</th>
+        <th class="numero">Días en la etapa</th>
+        <th class="numero">Costo acumulado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of unidades(); track u.vin) {
+        <tr>
+          <td class="codigo">{{ u.vin }}</td>
+          <td>
+            {{ u.marca }} {{ u.linea }} {{ u.modelo }}
+            <small>{{ u.color }}</small>
+          </td>
+          <td>
+            <span class="chip" [attr.data-estado]="u.estado">{{ etiqueta(u.estado) }}</span>
+          </td>
+          <td>{{ u.desde | date: 'dd/MM/yyyy' }}</td>
+          <td class="numero dias">{{ u.dias_en_etapa }}</td>
+          <td class="numero">{{ u.costo_total_gtq | monto }}</td>
+          <td class="accion">
+            @if (u.siguiente_etapa; as siguiente) {
+              @if (avanzando() === u.vin) {
+                <form class="avance" [formGroup]="avance" (ngSubmit)="avanzar(u)">
+                  <input
+                    type="text"
+                    formControlName="documento"
+                    name="documento"
+                    maxlength="200"
+                    placeholder="Documento (BL, DUCA, orden…)"
+                    aria-label="Documento que respalda el cambio"
+                  />
+                  <button type="submit" [disabled]="guardando()">
+                    Pasar a {{ etiqueta(siguiente) }}
+                  </button>
+                  <button type="button" class="secundario" (click)="cancelarAvance()">
+                    Cancelar
+                  </button>
+                  @if (avance.controls.documento.touched && avance.controls.documento.invalid) {
+                    <small class="falla">Indica el documento</small>
+                  }
+                </form>
+              } @else {
+                <button type="button" class="secundario" (click)="abrirAvance(u)">
+                  Pasar a {{ etiqueta(siguiente) }}
+                </button>
+              }
+            } @else {
+              <small>Lista para la flota</small>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">No hay unidades en esta etapa.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

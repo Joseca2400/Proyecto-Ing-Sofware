@@ -223,7 +223,11 @@ def test_cada_cambio_de_estado_queda_en_el_historial(cliente):
     [
         ([], "en_transito", "ya está en estado"),
         ([], "recuperada", "Solo una unidad vendida"),
-        (["en_venta", "vendida"], "en_flota", "solo puede pasar a recuperada"),
+        (
+            ["en_aduana", "en_taller", "lista", "en_venta", "vendida"],
+            "en_flota",
+            "solo puede pasar a recuperada",
+        ),
     ],
 )
 def test_rechaza_cambios_sin_sentido(cliente, previos, estado, mensaje):

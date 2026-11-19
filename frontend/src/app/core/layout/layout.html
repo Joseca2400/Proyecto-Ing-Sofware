@@ -12,7 +12,12 @@
   <nav class="menu" aria-label="Módulos">
     @for (entrada of menu; track entrada.etiqueta) {
       @if (entrada.ruta) {
-        <a [routerLink]="entrada.ruta" routerLinkActive="activo">{{ entrada.etiqueta }}</a>
+        <a
+          [routerLink]="entrada.ruta"
+          routerLinkActive="activo"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >{{ entrada.etiqueta }}</a
+        >
       } @else {
         <span class="deshabilitado" aria-disabled="true" title="Próximamente">{{
           entrada.etiqueta

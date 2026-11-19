@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 Estado = Literal[
     "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "en_venta", "vendida", "recuperada"
@@ -86,3 +87,50 @@ class Catalogos(BaseModel):
     estados: list[str]
     tipos_vehiculo: list[str]
     lineas_negocio: list[str]
+
+
+# ── HU-4.07: etapas de importación ────────────────────────────────────────────
+
+Etapa = Literal["en_transito", "en_aduana", "en_taller", "lista"]
+
+
+def _monto_texto(valor: Decimal) -> str:
+    return f"{valor:.6f}"
+
+
+class UnidadEnEtapa(BaseModel):
+    """Una unidad del listado por etapa. Los días y el costo los calcula el servidor; el costo
+    viaja como texto y el front solo le da formato."""
+
+    vin: str
+    marca: str
+    linea: str
+    modelo: int
+    color: str
+    estado: Etapa
+    desde: datetime
+    dias_en_etapa: int
+    costo_total_gtq: Decimal
+    siguiente_etapa: Etapa | None
+
+    @field_serializer("costo_total_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class ResumenEtapa(BaseModel):
+    estado: Etapa
+    unidades: int
+    costo_total_gtq: Decimal
+
+    @field_serializer("costo_total_gtq")
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+
+class EtapasImportacion(BaseModel):
+    """Totales por etapa, en orden (tránsito, aduana, taller, lista), y las unidades de cada una
+    de la que lleva más días a la que lleva menos."""
+
+    etapas: list[ResumenEtapa]
+    unidades: list[UnidadEnEtapa]

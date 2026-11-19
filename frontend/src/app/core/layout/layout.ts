@@ -23,6 +23,7 @@ export class Layout {
     { etiqueta: 'Gastos de importación', ruta: '/compras/gastos-importacion' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
+    { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },
     { etiqueta: 'Contabilidad', ruta: '/contabilidad/partidas' },
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
     { etiqueta: 'Reportes' },
