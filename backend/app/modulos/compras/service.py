@@ -26,6 +26,19 @@ HU-4.04 (diferido): ligar el gasto a un expediente (criterio 2) y prorratear los
 locales con FEL como crédito fiscal (criterio 5; hoy esa factura se captura en HU-4.09); un tipo
 de cambio personalizado con justificación.
 
+HU-4.02 (incluido): compra de una unidad en EE. UU. a un proveedor del exterior, en USD, con
+fecha, número de lote o factura, VIN y ficha del vehículo, precio y cargos de la subasta
+(comisión, documentación y arrastre interno). En una sola transacción: crea la unidad en estado
+"en tránsito" con el service de `unidades` (HU-1.05), registra la compra con el tipo de cambio de
+la fecha y su equivalente en quetzales (HU-1.06/HU-1.07), abre la cuenta por pagar en USD al
+proveedor y pide a `contabilidad` la partida (HU-2.03): débito a vehículos en tránsito
+(1.1.04.01, la cuenta de "unidades en proceso" del catálogo semilla) con el VIN y crédito a
+proveedores del exterior (2.1.01.01) en USD. Si el VIN ya existe, falta el tipo de cambio o la
+partida falla, no se crea nada. El total en quetzales suma al costo de la unidad junto con los
+gastos de importación (`resumen_gastos_unidad`).
+HU-4.02 (diferido): adjuntar la factura, el título y el bill of sale (criterio 4); comprar una
+unidad ya registrada; la compra a particulares en Guatemala (pendiente de la historia).
+
 Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
 - El perfil fiscal valida su NIT con el mismo `comun/nit.py`; no se duplica la regla.
 - Las retenciones diferidas dependen de que la empresa sea agente de retención de IVA o ISR:
@@ -77,6 +90,7 @@ from app.comun.dinero import convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.comun.nit import NITInvalido, formatear_nit, normalizar_nit
 from app.modulos.compras.models import (
+    CompraUnidad,
     ConceptoGastoImportacion,
     CuentaPorPagar,
     FacturaCompra,
@@ -85,13 +99,17 @@ from app.modulos.compras.models import (
     Proveedor,
 )
 from app.modulos.compras.schemas import (
+    CompraUnidadEntrada,
     FacturaCompraEntrada,
     GastoImportacionEntrada,
     LineaFacturaEntrada,
     ProveedorEntrada,
 )
 from app.modulos.configuracion import service as configuracion
+from app.modulos.contabilidad import service as contabilidad
+from app.modulos.contabilidad.schemas import LineaEntrada
 from app.modulos.unidades import service as unidades
+from app.modulos.unidades.schemas import UnidadEntrada
 
 
 def _nit_repetido(nit: str) -> ErrorNegocio:
@@ -445,8 +463,8 @@ def obtener_gasto_importacion(db: Session, gasto_id: int) -> GastoImportacion:
 
 
 def resumen_gastos_unidad(db: Session, vin: str) -> dict:
-    """Totales en quetzales de los gastos de una unidad: lo que suma a su costo y lo que es crédito
-    fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
+    """Costo de una unidad en quetzales: la compra (HU-4.02) más los gastos que suman al costo, y
+    aparte lo que es crédito fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
     unidad = unidades.obtener_por_vin(db, vin)
     filas = db.execute(
         select(
@@ -458,9 +476,159 @@ def resumen_gastos_unidad(db: Session, vin: str) -> dict:
         .group_by(GastoImportacion.tratamiento)
     ).all()
     totales = {tratamiento: total for tratamiento, _, total in filas}
+    compra_gtq = db.scalar(select(CompraUnidad.total_gtq).where(CompraUnidad.vin == unidad.vin))
+    compra_gtq = compra_gtq if compra_gtq is not None else Decimal(0)
+    gastos_costo = totales.get("costo", Decimal(0))
     return {
         "vin": unidad.vin,
         "gastos": sum(cantidad for _, cantidad, _ in filas),
-        "total_costo_gtq": totales.get("costo", Decimal(0)),
+        "total_costo_gtq": gastos_costo,
         "total_credito_fiscal_gtq": totales.get("credito_fiscal", Decimal(0)),
+        "compra_gtq": compra_gtq,
+        "costo_total_gtq": compra_gtq + gastos_costo,
     }
+
+
+# ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
+
+DOCUMENTO_COMPRA = "compra_unidad"  # tipo de documento de la partida (HU-2.03)
+CUENTA_EN_TRANSITO = "1.1.04.01"  # vehículos en tránsito: las unidades en proceso, con su VIN
+CUENTA_PROVEEDORES_EXTERIOR = "2.1.01.01"  # proveedores del exterior, en USD
+
+
+def _cuentas_compra(db: Session) -> tuple[int, int]:
+    """Ids de las dos cuentas de la partida de compra, del catálogo de `configuracion`."""
+    ids = {c.codigo: c.id for c in configuracion.listar_cuentas(db, solo_detalle=True)}
+    faltan = [c for c in (CUENTA_EN_TRANSITO, CUENTA_PROVEEDORES_EXTERIOR) if c not in ids]
+    if faltan:
+        raise ErrorNegocio(
+            f"El catálogo de cuentas no tiene {' ni '.join(faltan)}; cárguelo antes de registrar compras",
+            status=409,
+        )
+    return ids[CUENTA_EN_TRANSITO], ids[CUENTA_PROVEEDORES_EXTERIOR]
+
+
+def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUnidad:
+    """Crea la unidad, la compra, su cuenta por pagar y su partida en una transacción, o nada."""
+    proveedor = obtener_proveedor(db, datos.proveedor_id)
+    if proveedor.tipo != "exterior":
+        raise ErrorNegocio("La compra en EE. UU. se registra a un proveedor del exterior")
+    if datos.fecha > date.today():
+        raise ErrorNegocio("La fecha de la compra no puede ser futura")
+    if not datos.documento:
+        raise ErrorNegocio("Indique el número de lote o de factura de la compra")
+    precio = _monto(datos.precio_usd, "El precio", permite_cero=False)
+    comision = _monto(datos.comision_usd, "La comisión", permite_cero=True)
+    documentacion = _monto(datos.documentacion_usd, "El cargo de documentación", permite_cero=True)
+    arrastre = _monto(datos.arrastre_usd, "El arrastre", permite_cero=True)
+    total_usd = precio + comision + documentacion + arrastre
+    if total_usd >= _LIMITE_MONTO:
+        raise ErrorNegocio("El total de la compra excede el máximo permitido")
+    # Sin tipo de cambio de la fecha, `configuracion` rechaza la compra antes de crear nada.
+    tipo_cambio = configuracion.tipo_cambio_de(db, datos.fecha)
+    total_gtq = redondear(convertir(total_usd, tipo_cambio), _DECIMALES_MONTO)
+    if total_gtq >= _LIMITE_MONTO:
+        raise ErrorNegocio("El equivalente en quetzales excede el máximo permitido")
+    cuenta_transito, cuenta_proveedores = _cuentas_compra(db)
+
+    try:
+        unidad = unidades.registrar_unidad(
+            db,
+            UnidadEntrada(
+                vin=datos.vin,
+                marca=datos.marca,
+                linea=datos.linea,
+                modelo=datos.modelo,
+                color=datos.color,
+                tipo_vehiculo=datos.tipo_vehiculo,
+                linea_negocio=datos.linea_negocio,
+                estado="en_transito",
+                documento=f"Compra {datos.documento} a {proveedor.nombre}"[:200],
+            ),
+            confirmar=False,
+        )
+        # El id se reserva antes: la partida se liga a la compra y la compra a su partida.
+        compra_id = db.scalar(select(func.nextval("compra_unidad_id_seq")))
+        partida = contabilidad.registrar_automatica(
+            db,
+            fecha=datos.fecha,
+            concepto=f"Compra de la unidad {unidad.vin} a {proveedor.nombre}, {datos.documento}"[:300],
+            lineas=[
+                # Vehículos en tránsito no es cuenta monetaria en USD: se carga el equivalente en
+                # quetzales, el mismo que obtiene el motor al convertir la línea del proveedor.
+                LineaEntrada(
+                    cuenta_id=cuenta_transito,
+                    lado="debe",
+                    monto=f"{total_gtq:.6f}",
+                    linea_negocio=datos.linea_negocio,
+                    vin=unidad.vin,
+                ),
+                LineaEntrada(
+                    cuenta_id=cuenta_proveedores,
+                    lado="haber",
+                    monto=f"{total_usd:.6f}",
+                    moneda="USD",
+                    linea_negocio=datos.linea_negocio,
+                    vin=unidad.vin,
+                ),
+            ],
+            documento_tipo=DOCUMENTO_COMPRA,
+            documento_id=compra_id,
+        )
+        compra = CompraUnidad(
+            id=compra_id,
+            vin=unidad.vin,
+            proveedor_id=proveedor.id,
+            fecha=datos.fecha,
+            documento=datos.documento,
+            precio_usd=precio,
+            comision_usd=comision,
+            documentacion_usd=documentacion,
+            arrastre_usd=arrastre,
+            total_usd=total_usd,
+            tipo_cambio=tipo_cambio,
+            total_gtq=total_gtq,
+            partida_id=partida.id,
+        )
+        # La deuda queda en dólares, como la factura del proveedor.
+        compra.cuenta_por_pagar = CuentaPorPagar(
+            proveedor_id=proveedor.id,
+            fecha=datos.fecha,
+            fecha_vencimiento=datos.fecha + timedelta(days=proveedor.dias_credito),
+            moneda="USD",
+            monto=total_usd,
+            saldo=total_usd,
+        )
+        db.add(compra)
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+    except IntegrityError as error:
+        # Dos compras simultáneas del mismo VIN: las restricciones UNIQUE deciden.
+        db.rollback()
+        restriccion = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
+        if restriccion in ("unidad_vin_key", "uq_compra_unidad_vin"):
+            raise ErrorNegocio(f"Ya existe una unidad con el VIN {datos.vin}", status=409) from None
+        raise
+    db.refresh(compra)
+    return compra
+
+
+def listar_compras_unidad(
+    db: Session, vin: str | None = None, proveedor_id: int | None = None
+) -> list[CompraUnidad]:
+    """Compras de la más reciente a la más antigua, opcionalmente de una unidad o de un proveedor."""
+    consulta = select(CompraUnidad).order_by(CompraUnidad.fecha.desc(), CompraUnidad.id.desc())
+    if vin and vin.strip():
+        consulta = consulta.where(CompraUnidad.vin == vin.strip().upper())
+    if proveedor_id is not None:
+        consulta = consulta.where(CompraUnidad.proveedor_id == proveedor_id)
+    return list(db.scalars(consulta).unique())
+
+
+def obtener_compra_unidad(db: Session, compra_id: int) -> CompraUnidad:
+    compra = db.get(CompraUnidad, compra_id)
+    if compra is None:
+        raise ErrorNegocio(f"No existe la compra {compra_id}", status=404)
+    return compra

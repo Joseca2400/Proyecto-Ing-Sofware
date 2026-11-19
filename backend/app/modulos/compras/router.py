@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.comun.db import get_db
 from app.modulos.compras import service
 from app.modulos.compras.schemas import (
+    CompraUnidadEntrada,
+    CompraUnidadSalida,
     ConceptoGastoSalida,
     FacturaCompraEntrada,
     FacturaCompraSalida,
@@ -23,6 +25,9 @@ from app.modulos.compras.schemas import (
 # - Altas de proveedores y facturas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR))`.
 # - Alta de gastos de importación (POST; en HU-4.04 la hace el auxiliar contable):
 #   `_: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE, CONTADOR))`.
+# - Alta de compras en EE. UU. (POST; en HU-4.02 la hace el auxiliar contable):
+#   `usuario: Usuario = Depends(requiere_rol(AUXILIAR_CONTABLE, CONTADOR))`, y pasar `usuario.id`
+#   al service para el alta de la unidad y la partida.
 # Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
 router = APIRouter(prefix="/compras", tags=["Compras"])
 
@@ -101,3 +106,24 @@ def registrar_gasto_importacion(
 @router.get("/gastos-importacion/{gasto_id}", response_model=GastoImportacionSalida)
 def consultar_gasto_importacion(gasto_id: int, db: Session = Depends(get_db)) -> GastoImportacionSalida:
     return GastoImportacionSalida.model_validate(service.obtener_gasto_importacion(db, gasto_id))
+
+
+# ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
+
+
+@router.get("/compras-unidades", response_model=list[CompraUnidadSalida])
+def listar_compras_unidad(
+    vin: str | None = None, proveedor_id: int | None = None, db: Session = Depends(get_db)
+) -> list[CompraUnidadSalida]:
+    compras = service.listar_compras_unidad(db, vin, proveedor_id)
+    return [CompraUnidadSalida.model_validate(c) for c in compras]
+
+
+@router.post("/compras-unidades", response_model=CompraUnidadSalida, status_code=201)
+def registrar_compra_unidad(datos: CompraUnidadEntrada, db: Session = Depends(get_db)) -> CompraUnidadSalida:
+    return CompraUnidadSalida.model_validate(service.registrar_compra_unidad(db, datos))
+
+
+@router.get("/compras-unidades/{compra_id}", response_model=CompraUnidadSalida)
+def consultar_compra_unidad(compra_id: int, db: Session = Depends(get_db)) -> CompraUnidadSalida:
+    return CompraUnidadSalida.model_validate(service.obtener_compra_unidad(db, compra_id))

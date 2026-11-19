@@ -205,6 +205,8 @@ def test_resumen_de_la_unidad_suma_al_costo_sin_el_iva_de_importacion(cliente, n
         "gastos": 3,
         "total_costo_gtq": "4275.100000",
         "total_credito_fiscal_gtq": "1020.000000",
+        "compra_gtq": "0.000000",  # sin compra registrada (HU-4.02)
+        "costo_total_gtq": "4275.100000",
     }
 
 
@@ -217,6 +219,8 @@ def test_resumen_de_una_unidad_sin_gastos_es_cero(cliente):
         "gastos": 0,
         "total_costo_gtq": "0.000000",
         "total_credito_fiscal_gtq": "0.000000",
+        "compra_gtq": "0.000000",
+        "costo_total_gtq": "0.000000",
     }
 
 

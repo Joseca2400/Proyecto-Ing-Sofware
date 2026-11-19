@@ -8,8 +8,8 @@ HU-1.05 (diferido): placa, número de motor y expediente (criterio 2); los movim
 ligados al VIN en la ficha (criterio 5), cuando exista `contabilidad` (HU-2.01/HU-2.03).
 
 Pendiente para otras historias:
-- HU-4.02 (compra en EE. UU.): la compra crea la unidad con `registrar_unidad` en su misma
-  transacción (agregar un parámetro para no confirmar aquí) y el documento es la compra.
+- HU-4.02 (compra en EE. UU.): hecho. La compra crea la unidad con `registrar_unidad` y
+  `confirmar=False`, en su misma transacción; el documento del alta es la compra.
 - HU-4.07 (etapas de importación): el orden tránsito → aduana → taller → lista se valida allá;
   aquí solo se impide lo que nunca tiene sentido (ver `_validar_transicion`).
 - HU-1.09: con sesión, el router pasa `usuario.id` como `usuario_id` del cambio de estado.
@@ -80,7 +80,14 @@ def _validar_linea_negocio(linea: str | None) -> None:
         raise ErrorNegocio(f"Línea de negocio desconocida: {linea}. Use una de: {', '.join(lineas)}")
 
 
-def registrar_unidad(db: Session, datos: UnidadEntrada, usuario_id: int | None = None) -> Unidad:
+def registrar_unidad(
+    db: Session, datos: UnidadEntrada, usuario_id: int | None = None, confirmar: bool = True
+) -> Unidad:
+    """Da de alta la unidad con el alta en su historial.
+
+    Con `confirmar=False` solo la escribe (flush): la confirma el llamador junto con su documento,
+    como la compra en EE. UU. (HU-4.02). Si algo falla, el llamador revierte y no queda la unidad.
+    """
     vin = validar_vin(datos.vin)
     if not datos.marca or not datos.linea or not datos.color:
         raise ErrorNegocio("La marca, la línea y el color son obligatorios")
@@ -121,6 +128,9 @@ def registrar_unidad(db: Session, datos: UnidadEntrada, usuario_id: int | None =
             usuario_id=usuario_id,
         )
     )
+    if not confirmar:
+        db.flush()
+        return unidad
     db.commit()
     db.refresh(unidad)
     return unidad

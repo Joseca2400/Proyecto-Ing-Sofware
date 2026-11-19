@@ -301,13 +301,99 @@ class GastoImportacionSalida(BaseModel):
 
 
 class ResumenGastosUnidad(BaseModel):
-    """Totales en quetzales que calcula el servidor; el front solo les da formato."""
+    """Costo de la unidad en quetzales que calcula el servidor; el front solo les da formato.
+
+    `costo_total_gtq` es la compra (HU-4.02) más los gastos que suman al costo (HU-4.04); el IVA de
+    importación es crédito fiscal y queda aparte.
+    """
 
     vin: str
     gastos: int
     total_costo_gtq: Decimal
     total_credito_fiscal_gtq: Decimal
+    compra_gtq: Decimal
+    costo_total_gtq: Decimal
 
-    @field_serializer("total_costo_gtq", "total_credito_fiscal_gtq")
+    @field_serializer("total_costo_gtq", "total_credito_fiscal_gtq", "compra_gtq", "costo_total_gtq")
     def monto_a_texto(self, valor: Decimal) -> str:
         return _monto_texto(valor)
+
+
+# ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
+
+
+class CompraUnidadEntrada(BaseModel):
+    """Compra en USD a un proveedor del exterior con los datos de la unidad que crea.
+
+    Los montos llegan como texto ("8500.00"); los cargos de la subasta son opcionales ("0"). El VIN
+    y la ficha los valida `unidades`; el proveedor, los montos y el tipo de cambio, el service.
+    """
+
+    proveedor_id: int
+    fecha: date
+    documento: str = Field(max_length=50)
+    vin: str = Field(max_length=30)
+    marca: str = Field(max_length=50)
+    linea: str = Field(max_length=50)
+    modelo: int
+    color: str = Field(max_length=30)
+    tipo_vehiculo: str = Field(max_length=20)
+    linea_negocio: str | None = Field(default=None, max_length=20)
+    precio_usd: str
+    comision_usd: str = "0"
+    documentacion_usd: str = "0"
+    arrastre_usd: str = "0"
+
+    @field_validator("vin", mode="before")
+    @classmethod
+    def normalizar_vin(cls, valor: object) -> object:
+        return valor.strip().upper() if isinstance(valor, str) else valor
+
+    @field_validator("documento", "marca", "linea", "color", "tipo_vehiculo", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return valor.strip() if isinstance(valor, str) else valor
+
+    @field_validator("linea_negocio", mode="before")
+    @classmethod
+    def recortar_opcional(cls, valor: object) -> object:
+        if isinstance(valor, str):
+            return valor.strip() or None
+        return valor
+
+    @field_validator("precio_usd", "comision_usd", "documentacion_usd", "arrastre_usd", mode="before")
+    @classmethod
+    def monto_como_texto(cls, valor: object) -> object:
+        if not isinstance(valor, str):
+            raise ValueError('Los montos se envían como texto, por ejemplo "8500.00"')
+        return valor.strip() or "0"
+
+
+class CompraUnidadSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vin: str
+    proveedor: ProveedorGasto
+    fecha: date
+    documento: str
+    precio_usd: Decimal
+    comision_usd: Decimal
+    documentacion_usd: Decimal
+    arrastre_usd: Decimal
+    total_usd: Decimal
+    tipo_cambio: Decimal
+    total_gtq: Decimal
+    partida_id: int
+    cuenta_por_pagar: CuentaPorPagarSalida
+    creado_en: datetime
+
+    @field_serializer(
+        "precio_usd", "comision_usd", "documentacion_usd", "arrastre_usd", "total_usd", "total_gtq"
+    )
+    def monto_a_texto(self, valor: Decimal) -> str:
+        return _monto_texto(valor)
+
+    @field_serializer("tipo_cambio")
+    def tipo_cambio_a_texto(self, valor: Decimal) -> str:
+        return f"{valor:.8f}"

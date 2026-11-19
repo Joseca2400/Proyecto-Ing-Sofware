@@ -115,12 +115,18 @@
       <dt>Línea de negocio</dt>
       <dd>{{ etiqueta(unidad.linea_negocio) || 'Sin asignar' }}</dd>
       @if (gastos(); as g) {
+        <dt>Precio de compra</dt>
+        <dd>{{ g.compra_gtq | monto }}</dd>
         <dt>Gastos de importación</dt>
         <dd class="costo">
           <strong>{{ g.total_costo_gtq | monto }}</strong> suman al costo
           <small>
             IVA de importación {{ g.total_credito_fiscal_gtq | monto }}: crédito fiscal, no suma
           </small>
+        </dd>
+        <dt>Costo acumulado</dt>
+        <dd class="costo">
+          <strong>{{ g.costo_total_gtq | monto }}</strong>
         </dd>
       }
     </dl>

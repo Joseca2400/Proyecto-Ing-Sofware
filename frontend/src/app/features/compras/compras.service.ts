@@ -196,17 +196,61 @@ export interface GastoImportacion {
   creado_en: string;
 }
 
-/** Totales en quetzales que calcula el servidor; el front solo les da formato. */
+/** Costo de la unidad en quetzales que calcula el servidor; el front solo les da formato. */
 export interface ResumenGastosUnidad {
   vin: string;
   gastos: number;
+  /** Gastos de importación que suman al costo (HU-4.04). */
   total_costo_gtq: string;
   total_credito_fiscal_gtq: string;
+  /** Equivalente en quetzales de la compra en EE. UU. (HU-4.02); "0.000000" si no hay compra. */
+  compra_gtq: string;
+  /** Compra más gastos que suman al costo. */
+  costo_total_gtq: string;
 }
 
 export interface FiltroGastos {
   vin?: string;
   proveedor_id?: number;
+}
+
+// ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
+
+/** Compra en USD con los datos de la unidad que crea. Montos como texto ("8500.00"). */
+export interface CompraUnidadEntrada {
+  proveedor_id: number;
+  fecha: string;
+  documento: string;
+  vin: string;
+  marca: string;
+  linea: string;
+  modelo: number;
+  color: string;
+  tipo_vehiculo: string;
+  linea_negocio?: string;
+  precio_usd: string;
+  comision_usd?: string;
+  documentacion_usd?: string;
+  arrastre_usd?: string;
+}
+
+export interface CompraUnidad {
+  id: number;
+  vin: string;
+  proveedor: { id: number; nombre: string; tipo: TipoProveedor };
+  fecha: string;
+  documento: string;
+  precio_usd: string;
+  comision_usd: string;
+  documentacion_usd: string;
+  arrastre_usd: string;
+  total_usd: string;
+  tipo_cambio: string;
+  /** Equivalente en quetzales: lo que la compra suma al costo de la unidad. */
+  total_gtq: string;
+  partida_id: number;
+  cuenta_por_pagar: CuentaPorPagar;
+  creado_en: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -215,6 +259,7 @@ export class ComprasService {
   private readonly urlProveedores = `${API_URL}/compras/proveedores`;
   private readonly urlFacturas = `${API_URL}/compras/facturas`;
   private readonly urlGastos = `${API_URL}/compras/gastos-importacion`;
+  private readonly urlCompras = `${API_URL}/compras/compras-unidades`;
 
   proveedores(filtro: FiltroProveedores = {}): Observable<Proveedor[]> {
     const params: Record<string, string> = {};
@@ -255,5 +300,16 @@ export class ComprasService {
 
   resumenGastosUnidad(vin: string): Observable<ResumenGastosUnidad> {
     return this.http.get<ResumenGastosUnidad>(`${this.urlGastos}/unidad/${vin}`);
+  }
+
+  comprasUnidad(filtro: FiltroGastos = {}): Observable<CompraUnidad[]> {
+    const params: Record<string, string> = {};
+    if (filtro.vin) params['vin'] = filtro.vin;
+    if (filtro.proveedor_id) params['proveedor_id'] = String(filtro.proveedor_id);
+    return this.http.get<CompraUnidad[]>(this.urlCompras, { params });
+  }
+
+  registrarCompraUnidad(datos: CompraUnidadEntrada): Observable<CompraUnidad> {
+    return this.http.post<CompraUnidad>(this.urlCompras, datos);
   }
 }

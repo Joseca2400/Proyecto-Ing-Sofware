@@ -1,8 +1,8 @@
 """Tablas del módulo de compras (equipo B).
 
 Sprint 1: proveedores (HU-4.01), facturas de compras y gastos locales con su cuenta por pagar
-(HU-4.09) y gastos de importación por VIN con su cuenta por pagar (HU-4.04). Después llega la
-compra en EE. UU. (HU-4.02), también ligada a un proveedor.
+(HU-4.09), gastos de importación por VIN con su cuenta por pagar (HU-4.04) y la compra de la
+unidad en EE. UU. con su cuenta por pagar en USD y su partida (HU-4.02).
 """
 
 from datetime import date, datetime
@@ -240,17 +240,64 @@ class GastoImportacion(Base):
         return self.concepto_ref.nombre
 
 
+class CompraUnidad(Base):
+    """Compra de una unidad en EE. UU. a un proveedor del exterior (HU-4.02), en USD.
+
+    Una compra por unidad: el VIN es llave foránea a `unidad.vin` y único. El total en USD es el
+    precio más los cargos de la subasta; se convierte con el tipo de cambio de la fecha (HU-1.07)
+    y el equivalente en quetzales es lo que la compra suma al costo de la unidad. La partida la
+    crea `contabilidad` en la misma transacción y queda ligada por llave foránea.
+    """
+
+    __tablename__ = "compra_unidad"
+    __table_args__ = (
+        UniqueConstraint("vin", name="uq_compra_unidad_vin"),
+        UniqueConstraint("partida_id", name="uq_compra_unidad_partida"),
+        CheckConstraint(
+            "precio_usd > 0 AND comision_usd >= 0 AND documentacion_usd >= 0 AND arrastre_usd >= 0",
+            name="ck_compra_unidad_montos",
+        ),
+        CheckConstraint(
+            "total_usd = precio_usd + comision_usd + documentacion_usd + arrastre_usd",
+            name="ck_compra_unidad_total",
+        ),
+        CheckConstraint("tipo_cambio > 0 AND total_gtq > 0", name="ck_compra_unidad_tipo_cambio"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(String(17), ForeignKey("unidad.vin", name="fk_compra_unidad_vin_unidad"))
+    proveedor_id: Mapped[int] = mapped_column(ForeignKey("proveedor.id"), index=True)
+    fecha: Mapped[date] = mapped_column(Date, index=True)
+    documento: Mapped[str] = mapped_column(String(50))
+    precio_usd: Mapped[Decimal] = mapped_column(MONTO)
+    comision_usd: Mapped[Decimal] = mapped_column(MONTO)
+    documentacion_usd: Mapped[Decimal] = mapped_column(MONTO)
+    arrastre_usd: Mapped[Decimal] = mapped_column(MONTO)
+    total_usd: Mapped[Decimal] = mapped_column(MONTO)
+    tipo_cambio: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
+    total_gtq: Mapped[Decimal] = mapped_column(MONTO)
+    partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_compra_unidad_partida"))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    proveedor: Mapped[Proveedor] = relationship(lazy="joined")
+    cuenta_por_pagar: Mapped["CuentaPorPagar"] = relationship(
+        back_populates="compra_unidad", uselist=False, lazy="joined"
+    )
+
+
 class CuentaPorPagar(Base):
-    """Saldo a favor de un proveedor. Nace de una factura local (HU-4.09) por su total o de un gasto
-    de importación (HU-4.04) por su monto y en su moneda; siempre de uno solo de los dos. La compra
-    en EE. UU. (HU-4.02, en USD) y los pagos (HU-4.14) llegan después."""
+    """Saldo a favor de un proveedor. Nace de una factura local (HU-4.09) por su total, de un gasto
+    de importación (HU-4.04) por su monto y en su moneda o de la compra de una unidad en EE. UU.
+    (HU-4.02) por su total en USD; siempre de uno solo de los tres. Los pagos (HU-4.14) llegan
+    después."""
 
     __tablename__ = "cuenta_por_pagar"
     __table_args__ = (
         UniqueConstraint("factura_compra_id", name="uq_cuenta_por_pagar_factura"),
         UniqueConstraint("gasto_importacion_id", name="uq_cuenta_por_pagar_gasto_importacion"),
+        UniqueConstraint("compra_unidad_id", name="uq_cuenta_por_pagar_compra_unidad"),
         CheckConstraint(
-            "num_nonnulls(factura_compra_id, gasto_importacion_id) = 1",
+            "num_nonnulls(factura_compra_id, gasto_importacion_id, compra_unidad_id) = 1",
             name="ck_cuenta_por_pagar_origen",
         ),
         CheckConstraint("moneda IN ('GTQ', 'USD')", name="ck_cuenta_por_pagar_moneda"),
@@ -265,6 +312,7 @@ class CuentaPorPagar(Base):
     gasto_importacion_id: Mapped[int | None] = mapped_column(
         ForeignKey("gasto_importacion.id"), nullable=True
     )
+    compra_unidad_id: Mapped[int | None] = mapped_column(ForeignKey("compra_unidad.id"), nullable=True)
     fecha: Mapped[date] = mapped_column(Date)
     fecha_vencimiento: Mapped[date] = mapped_column(Date, index=True)
     moneda: Mapped[str] = mapped_column(String(3))
@@ -274,3 +322,4 @@ class CuentaPorPagar(Base):
 
     factura: Mapped[FacturaCompra | None] = relationship(back_populates="cuenta_por_pagar")
     gasto_importacion: Mapped[GastoImportacion | None] = relationship(back_populates="cuenta_por_pagar")
+    compra_unidad: Mapped[CompraUnidad | None] = relationship(back_populates="cuenta_por_pagar")

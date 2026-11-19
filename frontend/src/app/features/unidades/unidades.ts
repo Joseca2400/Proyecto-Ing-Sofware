@@ -19,8 +19,9 @@ const ESTADOS_FINALES: EstadoUnidad[] = ['vendida', 'recuperada'];
 
 // HU-1.05 (Sprint 1): alta de unidades por VIN con su ficha mínima, estado vigente e historial.
 // Aquí solo se revisa la forma del VIN; el dígito verificador y la unicidad los valida el servidor.
-// La ficha muestra el total de gastos de importación que suman al costo (HU-4.04), que calcula
-// el módulo de compras; el IVA de importación es crédito fiscal y no suma.
+// La ficha muestra el costo que calcula el módulo de compras: el precio de compra en quetzales
+// (HU-4.02) más los gastos de importación que suman al costo (HU-4.04); el IVA de importación es
+// crédito fiscal y no suma.
 // Diferido: placa, número de motor, expediente y movimientos contables ligados al VIN.
 @Component({
   selector: 'app-unidades',

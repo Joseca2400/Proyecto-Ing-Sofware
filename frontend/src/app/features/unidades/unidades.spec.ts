@@ -49,6 +49,8 @@ const SIN_GASTOS = {
   gastos: 0,
   total_costo_gtq: '0.000000',
   total_credito_fiscal_gtq: '0.000000',
+  compra_gtq: '0.000000',
+  costo_total_gtq: '0.000000',
 };
 
 describe('UnidadesPantalla', () => {
@@ -228,7 +230,7 @@ describe('UnidadesPantalla', () => {
     expect(el.textContent).toContain('Indica el documento');
   });
 
-  it('muestra en la ficha los gastos de importación que suman al costo', async () => {
+  it('muestra en la ficha la compra, los gastos que suman y el costo acumulado', async () => {
     const fixture = await crear([HONDA]);
     const el = elemento(fixture);
 
@@ -239,6 +241,8 @@ describe('UnidadesPantalla', () => {
       gastos: 3,
       total_costo_gtq: '4275.100000',
       total_credito_fiscal_gtq: '1020.000000',
+      compra_gtq: '70331.250000',
+      costo_total_gtq: '74606.350000',
     });
     await fixture.whenStable();
 
@@ -246,6 +250,8 @@ describe('UnidadesPantalla', () => {
     expect(ficha).toContain('Gastos de importación');
     expect(ficha).toMatch(/4,275\.10\s+suman al costo/);
     expect(ficha).toMatch(/IVA de importación \D*1,020\.00: crédito fiscal, no suma/);
+    expect(ficha).toMatch(/Precio de compra\s*\D*70,331\.25/);
+    expect(ficha).toMatch(/Costo acumulado\s*\D*74,606\.35/);
   });
 
   it('consulta con los filtros de búsqueda y estado', async () => {
