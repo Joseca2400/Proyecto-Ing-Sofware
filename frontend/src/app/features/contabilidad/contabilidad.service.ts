@@ -11,6 +11,7 @@ export type Regla = components['schemas']['ReglaSalida'];
 export type Balance = components['schemas']['BalanceSalida'];
 export type Mayor = components['schemas']['MayorSalida'];
 export type Depreciacion = components['schemas']['DepreciacionSalida'];
+export type Periodo = components['schemas']['PeriodoSalida'];
 export type Revaluacion = components['schemas']['RevaluacionSalida'];
 export type PoliticaRevaluacion = components['schemas']['RevaluacionEntrada']['politica'];
 
@@ -111,5 +112,13 @@ export class ContabilidadService {
       mes,
       politica,
     });
+  }
+
+  periodos(): Observable<Periodo[]> {
+    return this.http.get<Periodo[]>(`${API_URL}/contabilidad/periodos`);
+  }
+
+  cerrarMes(anio: number, mes: number): Observable<Periodo> {
+    return this.http.post<Periodo>(`${API_URL}/contabilidad/periodos`, { anio, mes });
   }
 }

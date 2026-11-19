@@ -262,3 +262,18 @@ class RevaluacionSalida(BaseModel):
     def total_diferencial(self) -> str:
         """Ganancia neta (positiva) o pérdida neta (negativa) no realizada del mes."""
         return f"{sum((linea.diferencial for linea in self.lineas), Decimal(0)):.6f}"
+
+
+# ── HU-2.12: cierre de un período mensual ─────────────────────────────────────
+
+
+class PeriodoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    fecha: date
+    cerrado_por: int | None
+    cerrado_en: datetime
+    balance: BalanceSalida

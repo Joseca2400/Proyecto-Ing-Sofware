@@ -743,6 +743,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/periodos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Periodos */
+        get: operations["listar_periodos_api_v1_contabilidad_periodos_get"];
+        put?: never;
+        /** Cerrar Mes */
+        post: operations["cerrar_mes_api_v1_contabilidad_periodos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades/catalogos": {
         parameters: {
             query?: never;
@@ -3132,6 +3150,28 @@ export interface components {
             agente_retencion_iva: boolean;
             /** Agente Retencion Isr */
             agente_retencion_isr: boolean;
+        };
+        /** PeriodoSalida */
+        PeriodoSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Cerrado Por */
+            cerrado_por: number | null;
+            /**
+             * Cerrado En
+             * Format: date-time
+             */
+            cerrado_en: string;
+            balance: components["schemas"]["BalanceSalida"];
         };
         /**
          * ProveedorEntrada
@@ -5618,6 +5658,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RevaluacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_periodos_api_v1_contabilidad_periodos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_mes_api_v1_contabilidad_periodos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodoSalida"];
                 };
             };
             /** @description Validation Error */

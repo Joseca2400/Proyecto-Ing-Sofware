@@ -13,6 +13,7 @@ from app.modulos.contabilidad.schemas import (
     MesEntrada,
     PartidaEntrada,
     PartidaSalida,
+    PeriodoSalida,
     ReglaEntrada,
     ReglaSalida,
     RevaluacionEntrada,
@@ -175,3 +176,18 @@ def revaluar(
     db: Session = Depends(get_db),
 ):
     return service.revaluar_mes(db, datos.anio, datos.mes, datos.politica, usuario.id)
+
+
+# ── HU-2.12: cierre de un período mensual ─────────────────────────────────────
+
+
+@router.get("/periodos", response_model=list[PeriodoSalida])
+def listar_periodos(_: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
+    return service.listar_periodos(db)
+
+
+@router.post("/periodos", response_model=PeriodoSalida, status_code=201)
+def cerrar_mes(
+    datos: MesEntrada, usuario: Usuario = Depends(requiere_rol(CONTADOR)), db: Session = Depends(get_db)
+):
+    return service.cerrar_mes(db, datos.anio, datos.mes, usuario.id)

@@ -6,6 +6,7 @@ import {
   ContabilidadService,
   Cuenta,
   Depreciacion,
+  Periodo,
   PoliticaRevaluacion,
   Revaluacion,
 } from './contabilidad.service';
@@ -28,6 +29,7 @@ function mesAnterior(): string {
 // servidor calcula y arma la partida en borrador, que sigue la revisión normal en «Partidas».
 // HU-2.08: revaluación de los saldos en USD con el tipo de cambio del último día del mes; su
 // partida nace contabilizada y el contador elige si se revierte el día 1 o se mantiene.
+// HU-2.12: cierre del mes; cerrado, no acepta partidas ni documentos (reabrir llega con HU-2.13).
 @Component({
   selector: 'app-cierre-mes',
   templateUrl: './cierre-mes.html',
@@ -52,6 +54,11 @@ export class CierreMesPantalla {
     this.revaluaciones().find((r) => r.anio === this.anio() && r.mes === this.numeroMes()),
   );
 
+  private readonly periodos = signal<Periodo[]>([]);
+  protected readonly periodo = computed(() =>
+    this.periodos().find((p) => p.anio === this.anio() && p.mes === this.numeroMes()),
+  );
+
   private readonly anio = computed(() => Number(this.mes().slice(0, 4)));
   private readonly numeroMes = computed(() => Number(this.mes().slice(5, 7)));
 
@@ -63,6 +70,10 @@ export class CierreMesPantalla {
     this.servicio.revaluaciones().subscribe({
       next: (lista) => this.revaluaciones.set(lista),
       error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar las revaluaciones'),
+    });
+    this.servicio.periodos().subscribe({
+      next: (lista) => this.periodos.set(lista),
+      error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar los meses cerrados'),
     });
     this.servicio.cuentas().subscribe({
       next: (lista) => this.cuentas.set(lista),
@@ -109,6 +120,21 @@ export class CierreMesPantalla {
         );
       },
       error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo calcular la depreciación'),
+    });
+  }
+
+  protected cerrar(): void {
+    this.error.set(null);
+    this.aviso.set(null);
+    if (!confirm(`¿Cerrar ${this.mes()}? Ya no aceptará partidas ni documentos con esa fecha.`)) {
+      return;
+    }
+    this.servicio.cerrarMes(this.anio(), this.numeroMes()).subscribe({
+      next: (nuevo) => {
+        this.periodos.update((lista) => [nuevo, ...lista]);
+        this.aviso.set('Mes cerrado: se guardó la instantánea del balance de comprobación');
+      },
+      error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo cerrar el mes'),
     });
   }
 

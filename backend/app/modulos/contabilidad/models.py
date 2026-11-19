@@ -18,6 +18,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.comun.db import Base
@@ -224,3 +225,22 @@ class RevaluacionLinea(Base):
     saldo_usd: Mapped[Decimal] = mapped_column(MONTO)
     tipo_cambio_anterior: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
     diferencial: Mapped[Decimal] = mapped_column(MONTO)
+
+
+class PeriodoCerrado(Base):
+    """Mes cerrado (HU-2.12): quién y cuándo lo cerró y la instantánea de su balance de
+    comprobación. Los meses se cierran en orden, así que todo lo anterior al último también lo está."""
+
+    __tablename__ = "periodo_cerrado"
+    __table_args__ = (
+        UniqueConstraint("anio", "mes", name="uq_periodo_cerrado"),
+        CheckConstraint("mes BETWEEN 1 AND 12", name="ck_periodo_cerrado_mes"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    anio: Mapped[int] = mapped_column(Integer)
+    mes: Mapped[int] = mapped_column(Integer)
+    fecha: Mapped[date] = mapped_column(Date, unique=True)  # último día del mes
+    cerrado_por: Mapped[int | None] = mapped_column(Integer)
+    cerrado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    balance: Mapped[dict] = mapped_column(JSONB)

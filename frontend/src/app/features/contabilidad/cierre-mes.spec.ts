@@ -54,12 +54,20 @@ describe('CierreMesPantalla', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.verify();
+    vi.restoreAllMocks();
+  });
 
-  async function crear(depreciaciones: unknown[] = [], revaluaciones: unknown[] = []) {
+  async function crear(
+    depreciaciones: unknown[] = [],
+    revaluaciones: unknown[] = [],
+    periodos: unknown[] = [],
+  ) {
     const fixture = TestBed.createComponent(CierreMesPantalla);
     http.expectOne(`${API}/depreciaciones`).flush(depreciaciones);
     http.expectOne(`${API}/revaluaciones`).flush(revaluaciones);
+    http.expectOne(`${API}/periodos`).flush(periodos);
     http.expectOne((r) => r.url.endsWith('/configuracion/cuentas')).flush(CUENTAS);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
@@ -131,5 +139,32 @@ describe('CierreMesPantalla', () => {
     expect(fila).toContain('5.00');
     expect(el.textContent).toContain('El saldo revaluado se mantiene');
     expect(el.querySelector('[name=revaluar]')).toBeNull();
+  });
+
+  it('cierra el mes tras confirmar y muestra quién lo cerró y su balance', async () => {
+    const { fixture, el } = await crear();
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    el.querySelector<HTMLButtonElement>('[name=cerrar]')!.click();
+    http.expectNone(`${API}/periodos`);
+
+    confirmar.mockReturnValue(true);
+    el.querySelector<HTMLButtonElement>('[name=cerrar]')!.click();
+    const peticion = http.expectOne(`${API}/periodos`);
+    expect(peticion.request.body).toEqual({ anio: 2024, mes: 2 });
+    peticion.flush({
+      id: 1,
+      anio: 2024,
+      mes: 2,
+      fecha: '2024-02-29',
+      cerrado_por: 2,
+      cerrado_en: '2024-03-03T15:00:00Z',
+      balance: { filas: [{}, {}], total_debe: '1000.000000', total_haber: '1000.000000' },
+    });
+    await fixture.whenStable();
+
+    const cierre = el.querySelector('#cierre')!.textContent!;
+    expect(cierre).toContain('Cerrado el 2024-03-03 por el usuario 2');
+    expect(cierre).toContain('2 cuentas');
+    expect(el.querySelector('[name=cerrar]')).toBeNull();
   });
 });

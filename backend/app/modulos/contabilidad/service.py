@@ -47,8 +47,14 @@ de cambio vigente de un saldo tras las revaluaciones que se mantuvieron.
 HU-2.08 (diferido): detalle por cliente o proveedor (las líneas del mayor aún no llevan tercero);
 política fija en la configuración (hoy el contador la elige en cada revaluación); préstamos en
 USD, cuando exista su módulo (entran solos si su cuenta es monetaria en USD).
-Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
-(HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
+HU-2.12 (incluido): cierre mensual. `cerrar_mes` no cierra con partidas sin contabilizar en el
+mes, cierra los meses en orden y guarda usuario, fecha e instantánea del balance de comprobación.
+Un mes cerrado no acepta partidas nuevas, correcciones, reversiones ni documentos con esa fecha:
+lo impide el motor (`exigir_periodo_abierto`) para todos los módulos, porque todos piden aquí sus
+partidas (cubre también el criterio 2 de HU-2.05).
+HU-2.12 (diferido): reabrir un período con aprobación (HU-2.13, Sprint 6); lista de verificación
+del cierre (HU-2.11, Sprint 4), que exigirá la depreciación y la revaluación antes de cerrar.
+Pendiente: límites monetarios de aprobación; lotes; adjuntos.
 """
 
 from calendar import monthrange
@@ -68,11 +74,12 @@ from app.modulos.contabilidad.models import (
     DepreciacionMesLinea,
     LineaPartida,
     Partida,
+    PeriodoCerrado,
     ReglaContabilizacion,
     Revaluacion,
     RevaluacionLinea,
 )
-from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
+from app.modulos.contabilidad.schemas import BalanceSalida, LineaEntrada, PartidaEntrada
 
 DECIMALES = 6
 _LIMITE = Decimal("1000000000000")  # cabe en NUMERIC(18, 6)
@@ -138,9 +145,23 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
     )
 
 
+def exigir_periodo_abierto(db: Session, fecha: date) -> None:
+    """HU-2.12: rechaza una fecha de un mes cerrado. Los meses se cierran en orden, así que basta
+    comparar con el último cierre. Otros módulos pueden llamarla para avisar antes de armar su
+    documento; de todas formas el motor la aplica a cada partida."""
+    cierre = db.scalar(select(func.max(PeriodoCerrado.fecha)))
+    if cierre is not None and fecha <= cierre:
+        raise ErrorNegocio(
+            f"El período está cerrado hasta el {cierre:%d/%m/%Y}: no se registra nada con fecha "
+            f"{fecha:%d/%m/%Y}",
+            409,
+        )
+
+
 def _lineas(db: Session, fecha: date, entradas: list[LineaEntrada]) -> list[LineaPartida]:
     if fecha > date.today():
         raise ErrorNegocio("La fecha de la partida no puede ser futura")
+    exigir_periodo_abierto(db, fecha)
     if not entradas:
         raise ErrorNegocio("La partida necesita al menos una línea")
     return [_linea(db, fecha, numero, datos) for numero, datos in enumerate(entradas, start=1)]
@@ -184,6 +205,7 @@ def _exigir_estado(partida: Partida, *estados: str, accion: str) -> None:
 def _contabilizar(db: Session, partida: Partida, usuario_id: int | None) -> None:
     # El candado dura hasta el commit: dos contabilizaciones simultáneas no repiten ni saltan número.
     db.execute(select(func.pg_advisory_xact_lock(_BLOQUEO_CORRELATIVO)))
+    exigir_periodo_abierto(db, partida.fecha)  # tras el candado: el cierre toma el mismo
     siguiente = db.scalar(select(func.coalesce(func.max(Partida.numero), 0) + 1))
     partida.numero = siguiente
     partida.estado = "contabilizada"
@@ -345,6 +367,7 @@ def _revertir(db: Session, original: Partida, fecha: date, motivo: str, usuario_
         raise ErrorNegocio("La fecha de la reversión no puede ser futura")
     if fecha < original.fecha:
         raise ErrorNegocio("La reversión no puede tener fecha anterior a la partida original")
+    exigir_periodo_abierto(db, fecha)  # antes de crear nada: la original puede ser de un mes cerrado
     reversion = Partida(
         fecha=fecha,
         concepto=f"Reversión de la partida No. {original.numero}",
@@ -949,3 +972,50 @@ def revaluar_mes(
     db.commit()
     db.refresh(revaluacion)
     return revaluacion
+
+
+# ── HU-2.12: cierre de un período mensual ─────────────────────────────────────
+
+
+def listar_periodos(db: Session) -> list[PeriodoCerrado]:
+    return list(db.scalars(select(PeriodoCerrado).order_by(PeriodoCerrado.fecha.desc())))
+
+
+def cerrar_mes(db: Session, anio: int, mes: int, usuario_id: int | None = None) -> PeriodoCerrado:
+    """Cierra el mes: desde aquí no acepta partidas ni documentos. Guarda la instantánea del
+    balance de comprobación del mes (saldo inicial, movimientos y saldo final por cuenta)."""
+    inicio, fin = date(anio, mes, 1), fin_de_mes(anio, mes)
+    nombre = f"{_MESES[mes - 1]} de {anio}"
+    if fin >= date.today():
+        raise ErrorNegocio(f"El mes debe haber terminado para cerrarlo: {nombre} sigue en curso")
+    # El mismo candado de la contabilización: ninguna partida entra al mes mientras se cierra.
+    db.execute(select(func.pg_advisory_xact_lock(_BLOQUEO_CORRELATIVO)))
+    ultimo = db.scalar(select(func.max(PeriodoCerrado.fecha)))
+    if ultimo is not None and fin <= ultimo:
+        raise ErrorNegocio(f"El mes de {nombre} ya está cerrado", 409)
+    # En orden: toca el mes siguiente al último cierre o, si es el primero, el de la partida más antigua.
+    if ultimo is not None:
+        toca = ultimo + timedelta(days=1)
+    else:
+        toca = min(db.scalar(select(func.min(Partida.fecha))) or inicio, inicio)
+    if (toca.year, toca.month) != (anio, mes):
+        raise ErrorNegocio(
+            f"Los meses se cierran en orden: cierre primero {_MESES[toca.month - 1]} de {toca.year}", 409
+        )
+    pendientes = db.scalar(
+        select(func.count())
+        .select_from(Partida)
+        .where(Partida.fecha <= fin, Partida.estado != "contabilizada")
+    )
+    if pendientes:
+        raise ErrorNegocio(
+            f"Hay {pendientes} partida(s) en borrador, en revisión o devueltas con fecha hasta el "
+            f"{fin:%d/%m/%Y}: contabilícelas antes de cerrar {nombre}",
+            409,
+        )
+    balance = BalanceSalida.model_validate(balance_comprobacion(db, inicio, fin)).model_dump(mode="json")
+    periodo = PeriodoCerrado(anio=anio, mes=mes, fecha=fin, cerrado_por=usuario_id, balance=balance)
+    db.add(periodo)
+    db.commit()
+    db.refresh(periodo)
+    return periodo
