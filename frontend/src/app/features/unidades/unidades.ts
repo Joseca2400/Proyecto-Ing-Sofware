@@ -8,20 +8,27 @@ import {
   CambioEstado,
   Catalogos,
   EstadoUnidad,
+  ParametroDepreciacion,
   Unidad,
   UnidadEntrada,
   UnidadesService,
+  ValorEnLibros,
   etiqueta,
 } from './unidades.service';
 
 const VIN = /^\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}\s*$/;
-const ESTADOS_FINALES: EstadoUnidad[] = ['vendida', 'recuperada'];
+// "alquilada" solo la pone el contrato de alquiler (HU-3.06).
+const NO_INICIALES: EstadoUnidad[] = ['vendida', 'recuperada', 'alquilada'];
+// Estados en los que la unidad puede tener alta en flota y, con ella, depreciación (HU-3.02).
+const CON_ALTA: EstadoUnidad[] = ['en_flota', 'alquilada', 'en_taller', 'en_venta', 'vendida'];
+const HOY = () => new Date().toLocaleDateString('en-CA');
 
 // HU-1.05 (Sprint 1): alta de unidades por VIN con su ficha mínima, estado vigente e historial.
 // Aquí solo se revisa la forma del VIN; el dígito verificador y la unicidad los valida el servidor.
-// La ficha muestra el costo que calcula el módulo de compras: el precio de compra en quetzales
-// (HU-4.02) más los gastos de importación que suman al costo (HU-4.04); el IVA de importación es
-// crédito fiscal y no suma.
+// La ficha muestra el costo que calcula el módulo de compras con la regla de la hoja de costo
+// (HU-4.08): compra, gastos de importación que suman al costo y reacondicionamiento; el IVA de
+// importación es crédito fiscal y no suma. Con alta en flota, también la depreciación acumulada y
+// el valor en libros, financiero y fiscal, a cualquier fecha, y sus parámetros (HU-3.02).
 // Diferido: placa, número de motor, expediente y movimientos contables ligados al VIN.
 @Component({
   selector: 'app-unidades',
@@ -47,6 +54,8 @@ export class UnidadesPantalla {
   protected readonly error = signal<string | null>(null);
   protected readonly aviso = signal<string | null>(null);
   protected readonly guardando = signal(false);
+  protected readonly valor = signal<ValorEnLibros | null>(null);
+  protected readonly parametros = signal<ParametroDepreciacion[]>([]);
 
   protected readonly formulario = this.fb.group({
     vin: ['', [Validators.required, Validators.pattern(VIN)]],
@@ -70,6 +79,15 @@ export class UnidadesPantalla {
     documento: ['', Validators.required],
   });
 
+  protected readonly fechaValor = this.fb.control(HOY());
+
+  protected readonly version = this.fb.group({
+    vigente_desde: [HOY(), Validators.required],
+    vida_util_meses: [60, [Validators.required, Validators.min(1)]],
+    valor_residual: ['', [Validators.required, Validators.pattern(/^\s*\d+(\.\d{1,2})?\s*$/)]],
+    porcentaje_fiscal: ['20', [Validators.required, Validators.pattern(/^\s*\d+(\.\d{1,2})?\s*$/)]],
+  });
+
   constructor() {
     this.servicio.catalogos().subscribe({
       next: (catalogos) => this.catalogos.set(catalogos),
@@ -78,9 +96,9 @@ export class UnidadesPantalla {
     this.cargar();
   }
 
-  /** Estados con los que se puede dar de alta una unidad (no vendida ni recuperada). */
+  /** Estados con los que se puede dar de alta una unidad (no vendida, recuperada ni alquilada). */
   protected estadosIniciales(): EstadoUnidad[] {
-    return this.catalogos().estados.filter((e) => !ESTADOS_FINALES.includes(e));
+    return this.catalogos().estados.filter((e) => !NO_INICIALES.includes(e));
   }
 
   protected cargar(): void {
@@ -140,6 +158,52 @@ export class UnidadesPantalla {
       next: (resumen) => this.gastos.set(resumen),
       error: () => this.error.set('No se pudo consultar los gastos de importación de la unidad'),
     });
+    this.valor.set(null);
+    this.parametros.set([]);
+    if (CON_ALTA.includes(unidad.estado)) {
+      this.consultarValor();
+    }
+  }
+
+  /** HU-3.02: valor en libros a la fecha elegida; una unidad sin alta en flota no muestra nada. */
+  protected consultarValor(): void {
+    const unidad = this.seleccionada();
+    if (!unidad) return;
+    this.servicio.valorEnLibros(unidad.vin, this.fechaValor.value || HOY()).subscribe({
+      next: (valor) => {
+        this.valor.set(valor);
+        this.servicio.parametrosDepreciacion(unidad.vin).subscribe({
+          next: (lista) => this.parametros.set(lista),
+          error: () => this.error.set('No se pudo consultar los parámetros de depreciación'),
+        });
+      },
+      error: () => this.valor.set(null),
+    });
+  }
+
+  protected cambiarParametros(): void {
+    const unidad = this.seleccionada();
+    if (!unidad || this.version.invalid) {
+      this.version.markAllAsTouched();
+      return;
+    }
+    const valores = this.version.getRawValue();
+    this.error.set(null);
+    this.aviso.set(null);
+    this.servicio
+      .cambiarParametros(unidad.vin, {
+        ...valores,
+        valor_residual: valores.valor_residual.trim(),
+        porcentaje_fiscal: valores.porcentaje_fiscal.trim(),
+      })
+      .subscribe({
+        next: (version) => {
+          this.aviso.set(`Parámetros vigentes desde el ${version.vigente_desde} guardados`);
+          this.consultarValor();
+        },
+        error: (respuesta: HttpErrorResponse) =>
+          this.fallo(respuesta, 'No se pudo cambiar los parámetros'),
+      });
   }
 
   protected cambiarEstado(): void {

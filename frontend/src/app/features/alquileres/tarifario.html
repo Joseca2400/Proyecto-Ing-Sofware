@@ -1,0 +1,125 @@
+<section class="encabezado">
+  <h1>Tarifario de alquiler</h1>
+  <p>
+    Tarifas por tipo de vehículo o, como excepción, por unidad. Una tarifa no se edita: para
+    cambiarla se registra una nueva con su vigencia y la anterior se cierra, así los contratos ya
+    firmados no se alteran.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Aplica a
+    <select formControlName="aplica_a" name="aplica_a">
+      <option value="tipo">Tipo de vehículo</option>
+      <option value="vin">Una unidad (VIN)</option>
+    </select>
+  </label>
+
+  @if (aplicaA() === 'tipo') {
+    <label>
+      Tipo de vehículo
+      <select formControlName="tipo_vehiculo" name="tipo_vehiculo">
+        @for (tipo of catalogos().tipos_vehiculo; track tipo) {
+          <option [value]="tipo">{{ tipo }}</option>
+        }
+      </select>
+    </label>
+  } @else {
+    <label>
+      VIN
+      <input type="text" formControlName="vin" name="vin" maxlength="17" />
+    </label>
+  }
+
+  <label>
+    Modalidad
+    <select formControlName="modalidad" name="modalidad">
+      @for (modalidad of catalogos().modalidades; track modalidad) {
+        <option [value]="modalidad">{{ etiquetas[modalidad] }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">Quetzales (GTQ)</option>
+      <option value="USD">Dólares (USD)</option>
+    </select>
+  </label>
+  <label>
+    Monto
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="monto"
+      name="monto"
+      placeholder="350.00"
+    />
+    @if (formulario.controls.monto.touched && formulario.controls.monto.invalid) {
+      <small class="falla">Número positivo con hasta 6 decimales</small>
+    }
+  </label>
+  <label>
+    Km incluidos
+    <input type="number" min="0" formControlName="km_incluido" name="km_incluido" />
+  </label>
+  <label>
+    Precio por km adicional
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="precio_km_adicional"
+      name="precio_km_adicional"
+    />
+  </label>
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" name="vigente_desde" />
+  </label>
+  <label>
+    Vigente hasta (opcional)
+    <input type="date" formControlName="vigente_hasta" name="vigente_hasta" />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar tarifa</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Aplica a</th>
+      <th>Modalidad</th>
+      <th class="numero">Monto</th>
+      <th class="numero">Km incluidos</th>
+      <th class="numero">Km adicional</th>
+      <th>Vigencia</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (t of tarifas(); track t.id) {
+      <tr>
+        <td>{{ t.vin ? 'VIN ' + t.vin : t.tipo_vehiculo }}</td>
+        <td>{{ etiquetas[t.modalidad] }}</td>
+        <td class="numero">{{ t.monto | monto: t.moneda }}</td>
+        <td class="numero">{{ t.km_incluido }}</td>
+        <td class="numero">{{ t.precio_km_adicional | monto: t.moneda }}</td>
+        <td>
+          {{ t.vigente_desde }} →
+          {{ t.vigente_hasta ?? 'sin fin' }}
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6" class="vacio">No hay tarifas registradas</td>
+      </tr>
+    }
+  </tbody>
+</table>

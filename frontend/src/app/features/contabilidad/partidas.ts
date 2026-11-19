@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { MontoPipe } from '../../shared/pipes/monto.pipe';
 import { ETIQUETAS_LINEA } from '../configuracion/configuracion.service';
@@ -50,6 +51,11 @@ export class PartidasPantalla {
   });
   protected readonly filtro = this.fb.control('en_revision');
   protected readonly comentario = this.fb.control('', Validators.required);
+  protected readonly fechaReversion = this.fb.control(
+    new Date().toLocaleDateString('en-CA'),
+    Validators.required,
+  );
+  protected readonly motivoReversion = this.fb.control('', Validators.required);
 
   constructor() {
     this.servicio.cuentas().subscribe({
@@ -61,6 +67,16 @@ export class PartidasPantalla {
       error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar las líneas de negocio'),
     });
     this.cargar();
+    // Desde el mayor (HU-2.16) se llega con ?partida=<id> para abrir esa partida.
+    const id = Number(inject(ActivatedRoute).snapshot.queryParamMap.get('partida'));
+    if (id) this.abrir(id);
+  }
+
+  protected abrir(id: number): void {
+    this.servicio.partida(id).subscribe({
+      next: (p) => this.ver(p),
+      error: (r: HttpErrorResponse) => this.fallo(r, 'No se pudo consultar la partida'),
+    });
   }
 
   protected get lineas() {
@@ -156,6 +172,7 @@ export class PartidasPantalla {
   protected ver(p: Partida): void {
     this.seleccionada.set(p);
     this.comentario.reset();
+    this.motivoReversion.reset();
   }
 
   protected enviar(p: Partida): void {
@@ -177,6 +194,19 @@ export class PartidasPantalla {
     this.ejecutar(
       this.servicio.devolver(p.id, this.comentario.value.trim()),
       (r) => `Partida ${r.id} devuelta`,
+    );
+  }
+
+  // HU-2.05: solo el contador revierte y solo partidas manuales; lo decide el servidor.
+  protected revertir(p: Partida): void {
+    const motivo = this.motivoReversion.value.trim();
+    if (!motivo || this.fechaReversion.invalid) {
+      this.motivoReversion.markAsTouched();
+      return;
+    }
+    this.ejecutar(
+      this.servicio.revertir(p.id, this.fechaReversion.value, motivo),
+      (r) => `Partida revertida con la partida No. ${r.numero}`,
     );
   }
 

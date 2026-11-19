@@ -1,0 +1,18 @@
+<main class="entrar">
+  <form class="caja" [formGroup]="formulario" (ngSubmit)="entrar()">
+    <h1>Kilómetro Cero</h1>
+    <p>Inicia sesión para continuar</p>
+    <label>
+      Correo
+      <input type="email" formControlName="correo" autocomplete="username" />
+    </label>
+    <label>
+      Contraseña
+      <input type="password" formControlName="clave" autocomplete="current-password" />
+    </label>
+    @if (error(); as mensaje) {
+      <p class="falla" role="alert">{{ mensaje }}</p>
+    }
+    <button type="submit" [disabled]="entrando()">Entrar</button>
+  </form>
+</main>

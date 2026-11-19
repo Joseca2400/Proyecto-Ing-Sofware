@@ -1,7 +1,8 @@
 """Catálogo semilla: `python -m app.modulos.configuracion.semilla`.
 
-BORRADOR para la compra en USD, la importación y las partidas manuales; el contador lo valida
-(sesión del 04/11). El padre de cada cuenta es su código sin el último segmento ("1.1.01.02" → "1.1.01").
+BORRADOR para la compra en USD, la importación, el taller, el alquiler y las partidas manuales; el
+contador lo valida (sesión del 04/11). El padre de cada cuenta es su código sin el último segmento
+("1.1.01.02" → "1.1.01").
 """
 
 from sqlalchemy import select
@@ -14,6 +15,7 @@ D, A = "deudora", "acreedora"  # naturaleza
 _VIN = {"vin": service.VIN_OBLIGATORIO}
 _ADMIN = {"linea_defecto": "administracion"}
 _OPC = {"vin": service.VIN_OPCIONAL}
+_USD = {"monetaria_usd": True}
 
 
 def _linea(linea: str, **extra) -> dict:
@@ -31,13 +33,14 @@ CATALOGO = (
     ("1.1.01.03", "Bancos en dólares", "activo", D, True, {"monetaria_usd": True, **_ADMIN}),
     ("1.1.02", "Cuentas por cobrar", "activo", D, False, {}),
     ("1.1.02.01", "Clientes", "activo", D, True, {"linea_obligatoria": True}),
+    ("1.1.02.02", "Clientes en dólares", "activo", D, True, {"linea_obligatoria": True, **_USD}),
     ("1.1.03", "Impuestos por recuperar", "activo", D, False, {}),
     ("1.1.03.01", "IVA crédito fiscal", "activo", D, True, {}),
     ("1.1.03.02", "IVA pagado en importación", "activo", D, True, _OPC),
     ("1.1.04", "Inventarios", "activo", D, False, {}),
     ("1.1.04.01", "Vehículos en tránsito", "activo", D, True, _VIN),
     ("1.1.04.02", "Vehículos para la venta", "activo", D, True, {"linea_defecto": "venta", **_VIN}),
-    ("1.1.04.03", "Repuestos e insumos de taller", "activo", D, True, {"linea_defecto": "taller"}),
+    ("1.1.04.03", "Repuestos e insumos de taller", "activo", D, True, {"linea_defecto": "taller", **_OPC}),
     ("1.2", "Activo no corriente", "activo", D, False, {}),
     ("1.2.01", "Vehículos de flota para alquiler", "activo", D, True, {"linea_defecto": "alquiler", **_VIN}),
     ("2", "Pasivo", "pasivo", A, False, {}),
@@ -47,6 +50,8 @@ CATALOGO = (
     ("2.1.01.02", "Proveedores locales", "pasivo", A, True, _OPC),
     ("2.1.02", "Impuestos por pagar", "pasivo", A, False, {}),
     ("2.1.02.01", "IVA débito fiscal", "pasivo", A, True, {}),
+    ("2.1.03", "Depósitos en garantía de clientes", "pasivo", A, True, _linea("alquiler", **_OPC)),
+    ("2.1.04", "Depósitos en garantía en dólares", "pasivo", A, True, _linea("alquiler", **_USD, **_OPC)),
     ("3", "Patrimonio", "patrimonio", A, False, {}),
     ("3.1", "Capital social", "patrimonio", A, True, _ADMIN),
     ("3.2", "Resultados acumulados", "patrimonio", A, True, _ADMIN),
@@ -54,12 +59,16 @@ CATALOGO = (
     ("4.1", "Ingresos por alquiler", "ingreso", A, True, _linea("alquiler", **_VIN)),
     ("4.2", "Ingresos por venta de vehículos", "ingreso", A, True, _linea("venta", **_VIN)),
     ("4.3", "Ingresos por servicios de taller", "ingreso", A, True, _linea("taller")),
+    ("4.4", "Ganancia por diferencial cambiario", "ingreso", A, True, _linea("administracion")),
     ("5", "Costos", "costo", D, False, {}),
     ("5.1", "Costo de vehículos vendidos", "costo", D, True, _linea("venta", **_VIN)),
+    ("5.2", "Mano de obra de taller aplicada", "costo", A, True, _linea("taller", **_OPC)),
     ("6", "Gastos", "gasto", D, False, {}),
     ("6.1", "Gastos de administración", "gasto", D, False, {}),
     ("6.1.01", "Sueldos y salarios", "gasto", D, True, _linea("administracion")),
     ("6.1.02", "Servicios y suministros", "gasto", D, True, _linea("administracion")),
+    ("6.2", "Mantenimiento de la flota", "gasto", D, True, _linea("alquiler", **_VIN)),
+    ("6.3", "Pérdida por diferencial cambiario", "gasto", D, True, _linea("administracion")),
 )  # fmt: skip
 
 

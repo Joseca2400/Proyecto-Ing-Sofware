@@ -6,11 +6,17 @@
     </span>
     <strong>Kilómetro Cero</strong>
   </a>
+  @if (usuario(); as actual) {
+    <div class="sesion">
+      <span>{{ actual.nombre }} · {{ rol() }}</span>
+      <button type="button" (click)="salir()">Cerrar sesión</button>
+    </div>
+  }
 </header>
 
 <div class="cuerpo">
   <nav class="menu" aria-label="Módulos">
-    @for (entrada of menu; track entrada.etiqueta) {
+    @for (entrada of menu(); track entrada.etiqueta) {
       @if (entrada.ruta) {
         <a
           [routerLink]="entrada.ruta"
@@ -19,9 +25,7 @@
           >{{ entrada.etiqueta }}</a
         >
       } @else {
-        <span class="deshabilitado" aria-disabled="true" title="Próximamente">{{
-          entrada.etiqueta
-        }}</span>
+        <span class="grupo">{{ entrada.etiqueta }}</span>
       }
     }
   </nav>

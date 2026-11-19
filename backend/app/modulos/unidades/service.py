@@ -22,28 +22,63 @@ al taller (mantenimiento y postventa, que regula HU-5.01). El listado por etapa
 historial, y su costo acumulado (compra más gastos que suman al costo, calculado por `compras` con
 la misma regla de la ficha), con el total de cada etapa.
 HU-4.07 (diferido):
-- Criterio 2: el paso a "en taller" lo hará la orden de reacondicionamiento al abrirse (HU-5.01),
-  llamando a `cambiar_estado`; mientras no exista, se registra a mano con su documento.
+- Criterio 2: hecho. La orden de reacondicionamiento (HU-5.01) pasa la unidad a "en taller" al
+  abrirse y a "lista" al cerrarse (HU-5.07), con `cambiar_estado(..., confirmar=False)`.
 - Criterio 3: el paso a "lista" exigirá la DUCA registrada (HU-4.06) y que no haya órdenes de
   reacondicionamiento abiertas (HU-5.01); ver `_validar_paso_a_lista`.
 - Las métricas de la etapa (promedios de días, unidades detenidas) quedan para HU-7.04.
+
+HU-3.01 (incluido, versión delgada): alta en flota (`dar_de_alta`) de una unidad "lista" sin orden
+de taller abierta; su costo es el total de la hoja de costo (HU-4.08), que debe ser mayor que cero
+y cuadrar con el mayor. En una transacción: registro del alta (VIN único), partida `alta_flota`
+que traslada el costo de unidades en proceso a activo fijo – flota con el VIN, y paso a "en flota",
+desde donde la unidad se puede alquilar. Una unidad lista no pasa a "en flota" sin su alta.
+HU-3.01 (diferido): que el auxiliar registre el alta y el contador la apruebe (criterio 5, Sprint 5);
+hoy solo el contador la registra.
+
+HU-3.02 (incluido): parámetros de depreciación por unidad, financieros (vida útil en meses, valor
+residual, línea recta) y fiscal (porcentaje anual), con valores por defecto por tipo de vehículo que
+se proponen al alta y el contador cambia. Cada cambio es una versión nueva con su vigencia (desde el
+mes en curso): las cuotas ya devengadas no se recalculan; la bitácora guarda cada versión.
+`valor_en_libros` da la depreciación acumulada y el valor en libros a cualquier fecha (sin partidas:
+la depreciación mensual contabilizada es HU-2.07, Sprint 3). Convención de meses (supuesto que
+confirma el contador): el mes del alta no se deprecia; cada fin de mes posterior devenga una cuota.
+
+HU-3.14 (incluido): regla de fin de vida útil en flota por kilometraje, por meses desde el alta, o
+ambas (una sola regla vigente, auditada), con un porcentaje de aviso (90 % por defecto) para las
+que están por alcanzarla. `alertas_fin_vida` lista las unidades en flota o alquiladas que la
+alcanzaron o están por alcanzarla, con su valor en libros; la alerta no cambia la unidad (la baja
+la decide la gerencia). Pendiente: confirmar la regla con la gerencia (pregunta 5 de las épicas).
 """
 
 import re
+from calendar import monthrange
 from datetime import UTC, date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
+from app.comun.dinero import redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
-from app.modulos.unidades.models import ESTADOS, CambioEstadoUnidad, Unidad
+from app.modulos.contabilidad import service as contabilidad
+from app.modulos.contabilidad.schemas import LineaEntrada
+from app.modulos.unidades.models import (
+    ESTADOS,
+    AltaFlota,
+    CambioEstadoUnidad,
+    DepreciacionTipoVehiculo,
+    ParametroDepreciacion,
+    ReglaFinVida,
+    Unidad,
+)
 from app.modulos.unidades.schemas import UnidadEntrada
 
 TIPOS_VEHICULO = ("sedan", "hatchback", "suv", "pickup", "camioneta", "microbus", "motocicleta", "otro")
-ESTADOS_INICIALES = tuple(e for e in ESTADOS if e not in ("vendida", "recuperada"))
+# "alquilada" solo la pone el contrato de alquiler (HU-3.06).
+ESTADOS_INICIALES = tuple(e for e in ESTADOS if e not in ("vendida", "recuperada", "alquilada"))
 MODELO_MINIMO = 1981  # el VIN de 17 caracteres es obligatorio desde los modelos 1981
 
 # ── Validación del VIN (norma de EE. UU., 49 CFR 565) ─────────────────────────
@@ -113,7 +148,7 @@ def registrar_unidad(
         raise ErrorNegocio(f"Tipo de vehículo desconocido. Use uno de: {', '.join(TIPOS_VEHICULO)}")
     _validar_linea_negocio(datos.linea_negocio)
     if datos.estado not in ESTADOS_INICIALES:
-        raise ErrorNegocio("Una unidad nueva no puede darse de alta como vendida ni recuperada")
+        raise ErrorNegocio("Una unidad nueva no puede darse de alta como vendida, recuperada ni alquilada")
     if db.scalar(select(Unidad.id).where(Unidad.vin == vin)) is not None:
         raise _vin_repetido(vin)
 
@@ -185,6 +220,19 @@ def existe_vin(db: Session, vin: str) -> bool:
     return buscar_por_vin(db, vin) is not None
 
 
+def fijar_kilometraje(db: Session, vin: str, kilometraje: int) -> Unidad:
+    """Para la devolución de un alquiler (HU-3.08): actualiza el kilometraje sin confirmar; lo
+    confirma el llamador con su documento. El kilometraje no retrocede."""
+    unidad = obtener_por_vin(db, vin)
+    if unidad.kilometraje is not None and kilometraje < unidad.kilometraje:
+        raise ErrorNegocio(
+            f"El kilometraje {kilometraje} es menor que el registrado en la unidad ({unidad.kilometraje} km)"
+        )
+    unidad.kilometraje = kilometraje
+    db.flush()
+    return unidad
+
+
 # ── HU-4.07: etapas de importación ────────────────────────────────────────────
 
 ETAPAS_IMPORTACION = ("en_transito", "en_aduana", "en_taller", "lista")
@@ -215,10 +263,19 @@ def _en_importacion(db: Session, unidad: Unidad) -> bool:
     return not db.scalar(select(_ya_salio_de_importacion(unidad.id)))
 
 
+def esta_en_importacion(db: Session, vin: str) -> bool:
+    """Para otros módulos: si la unidad sigue en la importación (aún no llega a lista ni a la flota)."""
+    return _en_importacion(db, obtener_por_vin(db, vin))
+
+
 def _validar_paso_a_lista(db: Session, unidad: Unidad) -> None:
-    """Diferido (HU-4.07, criterio 3): aquí se exigirá que la DUCA de la unidad esté registrada
-    (service de `compras`, HU-4.06) y que no tenga órdenes de reacondicionamiento abiertas
-    (service de `taller`, HU-5.01). Hoy solo se exige el orden de las etapas."""
+    """HU-4.07, criterio 3: una unidad con una orden de taller abierta no pasa a "lista"; la pasa
+    el cierre de su orden (HU-5.07). Diferido: exigir la DUCA registrada (`compras`, HU-4.06)."""
+    # Import diferido: `taller` ya importa este service al cargarse.
+    from app.modulos.taller import service as taller
+
+    if taller.tiene_orden_abierta(db, unidad.vin):
+        raise ErrorNegocio("La unidad tiene una orden de taller abierta; ciérrela para pasarla a lista", 409)
 
 
 def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
@@ -228,6 +285,11 @@ def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
         raise ErrorNegocio("Una unidad vendida solo puede pasar a recuperada")
     if nuevo == "recuperada" and actual != "vendida":
         raise ErrorNegocio("Solo una unidad vendida puede pasar a recuperada")
+    # HU-3.06/HU-3.08: en flota → alquilada → en flota, o al taller si regresa con daños.
+    if nuevo == "alquilada" and actual != "en_flota":
+        raise ErrorNegocio("Solo una unidad en flota puede alquilarse")
+    if actual == "alquilada" and nuevo not in ("en_flota", "en_taller"):
+        raise ErrorNegocio("Una unidad alquilada solo puede volver a la flota o pasar al taller")
     if en_importacion:
         siguiente = _SIGUIENTE_ETAPA[actual]
         if nuevo != siguiente:
@@ -242,12 +304,17 @@ def _validar_transicion(actual: str, nuevo: str, en_importacion: bool) -> None:
 
 
 def cambiar_estado(
-    db: Session, vin: str, estado: str, documento: str, usuario_id: int | None = None
+    db: Session,
+    vin: str,
+    estado: str,
+    documento: str,
+    usuario_id: int | None = None,
+    confirmar: bool = True,
 ) -> Unidad:
     """Cambia el estado vigente y guarda el cambio en el historial, en la misma transacción.
 
-    Diferido (HU-4.07, criterio 2): la orden de reacondicionamiento (HU-5.01) llamará a esta
-    función al abrirse para pasar la unidad a "en taller"; hoy el paso se registra a mano.
+    Con `confirmar=False` solo lo escribe (flush): lo confirma el llamador junto con su documento
+    (la orden de reacondicionamiento, HU-5.01 y HU-5.07, y el contrato de alquiler, HU-3.06).
     """
     if not documento:
         raise ErrorNegocio("Indique el documento que origina el cambio de estado")
@@ -258,6 +325,10 @@ def cambiar_estado(
     _validar_transicion(unidad.estado, estado, en_importacion)
     if en_importacion and estado == "lista":
         _validar_paso_a_lista(db, unidad)
+    if unidad.estado == "lista" and estado == "en_flota" and alta_de_unidad(db, unidad.vin) is None:
+        raise ErrorNegocio(
+            "Una unidad lista entra a la flota con su alta como activo fijo (Alta en flota)", 409
+        )
     db.add(
         CambioEstadoUnidad(
             unidad_id=unidad.id,
@@ -268,6 +339,9 @@ def cambiar_estado(
         )
     )
     unidad.estado = estado
+    if not confirmar:
+        db.flush()
+        return unidad
     db.commit()
     db.refresh(unidad)
     return unidad
@@ -294,16 +368,9 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
     if estado is not None and estado not in ETAPAS_IMPORTACION:
         raise ErrorNegocio(f"Etapa desconocida: {estado}. Use una de: {', '.join(ETAPAS_IMPORTACION)}")
     etapas = (estado,) if estado else ETAPAS_IMPORTACION
-    ultimo_cambio = (
-        select(func.max(CambioEstadoUnidad.id).label("id")).group_by(CambioEstadoUnidad.unidad_id).subquery()
-    )
     salio = _ya_salio_de_importacion(Unidad.id)
     filas = db.execute(
-        select(Unidad, CambioEstadoUnidad.fecha)
-        .join(CambioEstadoUnidad, CambioEstadoUnidad.unidad_id == Unidad.id)
-        .join(ultimo_cambio, ultimo_cambio.c.id == CambioEstadoUnidad.id)
-        .where(Unidad.estado.in_(etapas), (Unidad.estado == "lista") | ~salio)
-        .order_by(CambioEstadoUnidad.fecha, Unidad.id)
+        _con_desde().where(Unidad.estado.in_(etapas), (Unidad.estado == "lista") | ~salio)
     ).all()
 
     # Import diferido: `compras` ya importa este service al cargarse.
@@ -322,7 +389,7 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
                 "color": unidad.color,
                 "estado": unidad.estado,
                 "desde": desde,
-                "dias_en_etapa": max((ahora - desde).days, 0),
+                "dias_en_etapa": _dias(ahora, desde),
                 "costo_total_gtq": costos[unidad.vin],
                 "siguiente_etapa": _SIGUIENTE_ETAPA.get(unidad.estado),
             }
@@ -342,6 +409,453 @@ def etapas_importacion(db: Session, estado: str | None = None) -> dict:
         for etapa in etapas
     ]
     return {"etapas": resumen, "unidades": unidades}
+
+
+def _con_desde():
+    """Unidades con la fecha de su último cambio de estado (desde cuándo están en su estado), de la
+    que lleva más tiempo a la que lleva menos."""
+    ultimo_cambio = (
+        select(func.max(CambioEstadoUnidad.id).label("id")).group_by(CambioEstadoUnidad.unidad_id).subquery()
+    )
+    return (
+        select(Unidad, CambioEstadoUnidad.fecha)
+        .join(CambioEstadoUnidad, CambioEstadoUnidad.unidad_id == Unidad.id)
+        .join(ultimo_cambio, ultimo_cambio.c.id == CambioEstadoUnidad.id)
+        .order_by(CambioEstadoUnidad.fecha, Unidad.id)
+    )
+
+
+def _dias(ahora: datetime, desde: datetime) -> int:
+    return max((ahora - desde).days, 0)
+
+
+def dias_en_estado(db: Session) -> list[dict]:
+    """Para `reportes` (HU-7.04): cada unidad con su estado y los días que lleva en él, contados
+    como en las etapas de importación (desde el último cambio del historial)."""
+    ahora = datetime.now(UTC)
+    return [
+        {
+            "vin": unidad.vin,
+            "marca": unidad.marca,
+            "linea": unidad.linea,
+            "modelo": unidad.modelo,
+            "estado": unidad.estado,
+            "desde": desde,
+            "dias_en_estado": _dias(ahora, desde),
+        }
+        for unidad, desde in db.execute(_con_desde()).all()
+    ]
+
+
+# ── HU-3.01: alta de la unidad como activo fijo de la flota ───────────────────
+
+DOCUMENTO_ALTA = "alta_flota"
+
+
+def alta_de_unidad(db: Session, vin: str) -> AltaFlota | None:
+    return db.scalar(select(AltaFlota).where(AltaFlota.vin == vin.strip().upper()))
+
+
+def costo_de_alta(db: Session, vin: str) -> Decimal | None:
+    """Para `compras` (hoja de costo, HU-4.08): el costo congelado en el alta, o None sin alta."""
+    alta = alta_de_unidad(db, vin)
+    return alta.costo if alta else None
+
+
+def candidatas_alta(db: Session) -> list[dict]:
+    """Unidades en "lista" con el costo de su hoja de costo, su cuadre y si tienen orden abierta."""
+    # Import diferido: `compras` y `taller` ya importan este service al cargarse.
+    from app.modulos.compras import service as compras
+    from app.modulos.taller import service as taller
+
+    candidatas = []
+    for unidad in listar_unidades(db, estado="lista"):
+        hoja = compras.hoja_de_costo(db, unidad.vin)
+        candidatas.append(
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "tipo_vehiculo": unidad.tipo_vehiculo,
+                "costo": hoja["total_gtq"],
+                "cuadra": hoja["cuadra"],
+                "diferencia": hoja["diferencia_gtq"],
+                "orden_abierta": taller.tiene_orden_abierta(db, unidad.vin),
+                **propuesta_depreciacion(db, unidad.tipo_vehiculo, hoja["total_gtq"]),
+            }
+        )
+    return candidatas
+
+
+def dar_de_alta(
+    db: Session,
+    vin: str,
+    fecha: date,
+    usuario_id: int | None = None,
+    vida_util_meses: int | None = None,
+    valor_residual: str | None = None,
+    porcentaje_fiscal: str | None = None,
+) -> AltaFlota:
+    """Alta en flota: registro, partida (unidades en proceso → activo fijo – flota, con el VIN),
+    primera versión de los parámetros de depreciación (HU-3.02; lo no enviado se toma de la
+    propuesta del tipo de vehículo) y paso a "en flota", en una transacción, o nada."""
+    from app.modulos.compras import service as compras  # import diferido, ver arriba
+    from app.modulos.taller import service as taller
+
+    unidad = obtener_por_vin(db, vin)
+    db.refresh(unidad, with_for_update=True)  # dos altas simultáneas: la segunda ve "en flota"
+    if unidad.estado != "lista":
+        raise ErrorNegocio(
+            f"Solo una unidad lista se da de alta en la flota; la unidad está {unidad.estado}", 409
+        )
+    if taller.tiene_orden_abierta(db, unidad.vin):
+        raise ErrorNegocio("La unidad tiene una orden de taller abierta; ciérrela antes del alta", 409)
+    if fecha > date.today():
+        raise ErrorNegocio("La fecha del alta no puede ser futura")
+    hoja = compras.hoja_de_costo(db, unidad.vin)
+    costo = hoja["total_gtq"]
+    if costo <= 0:
+        raise ErrorNegocio("La hoja de costo de la unidad está en cero: no hay costo que dar de alta", 409)
+    if not hoja["cuadra"]:
+        raise ErrorNegocio(
+            f"La hoja de costo no cuadra con el mayor (diferencia {hoja['diferencia_gtq']:.2f}); "
+            "corrija la diferencia antes del alta",
+            409,
+        )
+    propuesta = propuesta_depreciacion(db, unidad.tipo_vehiculo, costo)
+    parametros = _parametros(
+        costo,
+        vida_util_meses if vida_util_meses is not None else propuesta["vida_util_meses"],
+        valor_residual if valor_residual is not None else f"{propuesta['valor_residual']}",
+        porcentaje_fiscal if porcentaje_fiscal is not None else f"{propuesta['porcentaje_fiscal']}",
+    )
+    try:
+        activo = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "activo_flota")
+        en_proceso = contabilidad.cuenta_regla(db, DOCUMENTO_ALTA, "unidad_en_proceso")
+        alta_id = db.scalar(select(func.nextval("alta_flota_id_seq")))
+        partida = contabilidad.registrar_automatica(
+            db,
+            fecha=fecha,
+            concepto=f"Alta en flota de la unidad {unidad.vin}",
+            lineas=[
+                LineaEntrada(
+                    cuenta_id=activo,
+                    lado="debe",
+                    monto=f"{costo:.6f}",
+                    linea_negocio="alquiler",
+                    vin=unidad.vin,
+                ),
+                LineaEntrada(
+                    cuenta_id=en_proceso,
+                    lado="haber",
+                    monto=f"{costo:.6f}",
+                    linea_negocio=unidad.linea_negocio,
+                    vin=unidad.vin,
+                ),
+            ],
+            documento_tipo=DOCUMENTO_ALTA,
+            documento_id=alta_id,
+            usuario_id=usuario_id,
+        )
+        alta = AltaFlota(
+            id=alta_id, vin=unidad.vin, fecha=fecha, costo=costo, partida_id=partida.id, usuario_id=usuario_id
+        )
+        db.add(alta)
+        db.add(
+            ParametroDepreciacion(vin=unidad.vin, vigente_desde=fecha, usuario_id=usuario_id, **parametros)
+        )
+        db.flush()  # el alta existe antes del cambio de estado, que la exige
+        cambiar_estado(db, unidad.vin, "en_flota", f"Alta en flota {alta_id}", usuario_id, confirmar=False)
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
+    db.refresh(alta)
+    return alta
+
+
+# ── HU-3.02: parámetros de depreciación y valor en libros ─────────────────────
+
+
+def _decimal(texto: str, campo: str, decimales: int) -> Decimal:
+    try:
+        valor = Decimal(str(texto).strip())
+    except InvalidOperation:
+        raise ErrorNegocio(f"{campo} no es un número válido") from None
+    if not valor.is_finite() or valor < 0:
+        raise ErrorNegocio(f"{campo} debe ser un número no negativo")
+    if valor >= Decimal(10) ** 12:
+        raise ErrorNegocio(f"{campo} excede el máximo permitido")
+    if valor != round(valor, decimales):  # "7719.690000" vale; "7719.695" no
+        raise ErrorNegocio(f"{campo} admite hasta {decimales} decimales")
+    return valor
+
+
+def _validar_vida_y_fiscal(vida_util_meses: int, fiscal: Decimal) -> None:
+    if not 0 < vida_util_meses <= 600:
+        raise ErrorNegocio("La vida útil es un número de meses entre 1 y 600")
+    if not 0 < fiscal <= 100:
+        raise ErrorNegocio("El porcentaje fiscal anual debe ser mayor que 0 y hasta 100")
+
+
+def _parametros(costo: Decimal, vida_util_meses: int, valor_residual: str, porcentaje_fiscal: str) -> dict:
+    """Valida los parámetros de una unidad contra su costo."""
+    residual = _decimal(valor_residual, "El valor residual", 2)
+    fiscal = _decimal(porcentaje_fiscal, "El porcentaje fiscal", 2)
+    _validar_vida_y_fiscal(vida_util_meses, fiscal)
+    if residual >= costo:
+        raise ErrorNegocio("El valor residual debe ser menor que el costo de la unidad")
+    return {"vida_util_meses": vida_util_meses, "valor_residual": residual, "porcentaje_fiscal": fiscal}
+
+
+def _tipo(db: Session, tipo_vehiculo: str) -> DepreciacionTipoVehiculo | None:
+    return db.scalar(
+        select(DepreciacionTipoVehiculo).where(DepreciacionTipoVehiculo.tipo_vehiculo == tipo_vehiculo)
+    )
+
+
+def listar_depreciacion_tipos(db: Session) -> list[DepreciacionTipoVehiculo]:
+    return list(db.scalars(select(DepreciacionTipoVehiculo).order_by(DepreciacionTipoVehiculo.id)))
+
+
+def definir_depreciacion_tipo(
+    db: Session,
+    tipo_vehiculo: str,
+    vida_util_meses: int,
+    porcentaje_residual: str,
+    porcentaje_fiscal: str,
+    usuario_id: int | None = None,
+) -> DepreciacionTipoVehiculo:
+    """Cambia los valores por defecto de un tipo (criterio 2): solo afectan las altas siguientes y
+    la bitácora guarda los anteriores."""
+    tipo = _tipo(db, tipo_vehiculo)
+    if tipo is None:
+        raise ErrorNegocio(f"Tipo de vehículo desconocido: {tipo_vehiculo}", 404)
+    residual = _decimal(porcentaje_residual, "El porcentaje residual", 2)
+    fiscal = _decimal(porcentaje_fiscal, "El porcentaje fiscal", 2)
+    _validar_vida_y_fiscal(vida_util_meses, fiscal)
+    if residual >= 100:
+        raise ErrorNegocio("El porcentaje residual debe ser menor que 100")
+    tipo.vida_util_meses = vida_util_meses
+    tipo.porcentaje_residual = residual
+    tipo.porcentaje_fiscal = fiscal
+    tipo.actualizado_por = usuario_id
+    db.commit()
+    db.refresh(tipo)
+    return tipo
+
+
+def propuesta_depreciacion(db: Session, tipo_vehiculo: str, costo: Decimal) -> dict:
+    """Parámetros que se proponen al alta: los del tipo, con el residual en quetzales sobre el costo."""
+    tipo = _tipo(db, tipo_vehiculo)
+    if tipo is None:  # sin valores del tipo: 20 % fiscal de vehículos, 60 meses y sin residual
+        return {
+            "vida_util_meses": 60,
+            "valor_residual": Decimal("0.00"),
+            "porcentaje_fiscal": Decimal("20.00"),
+        }
+    return {
+        "vida_util_meses": tipo.vida_util_meses,
+        "valor_residual": redondear(costo * tipo.porcentaje_residual / 100, 2),
+        "porcentaje_fiscal": tipo.porcentaje_fiscal,
+    }
+
+
+def parametros_depreciacion(db: Session, vin: str) -> list[ParametroDepreciacion]:
+    """Versiones de los parámetros de la unidad, de la más antigua (la del alta) a la vigente."""
+    unidad = obtener_por_vin(db, vin)
+    return list(
+        db.scalars(
+            select(ParametroDepreciacion)
+            .where(ParametroDepreciacion.vin == unidad.vin)
+            .order_by(ParametroDepreciacion.vigente_desde)
+        )
+    )
+
+
+def _indice_mes(fecha: date) -> int:
+    return fecha.year * 12 + fecha.month - 1
+
+
+def _fin_de_mes(indice: int) -> date:
+    anio, mes = divmod(indice, 12)
+    return date(anio, mes + 1, monthrange(anio, mes + 1)[1])
+
+
+def meses_depreciados(fecha_alta: date, fecha: date) -> int:
+    """Cuotas devengadas a `fecha`: una por cada mes cerrado (fin de mes <= fecha) posterior al mes
+    del alta. El mes del alta no se deprecia; la primera cuota es la del cierre del mes siguiente."""
+    cerrado = _indice_mes(fecha) - (0 if fecha == _fin_de_mes(_indice_mes(fecha)) else 1)
+    return max(cerrado - _indice_mes(fecha_alta), 0)
+
+
+def calcular_depreciacion(costo: Decimal, fecha_alta: date, versiones: list, fecha: date) -> dict:
+    """Depreciación acumulada a `fecha`, financiera y fiscal, mes a mes.
+
+    Cada mes usa la versión vigente a su fin de mes. Financiera, línea recta: la cuota es lo que
+    falta depreciar (valor en libros menos residual) entre los meses que faltan de la vida útil,
+    redondeada a centavos mitad hacia arriba; así un cambio aplica solo hacia adelante, la última
+    cuota absorbe los centavos y nunca se baja del residual. Fiscal: costo por porcentaje anual
+    entre 12, sin residual, hasta llegar a cero.
+    """
+    meses = meses_depreciados(fecha_alta, fecha)
+    financiera = fiscal = Decimal(0)
+    vigente = versiones[0]
+    for k in range(1, meses + 1):
+        fin = _fin_de_mes(_indice_mes(fecha_alta) + k)
+        vigente = [v for v in versiones if v.vigente_desde <= fin][-1]
+        faltan = max(vigente.vida_util_meses - (k - 1), 1)
+        financiera += max(redondear((costo - financiera - vigente.valor_residual) / faltan, 2), Decimal(0))
+        fiscal += min(redondear(costo * vigente.porcentaje_fiscal / 1200, 2), costo - fiscal)
+    return {
+        "meses_depreciados": meses,
+        "vida_util_meses": vigente.vida_util_meses,
+        "valor_residual": vigente.valor_residual,
+        "porcentaje_fiscal": vigente.porcentaje_fiscal,
+        "depreciacion_financiera": financiera,
+        "valor_libros_financiero": costo - financiera,
+        "depreciacion_fiscal": fiscal,
+        "valor_libros_fiscal": costo - fiscal,
+    }
+
+
+def valor_en_libros(db: Session, vin: str, fecha: date) -> dict:
+    """Costo, depreciación acumulada y valor en libros, financieros y fiscales, a `fecha`.
+
+    Lo reutilizan la ficha, los reportes y la depreciación mensual (HU-2.07), para que todos usen el
+    mismo cálculo. Requiere el alta en flota."""
+    alta = alta_de_unidad(db, vin)
+    if alta is None:
+        raise ErrorNegocio(f"La unidad {vin.strip().upper()} no tiene alta en la flota", 404)
+    return {
+        "vin": alta.vin,
+        "fecha": fecha,
+        "fecha_alta": alta.fecha,
+        "costo": alta.costo,
+        **calcular_depreciacion(alta.costo, alta.fecha, parametros_depreciacion(db, alta.vin), fecha),
+    }
+
+
+def cambiar_parametros(
+    db: Session,
+    vin: str,
+    vigente_desde: date,
+    vida_util_meses: int,
+    valor_residual: str,
+    porcentaje_fiscal: str,
+    usuario_id: int | None = None,
+) -> ParametroDepreciacion:
+    """Nueva versión de los parámetros, prospectiva (criterio 3): vigente desde el mes en curso o
+    uno posterior, así no recalcula cuotas de meses ya cerrados."""
+    alta = alta_de_unidad(db, vin)
+    if alta is None:
+        raise ErrorNegocio(f"La unidad {vin.strip().upper()} no tiene alta en la flota", 404)
+    ultima = parametros_depreciacion(db, alta.vin)[-1]
+    if vigente_desde < date.today().replace(day=1):
+        raise ErrorNegocio("El cambio es prospectivo: su vigencia no puede ser anterior al mes en curso")
+    if vigente_desde <= ultima.vigente_desde:
+        raise ErrorNegocio(
+            f"Ya hay parámetros vigentes desde el {ultima.vigente_desde}; use una fecha posterior"
+        )
+    parametros = _parametros(alta.costo, vida_util_meses, valor_residual, porcentaje_fiscal)
+    # Meses ya devengados al cierre del mes anterior a la vigencia: la vida nueva debe superarlos.
+    devengados = meses_depreciados(alta.fecha, _fin_de_mes(_indice_mes(vigente_desde) - 1))
+    if vida_util_meses <= devengados:
+        raise ErrorNegocio(f"La vida útil debe ser mayor que los {devengados} meses ya depreciados")
+    version = ParametroDepreciacion(
+        vin=alta.vin, vigente_desde=vigente_desde, usuario_id=usuario_id, **parametros
+    )
+    db.add(version)
+    db.commit()
+    db.refresh(version)
+    return version
+
+
+# ── HU-3.14: alerta de fin de vida útil en flota ──────────────────────────────
+
+EN_FLOTA = ("en_flota", "alquilada")
+
+
+def regla_fin_vida(db: Session) -> ReglaFinVida | None:
+    return db.get(ReglaFinVida, 1)
+
+
+def definir_regla_fin_vida(
+    db: Session,
+    kilometraje_limite: int | None,
+    meses_limite: int | None,
+    porcentaje_aviso: str,
+    usuario_id: int | None = None,
+) -> ReglaFinVida:
+    """Fija la regla vigente (criterio 1); la bitácora guarda la anterior."""
+    if kilometraje_limite is None and meses_limite is None:
+        raise ErrorNegocio("Indique el límite por kilometraje, por meses en flota o ambos")
+    if (kilometraje_limite is not None and kilometraje_limite <= 0) or (
+        meses_limite is not None and meses_limite <= 0
+    ):
+        raise ErrorNegocio("Los límites deben ser mayores que cero")
+    aviso = _decimal(porcentaje_aviso, "El porcentaje de aviso", 2)
+    if not 0 < aviso <= 100:
+        raise ErrorNegocio("El porcentaje de aviso debe ser mayor que 0 y hasta 100")
+    regla = regla_fin_vida(db) or ReglaFinVida(id=1)
+    regla.kilometraje_limite = kilometraje_limite
+    regla.meses_limite = meses_limite
+    regla.porcentaje_aviso = aviso
+    regla.actualizado_por = usuario_id
+    db.add(regla)
+    db.commit()
+    db.refresh(regla)
+    return regla
+
+
+def meses_en_flota(fecha_alta: date, fecha: date) -> int:
+    """Meses completos desde el alta (del 15 de enero al 14 de febrero no cumple el primero)."""
+    meses = _indice_mes(fecha) - _indice_mes(fecha_alta) - (1 if fecha.day < fecha_alta.day else 0)
+    return max(meses, 0)
+
+
+def alertas_fin_vida(db: Session, fecha: date | None = None) -> list[dict]:
+    """Unidades de la flota que alcanzaron el límite o están por alcanzarlo (desde el porcentaje de
+    aviso), con su valor en libros (criterio 2). Solo consulta: nunca cambia la unidad (criterio 3).
+    Una unidad en flota sin alta (cargada así antes de HU-3.01) no tiene fecha ni valor y no aparece."""
+    regla = regla_fin_vida(db)
+    if regla is None:
+        return []
+    fecha = fecha or date.today()
+    aviso = regla.porcentaje_aviso / 100
+    alertas = []
+    for unidad in db.scalars(select(Unidad).where(Unidad.estado.in_(EN_FLOTA)).order_by(Unidad.vin)):
+        alta = alta_de_unidad(db, unidad.vin)
+        if alta is None:
+            continue
+        km = unidad.kilometraje or 0
+        meses = meses_en_flota(alta.fecha, fecha)
+        medidas = [(km, regla.kilometraje_limite), (meses, regla.meses_limite)]
+        if any(limite and valor >= limite for valor, limite in medidas):
+            situacion = "alcanzado"
+        elif any(limite and valor >= limite * aviso for valor, limite in medidas):
+            situacion = "por_alcanzar"
+        else:
+            continue
+        libros = valor_en_libros(db, unidad.vin, fecha)
+        alertas.append(
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "estado": unidad.estado,
+                "fecha_alta": alta.fecha,
+                "kilometraje": unidad.kilometraje,
+                "meses_en_flota": meses,
+                "situacion": situacion,
+                "valor_libros_financiero": libros["valor_libros_financiero"],
+                "valor_libros_fiscal": libros["valor_libros_fiscal"],
+            }
+        )
+    alertas.sort(key=lambda a: a["situacion"] != "alcanzado")
+    return alertas
 
 
 def catalogos() -> dict[str, list[str]]:

@@ -10,7 +10,9 @@ HU-4.09 (incluido): captura del DTE de un proveedor local (serie, número, autor
 líneas con descripción, cuenta, línea de negocio, VIN opcional, base e IVA), en quetzales; el
 mismo DTE no se registra dos veces para el mismo proveedor; la factura de un pequeño
 contribuyente no da crédito fiscal (su IVA es parte del costo); cada factura abre su cuenta por
-pagar al proveedor por el total, con vencimiento según sus días de crédito.
+pagar al proveedor por el total, con vencimiento según sus días de crédito, y su partida (HU-2.03):
+débito a la cuenta de cada línea por su base (más su IVA si no da crédito fiscal), débito al IVA
+crédito fiscal y crédito a proveedores locales por el total.
 HU-4.09 (diferido): importar el XML del DTE (criterio 3) y el libro de compras (criterio 5, con
 HU-2.15).
 
@@ -19,8 +21,10 @@ de conceptos (flete, seguro de transporte, agente aduanal, almacenaje, DAI, IVA 
 IPRIMA, placas y otros) que da a cada uno su cuenta y su tratamiento; el IVA de importación es
 crédito fiscal y no suma al costo de la unidad; cada gasto tiene proveedor (HU-4.01), puede ser
 en GTQ o USD (con el tipo de cambio de la fecha, HU-1.06/HU-1.07, y su equivalente en quetzales)
-y abre su cuenta por pagar en la moneda del documento, como la factura de HU-4.09. La ficha de la
-unidad muestra el total que suma al costo (`resumen_gastos_unidad`).
+y abre su cuenta por pagar en la moneda del documento, como la factura de HU-4.09, con su partida
+(HU-2.03): débito a la cuenta del concepto por el equivalente en quetzales, con el VIN, y crédito
+a proveedores en la moneda del documento. La ficha de la unidad muestra el total que suma al costo
+(`resumen_gastos_unidad`).
 HU-4.04 (diferido): ligar el gasto a un expediente (criterio 2) y prorratear los compartidos
 (HU-4.05); la DUCA (HU-4.06), que cuadrará DAI e IVA contra estos gastos; el IVA de los servicios
 locales con FEL como crédito fiscal (criterio 5; hoy esa factura se captura en HU-4.09); un tipo
@@ -33,11 +37,22 @@ fecha, número de lote o factura, VIN y ficha del vehículo, precio y cargos de 
 la fecha y su equivalente en quetzales (HU-1.06/HU-1.07), abre la cuenta por pagar en USD al
 proveedor y pide a `contabilidad` la partida (HU-2.03): débito a vehículos en tránsito
 (1.1.04.01, la cuenta de "unidades en proceso" del catálogo semilla) con el VIN y crédito a
-proveedores del exterior (2.1.01.01) en USD. Si el VIN ya existe, falta el tipo de cambio o la
-partida falla, no se crea nada. El total en quetzales suma al costo de la unidad junto con los
-gastos de importación (`resumen_gastos_unidad`).
+proveedores del exterior (2.1.01.01) en USD. Las cuentas salen de las reglas de contabilización
+de `contabilidad` (`cuenta_regla`), que el contador puede cambiar. Si el VIN ya existe, falta el
+tipo de cambio o la partida falla, no se crea nada. El total en quetzales suma al costo de la
+unidad junto con los gastos de importación (`resumen_gastos_unidad`).
 HU-4.02 (diferido): adjuntar la factura, el título y el bill of sale (criterio 4); comprar una
 unidad ya registrada; la compra a particulares en Guatemala (pendiente de la historia).
+
+HU-4.08 (incluido, versión delgada): hoja de costo de la unidad (`hoja_de_costo`) agrupada en
+compra (USD, tipo de cambio y quetzales), importación por concepto (moneda original, tipo de cambio
+y quetzales; el IVA de importación se muestra aparte y no es costo) y reacondicionamiento: la mano
+de obra de las órdenes cerradas (`taller`) y las líneas de facturas locales cargadas a unidades en
+proceso con el VIN (con el IVA de un pequeño contribuyente). El total cuadra con el saldo de
+unidades en proceso del VIN en el mayor (criterio 3). `costos_de_unidades` y
+`resumen_gastos_unidad` usan la misma regla.
+HU-4.08 (diferido): exportar a PDF y Excel (criterio 4, Sprint 5 con HU-7.09); el expediente y los
+gastos compartidos prorrateados (HU-4.03/HU-4.05, Sprint 5).
 
 Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
 - El perfil fiscal valida su NIT con el mismo `comun/nit.py`; no se duplica la regla.
@@ -46,36 +61,15 @@ Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
   models) y solo pedir los datos de retención cuando la empresa retiene.
 - Rechazar como proveedor el NIT de la propia empresa (se compara contra el perfil vigente).
 
-Pendiente para HU-4.09 cuando salgan las historias de las que depende (ver `registrar_factura`):
-- HU-1.02 (catálogo, equipo A): la cuenta de cada línea hoy es texto con forma de código
-  ("5.1.02"). Validarla contra el service de `configuracion`: que exista, sea de detalle y esté
-  activa; y guardar la referencia a la cuenta en lugar del texto (migración de datos).
-- HU-1.04 (dimensiones, equipo A): la línea de negocio ya se valida contra la lista de
-  `configuracion`. Falta aplicar lo que defina la cuenta (línea obligatoria o por defecto, y si el
-  VIN es obligatorio, opcional o no aplica) con `configuracion.resolver_dimensiones`, que pide la
-  cuenta del catálogo (HU-1.02).
-- HU-1.05 (unidades): hecho. El VIN se valida con el service de `unidades` (forma y dígito
-  verificador) y la unidad debe existir; la línea queda ligada a la unidad por llave foránea.
-- HU-2.01/HU-2.03 (motor contable, equipo A): pedir la partida al service de `contabilidad` en la
-  misma transacción que la factura (regla 3 de la arquitectura): débito a la cuenta de cada línea
-  por su base (más su IVA si es pequeño contribuyente), débito a IVA por cobrar por el crédito
-  fiscal y crédito a proveedores por el total. Hoy no se genera partida.
+Pendiente para HU-4.09:
+- La cuenta de cada línea se guarda como código (texto) y se valida contra el catálogo (existe y
+  es de detalle); las dimensiones (línea de negocio y VIN) las valida el motor contable al crear
+  la partida. Falta rechazar cuentas inactivas cuando el catálogo permita inactivarlas (Sprint 5).
 - HU-6.02 (FEL, equipo C): el adaptador puede verificar la autorización del DTE con la SAT.
 - HU-1.07: facturas locales en dólares, con el tipo de cambio de la fecha.
 
 Pendiente para HU-4.04:
-- HU-2.01/HU-2.03 (motor contable, equipo A): el motor ya existe
-  (`contabilidad.registrar_automatica`, sin commit propio); se conectará en otra historia. Allí se
-  pedirá la partida en la misma transacción que el gasto (ver `registrar_gasto_importacion`):
-  débito a la cuenta del concepto por `monto_gtq` (1.1.04.01 con el VIN si suma al costo;
-  1.1.03.02 si es IVA de importación) y crédito a proveedores (2.1.01.01 del exterior o 2.1.01.02
-  locales; en USD, con el monto original y el tipo de cambio).
-- HU-1.02 (catálogo): la cuenta de cada concepto es texto; guardar la referencia a la cuenta.
 - HU-4.05/HU-4.06: el expediente y la DUCA; el gasto podrá ligarse al expediente en vez del VIN.
-
-Pendiente al mezclar HU-1.09 y HU-1.11: exigir sesión y permiso del auxiliar contable, y que la
-auditoría automática registre el alta del proveedor y de la factura (con el VIN de cada línea).
-Hecho para la auditoría, también del gasto de importación (con su VIN); la sesión sigue pendiente.
 """
 
 import re
@@ -108,6 +102,7 @@ from app.modulos.compras.schemas import (
 from app.modulos.configuracion import service as configuracion
 from app.modulos.contabilidad import service as contabilidad
 from app.modulos.contabilidad.schemas import LineaEntrada
+from app.modulos.taller import service as taller
 from app.modulos.unidades import service as unidades
 from app.modulos.unidades.schemas import UnidadEntrada
 
@@ -229,6 +224,10 @@ _CUENTA = re.compile(r"[0-9]+([.-][0-9]+)*")
 _LIMITE_MONTO = Decimal("1000000000000")  # cabe en NUMERIC(18, 6)
 
 
+DOCUMENTO_FACTURA = "factura_compra"  # tipos de documento de las partidas (HU-2.03)
+DOCUMENTO_GASTO = "gasto_importacion"
+
+
 def _monto(texto: str, campo: str, permite_cero: bool, prefijo: str = "") -> Decimal:
     """Lee un monto enviado como texto: número finito, con hasta 6 decimales, nunca float.
 
@@ -253,10 +252,14 @@ def _monto(texto: str, campo: str, permite_cero: bool, prefijo: str = "") -> Dec
 def _linea(db: Session, numero: int, datos: LineaFacturaEntrada) -> LineaFacturaCompra:
     if not datos.descripcion:
         raise ErrorNegocio(f"Línea {numero}: la descripción es obligatoria")
-    # Pendiente HU-1.02: la cuenta debe existir en el catálogo, ser de detalle y estar activa.
     if not _CUENTA.fullmatch(datos.cuenta):
-        raise ErrorNegocio(f"Línea {numero}: la cuenta debe ser un código del catálogo, por ejemplo 5.1.02")
-    # Pendiente HU-1.04 con HU-1.02: la cuenta decide si la línea de negocio y el VIN son obligatorios.
+        raise ErrorNegocio(f"Línea {numero}: la cuenta debe ser un código del catálogo, por ejemplo 6.1.02")
+    cuenta = configuracion.buscar_cuenta(db, datos.cuenta)
+    if cuenta is None or not cuenta.es_detalle:
+        raise ErrorNegocio(
+            f"Línea {numero}: la cuenta {datos.cuenta} no es una cuenta de detalle del catálogo"
+        )
+    # Si la cuenta exige línea de negocio o VIN lo decide el motor contable al crear la partida.
     if datos.linea_negocio not in configuracion.LINEAS_NEGOCIO:
         raise ErrorNegocio(
             f"Línea {numero}: línea de negocio desconocida ({datos.linea_negocio}); "
@@ -287,8 +290,10 @@ def _dte_repetido(proveedor: Proveedor, serie: str, numero: str) -> ErrorNegocio
     )
 
 
-def registrar_factura(db: Session, datos: FacturaCompraEntrada) -> FacturaCompra:
-    """Registra el DTE con sus líneas y abre su cuenta por pagar, todo en una transacción."""
+def registrar_factura(
+    db: Session, datos: FacturaCompraEntrada, usuario_id: int | None = None
+) -> FacturaCompra:
+    """Registra el DTE con sus líneas, su cuenta por pagar y su partida en una transacción, o nada."""
     proveedor = obtener_proveedor(db, datos.proveedor_id)
     if proveedor.tipo != "local":
         raise ErrorNegocio("Las facturas FEL se registran solo a proveedores locales")
@@ -347,11 +352,42 @@ def registrar_factura(db: Session, datos: FacturaCompraEntrada) -> FacturaCompra
         monto=total,
         saldo=total,
     )
+    # Sin crédito fiscal (pequeño contribuyente) el IVA de cada línea va a su misma cuenta.
+    debitos = [
+        LineaEntrada(
+            cuenta_id=configuracion.buscar_cuenta(db, linea.cuenta).id,
+            lado="debe",
+            monto=f"{linea.base + (linea.iva if not credito_fiscal else 0):.6f}",
+            linea_negocio=linea.linea_negocio,
+            vin=linea.vin,
+        )
+        for linea in lineas
+    ]
+    if credito_fiscal:
+        debitos.append(
+            LineaEntrada(
+                cuenta_id=contabilidad.cuenta_regla(db, DOCUMENTO_FACTURA, "iva_credito_fiscal"),
+                lado="debe",
+                monto=f"{credito_fiscal:.6f}",
+            )
+        )
+    por_pagar = contabilidad.cuenta_regla(db, DOCUMENTO_FACTURA, "por_pagar_gtq")
     db.add(factura)
-    # Pendiente HU-2.01/HU-2.03: aquí se pide la partida a `contabilidad` (sin commit propio), para
-    # que la factura, su cuenta por pagar y su partida se confirmen juntas.
     try:
+        db.flush()  # el id de la factura liga su partida
+        contabilidad.registrar_automatica(
+            db,
+            fecha=datos.fecha,
+            concepto=f"Factura {datos.serie}-{datos.numero} de {proveedor.nombre}"[:300],
+            lineas=[*debitos, LineaEntrada(cuenta_id=por_pagar, lado="haber", monto=f"{total:.6f}")],
+            documento_tipo=DOCUMENTO_FACTURA,
+            documento_id=factura.id,
+            usuario_id=usuario_id,
+        )
         db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
     except IntegrityError:
         # Dos capturas simultáneas del mismo DTE: las restricciones UNIQUE deciden.
         db.rollback()
@@ -385,11 +421,14 @@ def listar_conceptos(db: Session) -> list[ConceptoGastoImportacion]:
     return list(db.scalars(select(ConceptoGastoImportacion).order_by(ConceptoGastoImportacion.orden)))
 
 
-def registrar_gasto_importacion(db: Session, datos: GastoImportacionEntrada) -> GastoImportacion:
-    """Registra el gasto ligado a la unidad y abre su cuenta por pagar, todo en una transacción."""
+def registrar_gasto_importacion(
+    db: Session, datos: GastoImportacionEntrada, usuario_id: int | None = None
+) -> GastoImportacion:
+    """Registra el gasto de la unidad, su cuenta por pagar y su partida en una transacción, o nada."""
     vin = unidades.validar_vin(datos.vin)
     if not unidades.existe_vin(db, vin):
         raise ErrorNegocio(f"No existe la unidad con VIN {vin}; regístrela antes")
+    linea_negocio = unidades.obtener_por_vin(db, vin).linea_negocio
     concepto = db.scalar(
         select(ConceptoGastoImportacion).where(ConceptoGastoImportacion.codigo == datos.concepto)
     )
@@ -434,11 +473,46 @@ def registrar_gasto_importacion(db: Session, datos: GastoImportacionEntrada) -> 
         monto=monto,
         saldo=monto,
     )
+    cuenta_gasto = configuracion.buscar_cuenta(db, concepto.cuenta)
+    if cuenta_gasto is None:
+        raise ErrorNegocio(
+            f"El catálogo de cuentas no tiene {concepto.cuenta} ({concepto.nombre}); cárguelo antes", 409
+        )
+    por_pagar = contabilidad.cuenta_regla(db, DOCUMENTO_GASTO, f"por_pagar_{datos.moneda.lower()}")
     db.add(gasto)
-    # Pendiente: el motor contable ya existe (`contabilidad.registrar_automatica`, sin commit
-    # propio) y se conectará en otra historia, para que el gasto, su cuenta por pagar y su partida
-    # se confirmen juntos.
-    db.commit()
+    try:
+        db.flush()  # el id del gasto liga su partida
+        contabilidad.registrar_automatica(
+            db,
+            fecha=datos.fecha,
+            concepto=f"{concepto.nombre} de la unidad {vin}, {proveedor.nombre}, {datos.documento}"[:300],
+            lineas=[
+                # La cuenta del concepto no es monetaria en USD: se carga el equivalente en quetzales,
+                # el mismo que obtiene el motor al convertir la línea del proveedor.
+                LineaEntrada(
+                    cuenta_id=cuenta_gasto.id,
+                    lado="debe",
+                    monto=f"{monto_gtq:.6f}",
+                    linea_negocio=linea_negocio,
+                    vin=vin,
+                ),
+                LineaEntrada(
+                    cuenta_id=por_pagar,
+                    lado="haber",
+                    monto=f"{monto:.6f}",
+                    moneda=datos.moneda,
+                    linea_negocio=linea_negocio,
+                    vin=vin,
+                ),
+            ],
+            documento_tipo=DOCUMENTO_GASTO,
+            documento_id=gasto.id,
+            usuario_id=usuario_id,
+        )
+        db.commit()
+    except ErrorNegocio:
+        db.rollback()
+        raise
     db.refresh(gasto)
     return gasto
 
@@ -463,8 +537,9 @@ def obtener_gasto_importacion(db: Session, gasto_id: int) -> GastoImportacion:
 
 
 def resumen_gastos_unidad(db: Session, vin: str) -> dict:
-    """Costo de una unidad en quetzales: la compra (HU-4.02) más los gastos que suman al costo, y
-    aparte lo que es crédito fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
+    """Costo de una unidad en quetzales: la compra (HU-4.02), los gastos que suman al costo y el
+    reacondicionamiento, con la regla de la hoja de costo (HU-4.08); aparte lo que es crédito
+    fiscal (el IVA de importación). Lo muestra la ficha de la unidad."""
     unidad = unidades.obtener_por_vin(db, vin)
     filas = db.execute(
         select(
@@ -477,23 +552,22 @@ def resumen_gastos_unidad(db: Session, vin: str) -> dict:
     ).all()
     totales = {tratamiento: total for tratamiento, _, total in filas}
     compra_gtq = db.scalar(select(CompraUnidad.total_gtq).where(CompraUnidad.vin == unidad.vin))
-    compra_gtq = compra_gtq if compra_gtq is not None else Decimal(0)
-    gastos_costo = totales.get("costo", Decimal(0))
     return {
         "vin": unidad.vin,
         "gastos": sum(cantidad for _, cantidad, _ in filas),
-        "total_costo_gtq": gastos_costo,
+        "total_costo_gtq": totales.get("costo", Decimal(0)),
         "total_credito_fiscal_gtq": totales.get("credito_fiscal", Decimal(0)),
-        "compra_gtq": compra_gtq,
-        "costo_total_gtq": compra_gtq + gastos_costo,
+        "compra_gtq": compra_gtq if compra_gtq is not None else Decimal(0),
+        "costo_total_gtq": costos_de_unidades(db, [unidad.vin])[unidad.vin],
     }
 
 
 def costos_de_unidades(db: Session, vins: list[str]) -> dict[str, Decimal]:
-    """Costo acumulado en quetzales de varias unidades a la vez, con la misma regla que
-    `resumen_gastos_unidad`: la compra más los gastos que suman al costo (sin el IVA de
-    importación). Lo pide `unidades` para el listado por etapa (HU-4.07); un VIN sin compra ni
-    gastos cuesta cero."""
+    """Costo acumulado en quetzales de varias unidades a la vez, con la regla de la hoja de costo
+    (HU-4.08): la compra, los gastos que suman al costo (sin el IVA de importación), la mano de
+    obra de las órdenes cerradas y las líneas de facturas locales cargadas a unidades en proceso
+    con el VIN. Lo piden `unidades` (etapas, HU-4.07; alta, HU-3.01) y `reportes`; un VIN sin
+    nada cuesta cero."""
     costos = dict.fromkeys(vins, Decimal(0))
     if not vins:
         return costos
@@ -505,31 +579,140 @@ def costos_de_unidades(db: Session, vins: list[str]) -> dict[str, Decimal]:
         .where(GastoImportacion.vin.in_(vins), GastoImportacion.tratamiento == "costo")
         .group_by(GastoImportacion.vin)
     ).all()
-    for vin, monto in (*compras, *gastos):
+    lineas = [(linea.vin, _costo_linea(linea, regimen)) for linea, regimen in _lineas_en_proceso(db, vins)]
+    for vin, monto in (*compras, *gastos, *lineas):
         costos[vin] += monto
+    # shortcut: una consulta por VIN a `taller`; agregar una versión por lote si el listado crece.
+    for vin in vins:
+        costos[vin] += taller.costo_taller_de_unidad(db, vin)
     return costos
+
+
+# ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
+
+
+def _cuenta_en_proceso(db: Session) -> int:
+    """Unidades en proceso: la cuenta que carga la compra de la unidad (regla de `contabilidad`)."""
+    return contabilidad.cuenta_regla(db, DOCUMENTO_COMPRA, "unidad_en_transito")
+
+
+def _lineas_en_proceso(db: Session, vins: list[str]) -> list[tuple[LineaFacturaCompra, str]]:
+    """Líneas de facturas locales (HU-4.09) con VIN cargadas a unidades en proceso: repuestos y
+    subcontratos comprados para la unidad, con el régimen del proveedor de su factura."""
+    try:
+        codigo = configuracion.obtener_cuenta(db, _cuenta_en_proceso(db)).codigo
+    except ErrorNegocio:
+        return []  # sin la regla ni el catálogo no puede haber líneas validadas contra él
+    filas = db.execute(
+        select(LineaFacturaCompra, FacturaCompra.regimen_proveedor)
+        .join(FacturaCompra, FacturaCompra.id == LineaFacturaCompra.factura_id)
+        .where(LineaFacturaCompra.vin.in_(vins), LineaFacturaCompra.cuenta == codigo)
+        .order_by(FacturaCompra.fecha, LineaFacturaCompra.id)
+    ).all()
+    return [(linea, regimen) for linea, regimen in filas]
+
+
+def _costo_linea(linea: LineaFacturaCompra, regimen: str) -> Decimal:
+    """Lo que `registrar_factura` carga a la cuenta de la línea: la base, más su IVA cuando el
+    proveedor es pequeño contribuyente (no da crédito fiscal)."""
+    return linea.base + (linea.iva if regimen != "general" else 0)
+
+
+def hoja_de_costo(db: Session, vin: str) -> dict:
+    """Costo de la unidad agrupado en compra, importación y reacondicionamiento, y su cuadre con el
+    mayor (criterio 3).
+
+    Mientras la unidad está en proceso, el total se compara con el saldo de unidades en proceso
+    para su VIN. Al darla de alta en la flota (HU-3.01) ese saldo vuelve a cero: entonces se compara
+    con el saldo más el costo trasladado en el alta, que es todo lo que se cargó a la cuenta.
+    """
+    unidad = unidades.obtener_por_vin(db, vin)
+    compra = db.scalar(select(CompraUnidad).where(CompraUnidad.vin == unidad.vin))
+    orden_concepto = {c.codigo: (c.orden, c.nombre) for c in listar_conceptos(db)}
+    gastos = sorted(
+        listar_gastos_importacion(db, vin=unidad.vin),
+        key=lambda g: (orden_concepto[g.concepto][0], g.fecha, g.id),
+    )
+    importacion = [
+        {
+            "concepto": g.concepto,
+            "nombre": orden_concepto[g.concepto][1],
+            "fecha": g.fecha,
+            "documento": g.documento,
+            "moneda": g.moneda,
+            "monto": g.monto,
+            "tipo_cambio": g.tipo_cambio,
+            "monto_gtq": g.monto_gtq,
+            "suma_al_costo": g.tratamiento == "costo",
+        }
+        for g in gastos
+    ]
+    mano_obra = [
+        {"numero": o.numero, "fecha_cierre": o.fecha_cierre, "costo_gtq": o.costo_total}
+        for o in taller.ordenes_de_unidad(db, unidad.vin)
+        if o.estado == "cerrada" and o.tipo == "reacondicionamiento"
+    ]
+    repuestos = [
+        {
+            "documento": f"{linea.factura.serie}-{linea.factura.numero}",
+            "proveedor": linea.factura.proveedor.nombre,
+            "fecha": linea.factura.fecha,
+            "descripcion": linea.descripcion,
+            "monto_gtq": _costo_linea(linea, regimen),
+        }
+        for linea, regimen in _lineas_en_proceso(db, [unidad.vin])
+    ]
+    compra_gtq = compra.total_gtq if compra else Decimal(0)
+    importacion_gtq = sum((g["monto_gtq"] for g in importacion if g["suma_al_costo"]), Decimal(0))
+    reacondicionamiento_gtq = sum((x["costo_gtq"] for x in mano_obra), Decimal(0)) + sum(
+        (x["monto_gtq"] for x in repuestos), Decimal(0)
+    )
+    total = compra_gtq + importacion_gtq + reacondicionamiento_gtq
+
+    costo_alta = unidades.costo_de_alta(db, unidad.vin)
+    saldo = contabilidad.saldo_cuenta(db, _cuenta_en_proceso(db), vin=unidad.vin)
+    saldo_mayor = saldo + (costo_alta or 0)
+    return {
+        "vin": unidad.vin,
+        "marca": unidad.marca,
+        "linea": unidad.linea,
+        "modelo": unidad.modelo,
+        "estado": unidad.estado,
+        "compra": None
+        if compra is None
+        else {
+            "fecha": compra.fecha,
+            "documento": compra.documento,
+            "proveedor": compra.proveedor.nombre,
+            "total_usd": compra.total_usd,
+            "tipo_cambio": compra.tipo_cambio,
+            "total_gtq": compra.total_gtq,
+        },
+        "importacion": importacion,
+        "mano_obra": mano_obra,
+        "repuestos": repuestos,
+        "compra_gtq": compra_gtq,
+        "importacion_gtq": importacion_gtq,
+        "credito_fiscal_gtq": sum(
+            (g["monto_gtq"] for g in importacion if not g["suma_al_costo"]), Decimal(0)
+        ),
+        "reacondicionamiento_gtq": reacondicionamiento_gtq,
+        "total_gtq": total,
+        "saldo_mayor_gtq": saldo_mayor,
+        "costo_alta_gtq": costo_alta,
+        "diferencia_gtq": total - saldo_mayor,
+        "cuadra": total == saldo_mayor,
+    }
 
 
 # ── HU-4.02: compra de la unidad en EE. UU. ───────────────────────────────────
 
 DOCUMENTO_COMPRA = "compra_unidad"  # tipo de documento de la partida (HU-2.03)
-CUENTA_EN_TRANSITO = "1.1.04.01"  # vehículos en tránsito: las unidades en proceso, con su VIN
-CUENTA_PROVEEDORES_EXTERIOR = "2.1.01.01"  # proveedores del exterior, en USD
 
 
-def _cuentas_compra(db: Session) -> tuple[int, int]:
-    """Ids de las dos cuentas de la partida de compra, del catálogo de `configuracion`."""
-    ids = {c.codigo: c.id for c in configuracion.listar_cuentas(db, solo_detalle=True)}
-    faltan = [c for c in (CUENTA_EN_TRANSITO, CUENTA_PROVEEDORES_EXTERIOR) if c not in ids]
-    if faltan:
-        raise ErrorNegocio(
-            f"El catálogo de cuentas no tiene {' ni '.join(faltan)}; cárguelo antes de registrar compras",
-            status=409,
-        )
-    return ids[CUENTA_EN_TRANSITO], ids[CUENTA_PROVEEDORES_EXTERIOR]
-
-
-def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUnidad:
+def registrar_compra_unidad(
+    db: Session, datos: CompraUnidadEntrada, usuario_id: int | None = None
+) -> CompraUnidad:
     """Crea la unidad, la compra, su cuenta por pagar y su partida en una transacción, o nada."""
     proveedor = obtener_proveedor(db, datos.proveedor_id)
     if proveedor.tipo != "exterior":
@@ -550,7 +733,9 @@ def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUn
     total_gtq = redondear(convertir(total_usd, tipo_cambio), _DECIMALES_MONTO)
     if total_gtq >= _LIMITE_MONTO:
         raise ErrorNegocio("El equivalente en quetzales excede el máximo permitido")
-    cuenta_transito, cuenta_proveedores = _cuentas_compra(db)
+    # Vehículos en tránsito (las unidades en proceso, con su VIN) y proveedores del exterior, en USD.
+    cuenta_transito = contabilidad.cuenta_regla(db, DOCUMENTO_COMPRA, "unidad_en_transito")
+    cuenta_proveedores = contabilidad.cuenta_regla(db, DOCUMENTO_COMPRA, "por_pagar_usd")
 
     try:
         unidad = unidades.registrar_unidad(
@@ -566,6 +751,7 @@ def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUn
                 estado="en_transito",
                 documento=f"Compra {datos.documento} a {proveedor.nombre}"[:200],
             ),
+            usuario_id=usuario_id,
             confirmar=False,
         )
         # El id se reserva antes: la partida se liga a la compra y la compra a su partida.
@@ -595,6 +781,7 @@ def registrar_compra_unidad(db: Session, datos: CompraUnidadEntrada) -> CompraUn
             ],
             documento_tipo=DOCUMENTO_COMPRA,
             documento_id=compra_id,
+            usuario_id=usuario_id,
         )
         compra = CompraUnidad(
             id=compra_id,

@@ -3,12 +3,24 @@ cambios de estado (HU-1.05). El VIN es el hilo conductor: compras, taller, alqui
 a esta tabla por su VIN.
 """
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
+from app.comun.dinero import MONTO
 
 ESTADOS = (
     "en_transito",
@@ -16,6 +28,7 @@ ESTADOS = (
     "en_taller",
     "lista",
     "en_flota",
+    "alquilada",
     "en_venta",
     "vendida",
     "recuperada",
@@ -35,6 +48,7 @@ class Unidad(Base):
         CheckConstraint("vin ~ '^[A-HJ-NPR-Z0-9]{17}$'", name="ck_unidad_vin"),
         CheckConstraint(f"estado IN ({_ESTADOS_SQL})", name="ck_unidad_estado"),
         CheckConstraint("modelo BETWEEN 1900 AND 2100", name="ck_unidad_modelo"),
+        CheckConstraint("kilometraje IS NULL OR kilometraje >= 0", name="ck_unidad_kilometraje"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -46,6 +60,8 @@ class Unidad(Base):
     tipo_vehiculo: Mapped[str] = mapped_column(String(20))
     linea_negocio: Mapped[str | None] = mapped_column(String(20), nullable=True)
     estado: Mapped[str] = mapped_column(String(20), index=True)
+    # Último kilometraje conocido; lo actualiza la devolución de un alquiler (HU-3.08).
+    kilometraje: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -73,3 +89,102 @@ class CambioEstadoUnidad(Base):
     documento: Mapped[str] = mapped_column(String(200))
     usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AltaFlota(Base):
+    """Alta de la unidad como activo fijo de la flota (HU-3.01): una por VIN, con el costo de su
+    hoja de costo (HU-4.08) congelado y la partida que lo trasladó a "activo fijo – flota"."""
+
+    __tablename__ = "alta_flota"
+    __table_args__ = (
+        UniqueConstraint("vin", name="uq_alta_flota_vin"),
+        UniqueConstraint("partida_id", name="uq_alta_flota_partida"),
+        CheckConstraint("costo > 0", name="ck_alta_flota_costo"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(String(17), ForeignKey("unidad.vin", name="fk_alta_flota_vin_unidad"))
+    fecha: Mapped[date] = mapped_column(Date)
+    costo: Mapped[Decimal] = mapped_column(MONTO)
+    partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_alta_flota_partida"))
+    usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+PORCENTAJE = Numeric(5, 2)
+
+
+class ReglaFinVida(Base):
+    """Regla vigente de fin de vida útil en flota (HU-3.14): por kilometraje, por meses desde el
+    alta, o ambas; una sola fila (id 1) que se edita y la bitácora guarda cada cambio. El aviso
+    "por alcanzar" empieza en `porcentaje_aviso` del límite."""
+
+    __tablename__ = "regla_fin_vida"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="ck_regla_fin_vida_unica"),
+        CheckConstraint(
+            "num_nonnulls(kilometraje_limite, meses_limite) >= 1"
+            " AND (kilometraje_limite IS NULL OR kilometraje_limite > 0)"
+            " AND (meses_limite IS NULL OR meses_limite > 0)"
+            " AND porcentaje_aviso > 0 AND porcentaje_aviso <= 100",
+            name="ck_regla_fin_vida_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kilometraje_limite: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meses_limite: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    porcentaje_aviso: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    actualizado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    actualizado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class DepreciacionTipoVehiculo(Base):
+    """Parámetros de depreciación por defecto de un tipo de vehículo (HU-3.02, criterio 2): se
+    proponen al dar de alta la unidad. El residual es un porcentaje del costo."""
+
+    __tablename__ = "depreciacion_tipo_vehiculo"
+    __table_args__ = (
+        UniqueConstraint("tipo_vehiculo", name="uq_depreciacion_tipo_vehiculo"),
+        CheckConstraint(
+            "vida_util_meses > 0 AND porcentaje_residual >= 0 AND porcentaje_residual < 100"
+            " AND porcentaje_fiscal > 0 AND porcentaje_fiscal <= 100",
+            name="ck_depreciacion_tipo_vehiculo_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tipo_vehiculo: Mapped[str] = mapped_column(String(20))
+    vida_util_meses: Mapped[int] = mapped_column(Integer)
+    porcentaje_residual: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    porcentaje_fiscal: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    actualizado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class ParametroDepreciacion(Base):
+    """Versión de los parámetros de depreciación de una unidad (HU-3.02): financieros (vida útil en
+    meses y valor residual, línea recta) y fiscal (porcentaje anual). Un cambio es una versión nueva
+    con su vigencia; nunca se edita una existente (criterio 3)."""
+
+    __tablename__ = "parametro_depreciacion"
+    __table_args__ = (
+        UniqueConstraint("vin", "vigente_desde", name="uq_parametro_depreciacion_vigencia"),
+        CheckConstraint(
+            "vida_util_meses > 0 AND valor_residual >= 0"
+            " AND porcentaje_fiscal > 0 AND porcentaje_fiscal <= 100",
+            name="ck_parametro_depreciacion_valores",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(
+        String(17), ForeignKey("unidad.vin", name="fk_parametro_depreciacion_vin_unidad"), index=True
+    )
+    vigente_desde: Mapped[date] = mapped_column(Date)
+    vida_util_meses: Mapped[int] = mapped_column(Integer)
+    valor_residual: Mapped[Decimal] = mapped_column(MONTO)
+    porcentaje_fiscal: Mapped[Decimal] = mapped_column(PORCENTAJE)
+    usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

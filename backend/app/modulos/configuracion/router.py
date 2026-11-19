@@ -7,15 +7,26 @@ from app.comun.db import get_db
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service
 from app.modulos.configuracion.schemas import (
+    CuentaBancariaEntrada,
+    CuentaBancariaSalida,
     CuentaEntrada,
     CuentaSalida,
     DimensionesEntrada,
+    NumeracionChequesEntrada,
+    PerfilFiscalEntrada,
+    PerfilFiscalSalida,
     TipoCambioEntrada,
     TipoCambioSalida,
     TransaccionUSDEntrada,
     TransaccionUSDSalida,
 )
-from app.modulos.seguridad.service import CONTADOR, Usuario, requiere_rol, usuario_actual
+from app.modulos.seguridad.service import (
+    CONTADOR,
+    GERENTE_FINANCIERO,
+    Usuario,
+    requiere_rol,
+    usuario_actual,
+)
 
 router = APIRouter(prefix="/configuracion", tags=["Configuración"])
 
@@ -53,27 +64,30 @@ def definir_dimensiones(
 
 
 # ── HU-1.06: tipo de cambio ────────────────────────────────────────────────────
-# Pendiente (HU-1.09/HU-1.10): las rutas del equipo B (tipo de cambio y transacciones en USD)
-# siguen abiertas porque el front aún no tiene login (tarea C1 del equipo C). Cuando exista:
-# - Consultas (GET): `_: Usuario = Depends(usuario_actual)`.
-# - Altas (POST): `_: Usuario = Depends(requiere_rol(CONTADOR, GERENTE_FINANCIERO))`.
-# Sin sesión, la bitácora (HU-1.11) guarda el cambio con el actor vacío.
+CAMBIARIO = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
 
 
 @router.get("/tipos-cambio", response_model=list[TipoCambioSalida])
 def listar_tipos_cambio(
-    desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
+    desde: date | None = None,
+    hasta: date | None = None,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
 ) -> list[TipoCambioSalida]:
     return [TipoCambioSalida.model_validate(t) for t in service.listar(db, desde, hasta)]
 
 
 @router.post("/tipos-cambio", response_model=TipoCambioSalida, status_code=201)
-def registrar_tipo_cambio(datos: TipoCambioEntrada, db: Session = Depends(get_db)) -> TipoCambioSalida:
+def registrar_tipo_cambio(
+    datos: TipoCambioEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+) -> TipoCambioSalida:
     return TipoCambioSalida.model_validate(service.registrar_manual(db, datos.fecha, datos.valor))
 
 
 @router.get("/tipos-cambio/{fecha}", response_model=TipoCambioSalida)
-def consultar_tipo_cambio(fecha: date, db: Session = Depends(get_db)) -> TipoCambioSalida:
+def consultar_tipo_cambio(
+    fecha: date, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> TipoCambioSalida:
     tipo = service.buscar(db, fecha)
     if tipo is None:
         raise ErrorNegocio(f"No existe tipo de cambio para el {fecha:%d/%m/%Y}", status=404)
@@ -85,7 +99,10 @@ def consultar_tipo_cambio(fecha: date, db: Session = Depends(get_db)) -> TipoCam
 
 @router.get("/transacciones-usd", response_model=list[TransaccionUSDSalida])
 def listar_transacciones_usd(
-    desde: date | None = None, hasta: date | None = None, db: Session = Depends(get_db)
+    desde: date | None = None,
+    hasta: date | None = None,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
 ) -> list[TransaccionUSDSalida]:
     return [
         TransaccionUSDSalida.model_validate(t) for t in service.listar_transacciones_usd(db, desde, hasta)
@@ -94,7 +111,7 @@ def listar_transacciones_usd(
 
 @router.post("/transacciones-usd", response_model=TransaccionUSDSalida, status_code=201)
 def registrar_transaccion_usd(
-    datos: TransaccionUSDEntrada, db: Session = Depends(get_db)
+    datos: TransaccionUSDEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
 ) -> TransaccionUSDSalida:
     return TransaccionUSDSalida.model_validate(
         service.registrar_transaccion_usd(
@@ -105,3 +122,74 @@ def registrar_transaccion_usd(
             datos.justificacion,
         )
     )
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+
+@router.get("/perfil-fiscal", response_model=PerfilFiscalSalida)
+def perfil_fiscal_vigente(
+    fecha: date | None = None, _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    perfil = service.perfil_fiscal_vigente(db, fecha)
+    if perfil is None:
+        raise ErrorNegocio("Todavía no hay un perfil fiscal registrado", status=404)
+    return PerfilFiscalSalida.model_validate(perfil)
+
+
+@router.get("/perfil-fiscal/historial", response_model=list[PerfilFiscalSalida])
+def historial_perfil_fiscal(
+    _: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)
+) -> list[PerfilFiscalSalida]:
+    return [PerfilFiscalSalida.model_validate(p) for p in service.historial_perfil_fiscal(db)]
+
+
+@router.post("/perfil-fiscal", response_model=PerfilFiscalSalida, status_code=201)
+def registrar_perfil_fiscal(
+    datos: PerfilFiscalEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+) -> PerfilFiscalSalida:
+    return PerfilFiscalSalida.model_validate(service.registrar_perfil_fiscal(db, **datos.model_dump()))
+
+
+# ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+
+@router.get("/cuentas-bancarias", response_model=list[CuentaBancariaSalida])
+def listar_cuentas_bancarias(
+    moneda: str | None = None,
+    solo_activas: bool = False,
+    _: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
+    return service.listar_cuentas_bancarias(db, moneda, solo_activas)
+
+
+@router.post("/cuentas-bancarias", response_model=CuentaBancariaSalida, status_code=201)
+def crear_cuenta_bancaria(
+    datos: CuentaBancariaEntrada, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.crear_cuenta_bancaria(db, **datos.model_dump())
+
+
+@router.put("/cuentas-bancarias/{cuenta_bancaria_id}/cheques", response_model=CuentaBancariaSalida)
+def definir_numeracion_cheques(
+    cuenta_bancaria_id: int,
+    datos: NumeracionChequesEntrada,
+    _: Usuario = Depends(CAMBIARIO),
+    db: Session = Depends(get_db),
+):
+    return service.definir_numeracion_cheques(db, cuenta_bancaria_id, datos.siguiente_cheque)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/inactivar", response_model=CuentaBancariaSalida)
+def inactivar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, False)
+
+
+@router.post("/cuentas-bancarias/{cuenta_bancaria_id}/activar", response_model=CuentaBancariaSalida)
+def activar_cuenta_bancaria(
+    cuenta_bancaria_id: int, _: Usuario = Depends(CAMBIARIO), db: Session = Depends(get_db)
+):
+    return service.cambiar_estado_cuenta_bancaria(db, cuenta_bancaria_id, True)

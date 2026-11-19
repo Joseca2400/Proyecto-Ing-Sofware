@@ -1,0 +1,65 @@
+<section class="encabezado">
+  <h1>Bitácora de cambios</h1>
+  <p>Quién cambió qué y cuándo, con los valores anteriores y nuevos. No se edita ni se borra.</p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="filtro" (ngSubmit)="consultar()">
+  <label>
+    Usuario (id)
+    <input type="text" inputmode="numeric" formControlName="usuario_id" />
+  </label>
+  <label>
+    Entidad
+    <input type="text" formControlName="entidad" placeholder="unidad, partida, proveedor…" />
+  </label>
+  <label>
+    VIN
+    <input type="text" formControlName="vin" maxlength="17" />
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Entidad</th>
+      <th>Registro</th>
+      <th>Acción</th>
+      <th>VIN</th>
+      <th>Antes</th>
+      <th>Después</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (registro of registros(); track registro.id) {
+      <tr>
+        <td>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ registro.usuario_id ?? '—' }}</td>
+        <td>{{ registro.entidad }}</td>
+        <td>{{ registro.registro_id }}</td>
+        <td>{{ registro.accion }}</td>
+        <td>{{ registro.vin ?? '—' }}</td>
+        <td>
+          @if (registro.anteriores) {
+            <small>{{ registro.anteriores | json }}</small>
+          }
+        </td>
+        <td>
+          @if (registro.nuevos) {
+            <small>{{ registro.nuevos | json }}</small>
+          }
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="8" class="vacio">No hay cambios con esos filtros</td>
+      </tr>
+    }
+  </tbody>
+</table>

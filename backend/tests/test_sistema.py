@@ -18,3 +18,12 @@ def test_ruta_inexistente_usa_el_formato_de_error_comun(cliente):
     respuesta = cliente.get("/api/v1/no-existe")
     assert respuesta.status_code == 404
     assert "detail" in respuesta.json()
+
+
+def test_los_esquemas_de_la_api_no_chocan_entre_modulos():
+    """Dos módulos con un esquema del mismo nombre hacen que el OpenAPI los califique con el módulo
+    (`app__modulos__…`) y los tipos generados del front dejan de coincidir."""
+    from app.main import app
+
+    repetidos = [nombre for nombre in app.openapi()["components"]["schemas"] if "__" in nombre]
+    assert not repetidos, f"Esquemas con el mismo nombre en dos módulos: {repetidos}"

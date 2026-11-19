@@ -127,9 +127,26 @@
       @if (p.documento_soporte; as soporte) {
         · Soporte: {{ soporte }}
       }
+      @if (p.documento_tipo) {
+        · Documento de origen: {{ p.documento_tipo }} {{ p.documento_id }}
+      }
     </p>
+    @if (p.revierte_a; as id) {
+      <p class="datos">
+        Reversión de la
+        <button type="button" class="enlace" (click)="abrir(id)">partida {{ id }}</button>
+      </p>
+    }
+    @if (p.revertida_por; as id) {
+      <p class="datos">
+        Revertida por la
+        <button type="button" class="enlace" (click)="abrir(id)">partida {{ id }}</button>
+      </p>
+    }
     @if (p.comentario; as motivo) {
-      <p class="motivo">Motivo de la devolución: {{ motivo }}</p>
+      <p class="motivo">
+        {{ p.revierte_a ? 'Motivo de la reversión' : 'Motivo de la devolución' }}: {{ motivo }}
+      </p>
     }
     <div class="tabla">
       <table>
@@ -192,6 +209,27 @@
           Devolver
         </button>
       }
+      @if (
+        p.estado === 'contabilizada' && p.origen === 'manual' && !p.revierte_a && !p.revertida_por
+      ) {
+        <label>
+          Fecha de la reversión
+          <input type="date" name="fecha_reversion" [formControl]="fechaReversion" />
+        </label>
+        <label class="crece">
+          Motivo de la reversión
+          <input
+            type="text"
+            maxlength="300"
+            name="motivo_reversion"
+            [formControl]="motivoReversion"
+          />
+          @if (motivoReversion.touched && motivoReversion.invalid) {
+            <small class="falla">Indica el motivo</small>
+          }
+        </label>
+        <button type="button" [disabled]="guardando()" (click)="revertir(p)">Revertir</button>
+      }
     </div>
   </section>
 }
@@ -227,7 +265,12 @@
           <td>{{ p.numero ?? '—' }}</td>
           <td>{{ p.fecha }}</td>
           <td>{{ p.concepto }}</td>
-          <td>{{ p.origen === 'manual' ? 'Manual' : 'Automática' }}</td>
+          <td>
+            {{ p.origen === 'manual' ? 'Manual' : 'Automática' }}
+            @if (p.documento_tipo) {
+              <small>· {{ p.documento_tipo }} {{ p.documento_id }}</small>
+            }
+          </td>
           <td class="numero">{{ p.total_debe | monto }}</td>
           <td>
             <span class="chip" [attr.data-estado]="p.estado">{{

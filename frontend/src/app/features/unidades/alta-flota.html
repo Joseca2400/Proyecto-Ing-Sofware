@@ -1,0 +1,95 @@
+<section class="encabezado">
+  <h1>Alta en flota</h1>
+  <p>
+    Unidades listas que pueden entrar a la flota como activo fijo. El costo es el total de su hoja
+    de costo y debe cuadrar con el mayor; la unidad no puede tener órdenes de taller abiertas. Al
+    confirmar se traslada el costo de unidades en proceso a activo fijo – flota y la unidad queda
+    disponible para alquiler.
+  </p>
+</section>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (seleccionada(); as c) {
+  <form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="confirmar()">
+    <h2>{{ c.marca }} {{ c.linea }} {{ c.modelo }} · {{ c.vin }}</h2>
+    <p>
+      Costo de alta: <strong>{{ c.costo | monto }}</strong>
+    </p>
+    <label>
+      Fecha de alta
+      <input type="date" formControlName="fecha" />
+    </label>
+    <p>
+      Parámetros de depreciación propuestos para {{ c.tipo_vehiculo }} (línea recta); puedes
+      cambiarlos:
+    </p>
+    <label>
+      Vida útil (meses)
+      <input type="number" formControlName="vida_util_meses" min="1" />
+    </label>
+    <label>
+      Valor residual (Q)
+      <input type="text" inputmode="decimal" formControlName="valor_residual" />
+    </label>
+    <label>
+      Depreciación fiscal anual (%)
+      <input type="text" inputmode="decimal" formControlName="porcentaje_fiscal" />
+    </label>
+    @if (formulario.invalid && formulario.touched) {
+      <small class="falla">Revisa la fecha y los parámetros</small>
+    }
+    <button type="submit" [disabled]="guardando()">Confirmar alta</button>
+    <button type="button" class="secundario" (click)="seleccionada.set(null)">Cancelar</button>
+  </form>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>VIN</th>
+      <th>Unidad</th>
+      <th class="numero">Costo</th>
+      <th>Cuadre con el mayor</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (c of candidatas(); track c.vin) {
+      <tr>
+        <td class="codigo">{{ c.vin }}</td>
+        <td>{{ c.marca }} {{ c.linea }} {{ c.modelo }}</td>
+        <td class="numero">{{ c.costo | monto }}</td>
+        <td>
+          @if (c.cuadra) {
+            <span class="ok">Cuadra</span>
+          } @else {
+            <span class="falla">Diferencia {{ c.diferencia | monto }}</span>
+          }
+          @if (c.orden_abierta) {
+            <small class="falla">Orden de taller abierta</small>
+          }
+        </td>
+        <td>
+          <button
+            type="button"
+            class="secundario"
+            [disabled]="!c.cuadra || c.orden_abierta"
+            (click)="elegir(c)"
+          >
+            Dar de alta
+          </button>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="5" class="vacio">No hay unidades listas para la flota</td>
+      </tr>
+    }
+  </tbody>
+</table>

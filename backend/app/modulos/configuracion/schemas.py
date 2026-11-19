@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_serializer, field_validator
 
+from app.comun.nit import formatear_nit
 from app.modulos.configuracion import service
 
 # ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
@@ -124,3 +125,75 @@ class TransaccionUSDSalida(BaseModel):
     @field_serializer("tipo_cambio_aplicado")
     def tipo_cambio_a_texto(self, valor: Decimal) -> str:
         return f"{valor:.8f}"
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+RegimenISR = Literal[*service.REGIMENES_ISR]
+
+
+def _texto(maximo: int):
+    return Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=maximo)]
+
+
+class PerfilFiscalEntrada(BaseModel):
+    vigente_desde: date
+    razon_social: _texto(200)
+    nombre_comercial: _texto(200)
+    nit: _texto(20)
+    direccion_fiscal: _texto(300)
+    establecimiento: _texto(100)
+    regimen_isr: RegimenISR
+    agente_retencion_iva: bool = False
+    agente_retencion_isr: bool = False
+
+
+class PerfilFiscalSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vigente_desde: date
+    razon_social: str
+    nombre_comercial: str
+    nit: str
+    direccion_fiscal: str
+    establecimiento: str
+    regimen_isr: RegimenISR
+    agente_retencion_iva: bool
+    agente_retencion_isr: bool
+
+    @field_serializer("nit")
+    def nit_con_guion(self, nit: str) -> str:
+        return formatear_nit(nit)
+
+
+# ── HU-1.08: cuentas bancarias ────────────────────────────────────────────────
+
+Moneda = Literal[*service.MONEDAS_BANCARIAS]
+TipoCuentaBancaria = Literal[*service.TIPOS_CUENTA_BANCARIA]
+
+
+class CuentaBancariaEntrada(BaseModel):
+    banco: _texto(100)
+    numero: _texto(30)
+    tipo: TipoCuentaBancaria
+    moneda: Moneda
+    cuenta_id: int
+    siguiente_cheque: int | None = None
+
+
+class NumeracionChequesEntrada(BaseModel):
+    siguiente_cheque: int | None = None
+
+
+class CuentaBancariaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    banco: str
+    numero: str
+    tipo: TipoCuentaBancaria
+    moneda: Moneda
+    cuenta_id: int
+    siguiente_cheque: int | None
+    activa: bool

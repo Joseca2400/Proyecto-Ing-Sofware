@@ -217,6 +217,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/configuracion/perfil-fiscal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Perfil Fiscal Vigente */
+        get: operations["perfil_fiscal_vigente_api_v1_configuracion_perfil_fiscal_get"];
+        put?: never;
+        /** Registrar Perfil Fiscal */
+        post: operations["registrar_perfil_fiscal_api_v1_configuracion_perfil_fiscal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/perfil-fiscal/historial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial Perfil Fiscal */
+        get: operations["historial_perfil_fiscal_api_v1_configuracion_perfil_fiscal_historial_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Cuentas Bancarias */
+        get: operations["listar_cuentas_bancarias_api_v1_configuracion_cuentas_bancarias_get"];
+        put?: never;
+        /** Crear Cuenta Bancaria */
+        post: operations["crear_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/cheques": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Numeracion Cheques */
+        put: operations["definir_numeracion_cheques_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__cheques_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/inactivar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inactivar Cuenta Bancaria */
+        post: operations["inactivar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__inactivar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracion/cuentas-bancarias/{cuenta_bancaria_id}/activar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activar Cuenta Bancaria */
+        post: operations["activar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__activar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/compras/proveedores": {
         parameters: {
             query?: never;
@@ -391,6 +495,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/hoja-costo/{vin}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hoja De Costo */
+        get: operations["hoja_de_costo_api_v1_compras_hoja_costo__vin__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -403,6 +524,26 @@ export interface paths {
         put?: never;
         /** Crear Partida */
         post: operations["crear_partida_api_v1_contabilidad_partidas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/documentos/{documento_tipo}/{documento_id}/partida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partida De Documento
+         * @description HU-2.03: del documento a su partida (de la partida al documento: `documento_tipo` e id).
+         */
+        get: operations["partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -478,6 +619,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/partidas/{partida_id}/revertir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revertir */
+        post: operations["revertir_api_v1_contabilidad_partidas__partida_id__revertir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/reglas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Reglas */
+        get: operations["listar_reglas_api_v1_contabilidad_reglas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/reglas/{regla_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Regla */
+        put: operations["definir_regla_api_v1_contabilidad_reglas__regla_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance Comprobacion */
+        get: operations["balance_comprobacion_api_v1_contabilidad_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/mayor/{cuenta_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mayor */
+        get: operations["mayor_api_v1_contabilidad_mayor__cuenta_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades/catalogos": {
         parameters: {
             query?: never;
@@ -508,6 +734,100 @@ export interface paths {
          */
         get: operations["etapas_importacion_api_v1_unidades_etapas_importacion_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/alta-flota/candidatas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Candidatas Alta
+         * @description HU-3.01: unidades listas con el costo de su hoja de costo y su cuadre con el mayor.
+         */
+        get: operations["candidatas_alta_api_v1_unidades_alta_flota_candidatas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/depreciacion/tipos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Depreciacion Tipos
+         * @description HU-3.02: valores de depreciación por defecto de cada tipo de vehículo.
+         */
+        get: operations["listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/depreciacion/tipos/{tipo_vehiculo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Depreciacion Tipo */
+        put: operations["definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/fin-vida-util": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fin Vida Util
+         * @description HU-3.14: unidades de la flota que alcanzaron o están por alcanzar el fin de su vida útil.
+         */
+        get: operations["fin_vida_util_api_v1_unidades_fin_vida_util_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/fin-vida-util/regla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir Regla Fin Vida */
+        put: operations["definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -584,10 +904,539 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/unidades/{vin}/alta-flota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dar De Alta */
+        post: operations["dar_de_alta_api_v1_unidades__vin__alta_flota_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/parametros-depreciacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parametros Depreciacion */
+        get: operations["parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get"];
+        put?: never;
+        /** Cambiar Parametros */
+        post: operations["cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/unidades/{vin}/valor-libros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valor En Libros
+         * @description Depreciación acumulada y valor en libros, financiero y fiscal, a la fecha (hoy si no se indica).
+         */
+        get: operations["valor_en_libros_api_v1_unidades__vin__valor_libros_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/clientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Clientes */
+        get: operations["listar_clientes_api_v1_facturacion_clientes_get"];
+        put?: never;
+        /** Registrar Cliente */
+        post: operations["registrar_cliente_api_v1_facturacion_clientes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/clientes/{cliente_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Cliente */
+        get: operations["consultar_cliente_api_v1_facturacion_clientes__cliente_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/facturas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Facturas */
+        get: operations["listar_facturas_api_v1_facturacion_facturas_get"];
+        put?: never;
+        /**
+         * Emitir Factura
+         * @description Certificada o rechazada por el certificador, la factura queda registrada: ver `estado`.
+         */
+        post: operations["emitir_factura_api_v1_facturacion_facturas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facturacion/facturas/{factura_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Factura */
+        get: operations["consultar_factura_api_v1_facturacion_facturas__factura_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/tarifas/catalogos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalogos */
+        get: operations["catalogos_api_v1_alquileres_tarifas_catalogos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/tarifas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Tarifas */
+        get: operations["listar_tarifas_api_v1_alquileres_tarifas_get"];
+        put?: never;
+        /** Registrar Tarifa */
+        post: operations["registrar_tarifa_api_v1_alquileres_tarifas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/tarifas/vigente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tarifa Vigente
+         * @description Cotización: la tarifa que aplica hoy (o en `fecha`) a esa unidad o tipo de vehículo.
+         */
+        get: operations["tarifa_vigente_api_v1_alquileres_tarifas_vigente_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Contratos */
+        get: operations["listar_contratos_api_v1_alquileres_contratos_get"];
+        put?: never;
+        /** Registrar Contrato */
+        post: operations["registrar_contrato_api_v1_alquileres_contratos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Contrato */
+        get: operations["obtener_contrato_api_v1_alquileres_contratos__contrato_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}/cierre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cerrar Contrato */
+        post: operations["cerrar_contrato_api_v1_alquileres_contratos__contrato_id__cierre_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}/factura": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Facturar Contrato
+         * @description HU-6.02: factura FEL del cobro del contrato cerrado.
+         */
+        post: operations["facturar_contrato_api_v1_alquileres_contratos__contrato_id__factura_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/contratos/{contrato_id}/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos De Contrato */
+        get: operations["depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get"];
+        put?: never;
+        /** Recibir Deposito */
+        post: operations["recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Depositos Vigentes */
+        get: operations["depositos_vigentes_api_v1_alquileres_depositos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/aplicacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar Deposito */
+        post: operations["aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alquileres/depositos/{deposito_id}/devolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Devolver Deposito */
+        post: operations["devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/tarifas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Tarifas */
+        get: operations["listar_tarifas_api_v1_taller_tarifas_get"];
+        put?: never;
+        /** Crear Tarifa */
+        post: operations["crear_tarifa_api_v1_taller_tarifas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Ordenes */
+        get: operations["listar_ordenes_api_v1_taller_ordenes_get"];
+        put?: never;
+        /** Abrir Orden */
+        post: operations["abrir_orden_api_v1_taller_ordenes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Orden */
+        get: operations["consultar_orden_api_v1_taller_ordenes__orden_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}/horas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Horas */
+        get: operations["listar_horas_api_v1_taller_ordenes__orden_id__horas_get"];
+        put?: never;
+        /** Registrar Horas */
+        post: operations["registrar_horas_api_v1_taller_ordenes__orden_id__horas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taller/ordenes/{orden_id}/cerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cerrar Orden */
+        post: operations["cerrar_orden_api_v1_taller_ordenes__orden_id__cerrar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/unidades-por-etapa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unidades Por Etapa
+         * @description HU-7.04: unidades y valor por estado, días promedio y las que superan el plazo.
+         */
+        get: operations["unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AlertaFinVida
+         * @description `situacion`: "alcanzado" o "por_alcanzar" (desde el porcentaje de aviso del límite).
+         */
+        AlertaFinVida: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Kilometraje */
+            kilometraje: number | null;
+            /** Meses En Flota */
+            meses_en_flota: number;
+            /**
+             * Situacion
+             * @enum {string}
+             */
+            situacion: "alcanzado" | "por_alcanzar";
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
+        };
+        /**
+         * AltaFlotaEntrada
+         * @description Fecha del alta y, opcionalmente, los parámetros de depreciación si el contador cambia los
+         *     propuestos (montos y porcentajes como texto).
+         */
+        AltaFlotaEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Vida Util Meses */
+            vida_util_meses?: number | null;
+            /** Valor Residual */
+            valor_residual?: string | null;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal?: string | null;
+        };
+        /** AltaFlotaSalida */
+        AltaFlotaSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Costo */
+            costo: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /** AplicacionEntrada */
+        AplicacionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+        };
+        /** BalanceSalida */
+        BalanceSalida: {
+            /** Filas */
+            filas: components["schemas"]["FilaBalance"][];
+            /** Total Debe */
+            total_debe: string;
+            /** Total Haber */
+            total_haber: string;
+        };
         /** BitacoraSalida */
         BitacoraSalida: {
             /** Id */
@@ -622,7 +1471,7 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento: string;
         };
@@ -631,12 +1480,12 @@ export interface components {
             /** Id */
             id: number;
             /** Estado Anterior */
-            estado_anterior: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada") | null;
+            estado_anterior: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada") | null;
             /**
              * Estado Nuevo
              * @enum {string}
              */
-            estado_nuevo: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado_nuevo: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento: string;
             /** Usuario Id */
@@ -646,6 +1495,36 @@ export interface components {
              * Format: date-time
              */
             fecha: string;
+        };
+        /**
+         * CandidataAltaFlota
+         * @description Unidad lista con el costo de su hoja de costo y si se puede dar de alta (cuadra, sin orden).
+         */
+        CandidataAltaFlota: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Costo */
+            costo: string;
+            /** Cuadra */
+            cuadra: boolean;
+            /** Diferencia */
+            diferencia: string;
+            /** Orden Abierta */
+            orden_abierta: boolean;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
         };
         /**
          * Catalogos
@@ -658,6 +1537,138 @@ export interface components {
             tipos_vehiculo: string[];
             /** Lineas Negocio */
             lineas_negocio: string[];
+        };
+        /** CatalogosTarifas */
+        CatalogosTarifas: {
+            /** Modalidades */
+            modalidades: ("diaria" | "semanal" | "mensual" | "por_kilometraje")[];
+            /** Monedas */
+            monedas: ("GTQ" | "USD")[];
+            /** Tipos Vehiculo */
+            tipos_vehiculo: string[];
+        };
+        /** CierreContratoEntrada */
+        CierreContratoEntrada: {
+            /**
+             * Devolucion
+             * Format: date-time
+             */
+            devolucion: string;
+            /** Km Devolucion */
+            km_devolucion: number;
+            /**
+             * Combustible Devolucion
+             * @description Octavos de tanque, de 0 (vacío) a 8 (lleno)
+             */
+            combustible_devolucion: number;
+            /** Observaciones Danos */
+            observaciones_danos?: string | null;
+        };
+        /**
+         * CierreOrdenEntrada
+         * @description Cierre de la orden. La justificación solo es obligatoria si el costo es cero.
+         */
+        CierreOrdenEntrada: {
+            /** Justificacion */
+            justificacion?: string | null;
+        };
+        /**
+         * ClienteEntrada
+         * @description Alta de cliente. El verificador del NIT y las reglas que cruzan campos (empresa solo con
+         *     NIT, país solo con pasaporte) se validan en el service.
+         */
+        ClienteEntrada: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "individual" | "empresa";
+            /** Nombre */
+            nombre: string;
+            /**
+             * Tipo Identificacion
+             * @enum {string}
+             */
+            tipo_identificacion: "nit" | "cui" | "pasaporte";
+            /** Identificacion */
+            identificacion: string;
+            /** Pais */
+            pais?: string | null;
+            /** Direccion */
+            direccion?: string | null;
+            /** Telefono */
+            telefono?: string | null;
+            /** Correo */
+            correo?: string | null;
+            /**
+             * Agente Retencion Iva
+             * @default false
+             */
+            agente_retencion_iva: boolean;
+            /**
+             * Agente Retencion Isr
+             * @default false
+             */
+            agente_retencion_isr: boolean;
+        };
+        /** ClienteSalida */
+        ClienteSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "individual" | "empresa";
+            /** Nombre */
+            nombre: string;
+            /**
+             * Tipo Identificacion
+             * @enum {string}
+             */
+            tipo_identificacion: "nit" | "cui" | "pasaporte";
+            /** Identificacion */
+            identificacion: string;
+            /** Pais */
+            pais: string | null;
+            /** Direccion */
+            direccion: string | null;
+            /** Telefono */
+            telefono: string | null;
+            /** Correo */
+            correo: string | null;
+            /** Agente Retencion Iva */
+            agente_retencion_iva: boolean;
+            /** Agente Retencion Isr */
+            agente_retencion_isr: boolean;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /**
+             * Identificacion Formateada
+             * @description NIT con guion para mostrar; CUI y pasaporte tal cual.
+             */
+            readonly identificacion_formateada: string;
+        };
+        /** CompraHojaCosto */
+        CompraHojaCosto: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /** Total Usd */
+            total_usd: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Total Gtq */
+            total_gtq: string;
         };
         /**
          * CompraUnidadEntrada
@@ -764,6 +1775,172 @@ export interface components {
              */
             readonly suma_al_costo: boolean;
         };
+        /**
+         * ContratoEntrada
+         * @description Registro del contrato al salir la unidad. La tarifa se toma del tarifario vigente el día de
+         *     salida para la modalidad y moneda indicadas; el depósito esperado llega como texto.
+         */
+        ContratoEntrada: {
+            /** Cliente Id */
+            cliente_id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Salida
+             * Format: date-time
+             */
+            salida: string;
+            /**
+             * Devolucion Prevista
+             * Format: date
+             */
+            devolucion_prevista: string;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Km Salida */
+            km_salida: number;
+            /**
+             * Combustible Salida
+             * @description Octavos de tanque, de 0 (vacío) a 8 (lleno)
+             */
+            combustible_salida: number;
+            /**
+             * Deposito Esperado
+             * @default 0
+             */
+            deposito_esperado: string;
+        };
+        /** ContratoSalida */
+        ContratoSalida: {
+            /** Id */
+            id: number;
+            /** Numero */
+            numero: number;
+            /** Cliente Id */
+            cliente_id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Salida
+             * Format: date-time
+             */
+            salida: string;
+            /**
+             * Devolucion Prevista
+             * Format: date
+             */
+            devolucion_prevista: string;
+            /** Tarifa Id */
+            tarifa_id: number;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Tarifa Monto */
+            tarifa_monto: string | null;
+            /** Km Incluido */
+            km_incluido: number;
+            /** Precio Km Adicional */
+            precio_km_adicional: string | null;
+            /** Km Salida */
+            km_salida: number;
+            /** Combustible Salida */
+            combustible_salida: number;
+            /** Deposito Esperado */
+            deposito_esperado: string | null;
+            /** Dias Previstos */
+            dias_previstos: number;
+            /** Monto Estimado */
+            monto_estimado: string | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "abierto" | "cerrado";
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Devolucion */
+            devolucion: string | null;
+            /** Km Devolucion */
+            km_devolucion: number | null;
+            /** Combustible Devolucion */
+            combustible_devolucion: number | null;
+            /** Observaciones Danos */
+            observaciones_danos: string | null;
+            /** Dias Efectivos */
+            dias_efectivos: number | null;
+            /** Km Recorridos */
+            km_recorridos: number | null;
+            /** Km Excedentes */
+            km_excedentes: number | null;
+            /** Combustible Faltante */
+            combustible_faltante: number | null;
+            /** Monto Final */
+            monto_final: string | null;
+        };
+        /** CuentaBancariaEntrada */
+        CuentaBancariaEntrada: {
+            /** Banco */
+            banco: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "monetaria" | "ahorro";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Siguiente Cheque */
+            siguiente_cheque?: number | null;
+        };
+        /** CuentaBancariaSalida */
+        CuentaBancariaSalida: {
+            /** Id */
+            id: number;
+            /** Banco */
+            banco: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "monetaria" | "ahorro";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Siguiente Cheque */
+            siguiente_cheque: number | null;
+            /** Activa */
+            activa: boolean;
+        };
         /** CuentaEntrada */
         CuentaEntrada: {
             /**
@@ -805,6 +1982,27 @@ export interface components {
              * @default false
              */
             monetaria_usd: boolean;
+        };
+        /** CuentaPorCobrarSalida */
+        CuentaPorCobrarSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Fecha Vencimiento
+             * Format: date
+             */
+            fecha_vencimiento: string;
+            /** Moneda */
+            moneda: string;
+            /** Monto */
+            monto: string;
+            /** Saldo */
+            saldo: string;
         };
         /** CuentaPorPagarSalida */
         CuentaPorPagarSalida: {
@@ -866,6 +2064,125 @@ export interface components {
             /** Linea Defecto */
             linea_defecto: ("alquiler" | "venta" | "taller" | "financiamiento" | "administracion") | null;
         };
+        /**
+         * DepositoEntrada
+         * @description Depósito en dinero (con su cuenta bancaria) o autorización de tarjeta sin cobro (con su
+         *     referencia). La moneda de la cuenta bancaria se valida en el service.
+         */
+        DepositoEntrada: {
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id?: number | null;
+            /** Referencia */
+            referencia?: string | null;
+        };
+        /** DepositoSalida */
+        DepositoSalida: {
+            /** Id */
+            id: number;
+            /** Contrato Id */
+            contrato_id: number;
+            /** Contrato Numero */
+            contrato_numero: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "deposito" | "autorizacion_tarjeta";
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Saldo */
+            saldo: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number | null;
+            /** Referencia */
+            referencia: string | null;
+            /** Devuelto */
+            devuelto: boolean;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /**
+         * DepositosVigentes
+         * @description `totales` es el saldo de los depósitos y `mayor` el de sus cuentas de pasivo: deben cuadrar.
+         */
+        DepositosVigentes: {
+            /** Depositos */
+            depositos: components["schemas"]["DepositoSalida"][];
+            /** Totales */
+            totales: {
+                [key: string]: string;
+            };
+            /** Mayor */
+            mayor: {
+                [key: string]: string;
+            };
+            /** Cuadra */
+            cuadra: boolean;
+        };
+        /** DepreciacionTipoEntrada */
+        DepreciacionTipoEntrada: {
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** DepreciacionTipoSalida */
+        DepreciacionTipoSalida: {
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Porcentaje Residual */
+            porcentaje_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** DevolucionDepositoEntrada */
+        DevolucionDepositoEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Monto */
+            monto: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number;
+        };
         /** DevolucionEntrada */
         DevolucionEntrada: {
             /** Comentario */
@@ -895,6 +2212,19 @@ export interface components {
             motor: string | null;
             /** Revision Esquema */
             revision_esquema: string | null;
+        };
+        /** EstadoReporteEtapa */
+        EstadoReporteEtapa: {
+            /** Estado */
+            estado: string;
+            /** Unidades */
+            unidades: number;
+            /** Valor */
+            valor: string;
+            /** Dias Promedio */
+            dias_promedio: number;
+            /** Excedidas */
+            excedidas: number;
         };
         /** EstadoSistema */
         EstadoSistema: {
@@ -982,6 +2312,151 @@ export interface components {
             readonly genera_credito_fiscal: boolean;
         };
         /**
+         * FacturaEntrada
+         * @description Factura a emitir. Sin `cliente_id` se emite a Consumidor Final; `origen_tipo` y `origen_id`
+         *     (los dos o ninguno) ligan la factura al contrato, la venta o la orden que la origina.
+         */
+        FacturaEntrada: {
+            /** Cliente Id */
+            cliente_id?: number | null;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /**
+             * Dias Credito
+             * @default 0
+             */
+            dias_credito: number;
+            /** Origen Tipo */
+            origen_tipo?: ("contrato" | "venta" | "orden_taller") | null;
+            /** Origen Id */
+            origen_id?: number | null;
+            /** Lineas */
+            lineas: components["schemas"]["LineaFacturaFelEntrada"][];
+        };
+        /** FacturaSalida */
+        FacturaSalida: {
+            /** Id */
+            id: number;
+            /** Cliente Id */
+            cliente_id: number | null;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Moneda */
+            moneda: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Origen Tipo */
+            origen_tipo: string | null;
+            /** Origen Id */
+            origen_id: number | null;
+            /** Dias Credito */
+            dias_credito: number;
+            /** Emisor Nit */
+            emisor_nit: string;
+            /** Emisor Nombre */
+            emisor_nombre: string;
+            /** Receptor Id */
+            receptor_id: string;
+            /** Receptor Nombre */
+            receptor_nombre: string;
+            /** Base */
+            base: string;
+            /** Iva */
+            iva: string;
+            /** Total */
+            total: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "pendiente" | "certificada" | "rechazada";
+            /** Serie */
+            serie: string | null;
+            /** Numero */
+            numero: string | null;
+            /** Autorizacion */
+            autorizacion: string | null;
+            /** Certificada En */
+            certificada_en: string | null;
+            /** Xml */
+            xml: string | null;
+            /** Motivo Rechazo */
+            motivo_rechazo: string | null;
+            /** Partida Id */
+            partida_id: number | null;
+            /** Lineas */
+            lineas: components["schemas"]["LineaFacturaFelSalida"][];
+            cuenta_por_cobrar: components["schemas"]["CuentaPorCobrarSalida"] | null;
+        };
+        /** FilaBalance */
+        FilaBalance: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
+            /** Naturaleza */
+            naturaleza: string;
+            /** Saldo Inicial */
+            saldo_inicial: string;
+            /** Debe */
+            debe: string;
+            /** Haber */
+            haber: string;
+            /** Saldo Final */
+            saldo_final: string;
+        };
+        /** FinVidaUtil */
+        FinVidaUtil: {
+            regla: components["schemas"]["ReglaFinVidaSalida"] | null;
+            /** Unidades */
+            unidades: components["schemas"]["AlertaFinVida"][];
+        };
+        /**
+         * GastoHojaCosto
+         * @description Un gasto de importación; `suma_al_costo` es falso para el IVA de importación (crédito fiscal).
+         */
+        GastoHojaCosto: {
+            /** Concepto */
+            concepto: string;
+            /** Nombre */
+            nombre: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Documento */
+            documento: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Monto Gtq */
+            monto_gtq: string;
+            /** Suma Al Costo */
+            suma_al_costo: boolean;
+        };
+        /**
          * GastoImportacionEntrada
          * @description Gasto de importación de una unidad. El monto llega como texto ("350.00"); el VIN (contra
          *     `unidades`), el concepto, el proveedor y el tipo de cambio se validan en el service.
@@ -1062,6 +2537,89 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HojaCosto
+         * @description Hoja de costo (HU-4.08) que calcula el servidor; el front solo da formato a los montos.
+         *
+         *     `saldo_mayor_gtq` es el saldo de unidades en proceso del VIN, más el costo trasladado en el alta
+         *     a la flota (`costo_alta_gtq`) cuando ya la tiene; `cuadra` compara el total con ese saldo.
+         */
+        HojaCosto: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            compra: components["schemas"]["CompraHojaCosto"] | null;
+            /** Importacion */
+            importacion: components["schemas"]["GastoHojaCosto"][];
+            /** Mano Obra */
+            mano_obra: components["schemas"]["ManoObraHojaCosto"][];
+            /** Repuestos */
+            repuestos: components["schemas"]["RepuestoHojaCosto"][];
+            /** Compra Gtq */
+            compra_gtq: string;
+            /** Importacion Gtq */
+            importacion_gtq: string;
+            /** Credito Fiscal Gtq */
+            credito_fiscal_gtq: string;
+            /** Reacondicionamiento Gtq */
+            reacondicionamiento_gtq: string;
+            /** Total Gtq */
+            total_gtq: string;
+            /** Saldo Mayor Gtq */
+            saldo_mayor_gtq: string;
+            /** Costo Alta Gtq */
+            costo_alta_gtq: string | null;
+            /** Diferencia Gtq */
+            diferencia_gtq: string;
+            /** Cuadra */
+            cuadra: boolean;
+        };
+        /**
+         * HoraEntrada
+         * @description Horas de un mecánico en la orden. Las horas viajan como texto ("2.50"); el service las valida.
+         */
+        HoraEntrada: {
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+        };
+        /** HoraSalida */
+        HoraSalida: {
+            /** Id */
+            id: number;
+            /** Orden Id */
+            orden_id: number;
+            /** Mecanico */
+            mecanico: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Horas */
+            horas: string;
+            /** Tarea */
+            tarea: string;
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /** Costo */
+            costo: string;
+        };
         JsonValue: unknown;
         /**
          * LineaEntrada
@@ -1108,6 +2666,44 @@ export interface components {
             base: string;
             /** Iva */
             iva: string;
+        };
+        /**
+         * LineaFacturaFelEntrada
+         * @description Línea de la factura. Cantidad y precio unitario (con IVA) llegan como texto ("1120.00");
+         *     se validan en el service, igual que la línea de negocio y el VIN.
+         */
+        LineaFacturaFelEntrada: {
+            /** Descripcion */
+            descripcion: string;
+            /** Cantidad */
+            cantidad: string;
+            /** Precio Unitario */
+            precio_unitario: string;
+            /** Linea Negocio */
+            linea_negocio: string;
+            /** Vin */
+            vin?: string | null;
+        };
+        /** LineaFacturaFelSalida */
+        LineaFacturaFelSalida: {
+            /** Numero Linea */
+            numero_linea: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Cantidad */
+            cantidad: string;
+            /** Precio Unitario */
+            precio_unitario: string;
+            /** Total */
+            total: string;
+            /** Base */
+            base: string;
+            /** Iva */
+            iva: string;
+            /** Linea Negocio */
+            linea_negocio: string;
+            /** Vin */
+            vin: string | null;
         };
         /** LineaFacturaSalida */
         LineaFacturaSalida: {
@@ -1160,6 +2756,179 @@ export interface components {
             token: string;
             usuario: components["schemas"]["UsuarioSalida"];
         };
+        /** ManoObraHojaCosto */
+        ManoObraHojaCosto: {
+            /** Numero */
+            numero: string;
+            /**
+             * Fecha Cierre
+             * Format: date
+             */
+            fecha_cierre: string;
+            /** Costo Gtq */
+            costo_gtq: string;
+        };
+        /** MayorSalida */
+        MayorSalida: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
+            /** Naturaleza */
+            naturaleza: string;
+            /** Monetaria Usd */
+            monetaria_usd: boolean;
+            /** Saldo Inicial */
+            saldo_inicial: string;
+            /** Movimientos */
+            movimientos: components["schemas"]["MovimientoMayor"][];
+            /** Saldo Final */
+            saldo_final: string;
+        };
+        /** MovimientoMayor */
+        MovimientoMayor: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Numero */
+            numero: number | null;
+            /** Concepto */
+            concepto: string;
+            /** Documento Tipo */
+            documento_tipo: string | null;
+            /** Documento Id */
+            documento_id: string | null;
+            /** Debe */
+            debe: string;
+            /** Haber */
+            haber: string;
+            /** Saldo */
+            saldo: string;
+            /** Moneda */
+            moneda: string;
+            /** Monto Usd */
+            monto_usd: string | null;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Linea Negocio */
+            linea_negocio: string | null;
+            /** Vin */
+            vin: string | null;
+        };
+        /** NumeracionChequesEntrada */
+        NumeracionChequesEntrada: {
+            /** Siguiente Cheque */
+            siguiente_cheque?: number | null;
+        };
+        /**
+         * OrdenEntrada
+         * @description Apertura de la orden. El VIN y la coherencia con el estado de la unidad se validan en el service.
+         */
+        OrdenEntrada: {
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+        };
+        /** OrdenSalida */
+        OrdenSalida: {
+            /** Id */
+            id: number;
+            /** Numero */
+            numero: string;
+            /** Vin */
+            vin: string;
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "reacondicionamiento";
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "abierta" | "cerrada";
+            /**
+             * Fecha Apertura
+             * Format: date
+             */
+            fecha_apertura: string;
+            /** Kilometraje */
+            kilometraje: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Responsable */
+            responsable: string;
+            /** Dias */
+            dias: number;
+            /** Costo Acumulado */
+            costo_acumulado: string;
+            /** Fecha Cierre */
+            fecha_cierre: string | null;
+            /** Justificacion */
+            justificacion: string | null;
+            /** Partida Id */
+            partida_id: number | null;
+        };
+        /** ParametroDepreciacionEntrada */
+        ParametroDepreciacionEntrada: {
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+        };
+        /** ParametroDepreciacionSalida */
+        ParametroDepreciacionSalida: {
+            /** Id */
+            id: number;
+            /** Vin */
+            vin: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
         /** PartidaEntrada */
         PartidaEntrada: {
             /**
@@ -1205,12 +2974,78 @@ export interface components {
             contabilizada_por: number | null;
             /** Contabilizada En */
             contabilizada_en: string | null;
+            /** Revierte A */
+            revierte_a: number | null;
+            /** Revertida Por */
+            revertida_por: number | null;
             /** Lineas */
             lineas: components["schemas"]["LineaSalida"][];
             /** Total Debe */
             readonly total_debe: string;
             /** Total Haber */
             readonly total_haber: string;
+        };
+        /** PerfilFiscalEntrada */
+        PerfilFiscalEntrada: {
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Razon Social */
+            razon_social: string;
+            /** Nombre Comercial */
+            nombre_comercial: string;
+            /** Nit */
+            nit: string;
+            /** Direccion Fiscal */
+            direccion_fiscal: string;
+            /** Establecimiento */
+            establecimiento: string;
+            /**
+             * Regimen Isr
+             * @enum {string}
+             */
+            regimen_isr: "utilidades" | "simplificado";
+            /**
+             * Agente Retencion Iva
+             * @default false
+             */
+            agente_retencion_iva: boolean;
+            /**
+             * Agente Retencion Isr
+             * @default false
+             */
+            agente_retencion_isr: boolean;
+        };
+        /** PerfilFiscalSalida */
+        PerfilFiscalSalida: {
+            /** Id */
+            id: number;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Razon Social */
+            razon_social: string;
+            /** Nombre Comercial */
+            nombre_comercial: string;
+            /** Nit */
+            nit: string;
+            /** Direccion Fiscal */
+            direccion_fiscal: string;
+            /** Establecimiento */
+            establecimiento: string;
+            /**
+             * Regimen Isr
+             * @enum {string}
+             */
+            regimen_isr: "utilidades" | "simplificado";
+            /** Agente Retencion Iva */
+            agente_retencion_iva: boolean;
+            /** Agente Retencion Isr */
+            agente_retencion_isr: boolean;
         };
         /**
          * ProveedorEntrada
@@ -1324,6 +3159,82 @@ export interface components {
              */
             readonly nit_formateado: string | null;
         };
+        /** ReglaEntrada */
+        ReglaEntrada: {
+            /** Cuenta Codigo */
+            cuenta_codigo: string;
+        };
+        /** ReglaFinVidaEntrada */
+        ReglaFinVidaEntrada: {
+            /** Kilometraje Limite */
+            kilometraje_limite?: number | null;
+            /** Meses Limite */
+            meses_limite?: number | null;
+            /**
+             * Porcentaje Aviso
+             * @default 90
+             */
+            porcentaje_aviso: string;
+        };
+        /** ReglaFinVidaSalida */
+        ReglaFinVidaSalida: {
+            /** Kilometraje Limite */
+            kilometraje_limite: number | null;
+            /** Meses Limite */
+            meses_limite: number | null;
+            /** Porcentaje Aviso */
+            porcentaje_aviso: string;
+            /** Actualizado Por */
+            actualizado_por: number | null;
+            /**
+             * Actualizado En
+             * Format: date-time
+             */
+            actualizado_en: string;
+        };
+        /** ReglaSalida */
+        ReglaSalida: {
+            /** Id */
+            id: number;
+            /** Documento Tipo */
+            documento_tipo: string;
+            /** Concepto */
+            concepto: string;
+            /** Descripcion */
+            descripcion: string;
+            /** Cuenta Codigo */
+            cuenta_codigo: string | null;
+        };
+        /** ReporteUnidadesEtapa */
+        ReporteUnidadesEtapa: {
+            /** Limite Dias */
+            limite_dias: number;
+            /** Valor Total */
+            valor_total: string;
+            /** Estados */
+            estados: components["schemas"]["EstadoReporteEtapa"][];
+            /** Unidades */
+            unidades: components["schemas"]["UnidadReporteEtapa"][];
+        };
+        /**
+         * RepuestoHojaCosto
+         * @description Línea de una factura local cargada a unidades en proceso con el VIN (repuesto o subcontrato).
+         */
+        RepuestoHojaCosto: {
+            /** Documento */
+            documento: string;
+            /** Proveedor */
+            proveedor: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Descripcion */
+            descripcion: string;
+            /** Monto Gtq */
+            monto_gtq: string;
+        };
         /** ResumenEtapa */
         ResumenEtapa: {
             /**
@@ -1356,6 +3267,123 @@ export interface components {
             compra_gtq: string;
             /** Costo Total Gtq */
             costo_total_gtq: string;
+        };
+        /** ReversionEntrada */
+        ReversionEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Motivo */
+            motivo: string;
+        };
+        /**
+         * TarifaEntrada
+         * @description Alta de una tarifa. Los montos llegan como texto; que se indique tipo de vehículo o VIN (uno
+         *     solo), la existencia del VIN y la vigencia se validan en el service.
+         */
+        TarifaEntrada: {
+            /** Tipo Vehiculo */
+            tipo_vehiculo?: string | null;
+            /** Vin */
+            vin?: string | null;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /**
+             * Km Incluido
+             * @default 0
+             */
+            km_incluido: number;
+            /**
+             * Precio Km Adicional
+             * @default 0
+             */
+            precio_km_adicional: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vigente Hasta */
+            vigente_hasta?: string | null;
+        };
+        /**
+         * TarifaManoObraEntrada
+         * @description Tarifa horaria de costo en quetzales; viaja como texto y el service la valida.
+         */
+        TarifaManoObraEntrada: {
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+        };
+        /** TarifaManoObraSalida */
+        TarifaManoObraSalida: {
+            /** Id */
+            id: number;
+            /** Tarifa Hora */
+            tarifa_hora: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /** TarifaSalida */
+        TarifaSalida: {
+            /** Id */
+            id: number;
+            /** Tipo Vehiculo */
+            tipo_vehiculo: string | null;
+            /** Vin */
+            vin: string | null;
+            /**
+             * Modalidad
+             * @enum {string}
+             */
+            modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /** Monto */
+            monto: string;
+            /** Km Incluido */
+            km_incluido: number;
+            /** Precio Km Adicional */
+            precio_km_adicional: string;
+            /**
+             * Vigente Desde
+             * Format: date
+             */
+            vigente_desde: string;
+            /** Vigente Hasta */
+            vigente_hasta: string | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
         };
         /**
          * TipoCambioEntrada
@@ -1480,9 +3508,38 @@ export interface components {
              * @default en_transito
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
             /** Documento */
             documento?: string | null;
+        };
+        /**
+         * UnidadReporteEtapa
+         * @description `valor_en_libros` dice si el valor es el en libros (con alta en flota) o el costo acumulado.
+         */
+        UnidadReporteEtapa: {
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            /**
+             * Desde
+             * Format: date-time
+             */
+            desde: string;
+            /** Dias En Estado */
+            dias_en_estado: number;
+            /** Valor */
+            valor: string;
+            /** Valor En Libros */
+            valor_en_libros: boolean;
+            /** Excede */
+            excede: boolean;
         };
         /** UnidadSalida */
         UnidadSalida: {
@@ -1506,7 +3563,9 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada";
+            estado: "en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada";
+            /** Kilometraje */
+            kilometraje?: number | null;
             /**
              * Creado En
              * Format: date-time
@@ -1536,6 +3595,42 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * ValorEnLibros
+         * @description Depreciación acumulada y valor en libros a una fecha, financieros y fiscales (línea recta).
+         */
+        ValorEnLibros: {
+            /** Vin */
+            vin: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+            /** Costo */
+            costo: string;
+            /** Meses Depreciados */
+            meses_depreciados: number;
+            /** Vida Util Meses */
+            vida_util_meses: number;
+            /** Valor Residual */
+            valor_residual: string;
+            /** Porcentaje Fiscal */
+            porcentaje_fiscal: string;
+            /** Depreciacion Financiera */
+            depreciacion_financiera: string;
+            /** Valor Libros Financiero */
+            valor_libros_financiero: string;
+            /** Depreciacion Fiscal */
+            depreciacion_fiscal: string;
+            /** Valor Libros Fiscal */
+            valor_libros_fiscal: string;
         };
     };
     responses: never;
@@ -1860,7 +3955,9 @@ export interface operations {
                 desde?: string | null;
                 hasta?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1889,7 +3986,9 @@ export interface operations {
     registrar_tipo_cambio_api_v1_configuracion_tipos_cambio_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1922,7 +4021,9 @@ export interface operations {
     consultar_tipo_cambio_api_v1_configuracion_tipos_cambio__fecha__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 fecha: string;
             };
@@ -1956,7 +4057,9 @@ export interface operations {
                 desde?: string | null;
                 hasta?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1985,7 +4088,9 @@ export interface operations {
     registrar_transaccion_usd_api_v1_configuracion_transacciones_usd_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2015,6 +4120,277 @@ export interface operations {
             };
         };
     };
+    perfil_fiscal_vigente_api_v1_configuracion_perfil_fiscal_get: {
+        parameters: {
+            query?: {
+                fecha?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_perfil_fiscal_api_v1_configuracion_perfil_fiscal_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerfilFiscalEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    historial_perfil_fiscal_api_v1_configuracion_perfil_fiscal_historial_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilFiscalSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_cuentas_bancarias_api_v1_configuracion_cuentas_bancarias_get: {
+        parameters: {
+            query?: {
+                moneda?: string | null;
+                solo_activas?: boolean;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crear_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CuentaBancariaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_numeracion_cheques_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__cheques_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NumeracionChequesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inactivar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__inactivar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activar_cuenta_bancaria_api_v1_configuracion_cuentas_bancarias__cuenta_bancaria_id__activar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_bancaria_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuentaBancariaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_proveedores_api_v1_compras_proveedores_get: {
         parameters: {
             query?: {
@@ -2022,7 +4398,9 @@ export interface operations {
                 rubro?: ("subasta" | "dealer" | "naviera" | "agente_aduanal" | "repuestos" | "seguros" | "servicios" | "otros") | null;
                 buscar?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2051,7 +4429,9 @@ export interface operations {
     registrar_proveedor_api_v1_compras_proveedores_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2084,7 +4464,9 @@ export interface operations {
     consultar_proveedor_api_v1_compras_proveedores__proveedor_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 proveedor_id: number;
             };
@@ -2117,7 +4499,9 @@ export interface operations {
             query?: {
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2146,7 +4530,9 @@ export interface operations {
     registrar_factura_api_v1_compras_facturas_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2179,7 +4565,9 @@ export interface operations {
     consultar_factura_api_v1_compras_facturas__factura_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 factura_id: number;
             };
@@ -2210,7 +4598,9 @@ export interface operations {
     listar_conceptos_api_v1_compras_gastos_importacion_conceptos_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2225,12 +4615,23 @@ export interface operations {
                     "application/json": components["schemas"]["ConceptoGastoSalida"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     resumen_gastos_unidad_api_v1_compras_gastos_importacion_unidad__vin__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2264,7 +4665,9 @@ export interface operations {
                 vin?: string | null;
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2293,7 +4696,9 @@ export interface operations {
     registrar_gasto_importacion_api_v1_compras_gastos_importacion_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2326,7 +4731,9 @@ export interface operations {
     consultar_gasto_importacion_api_v1_compras_gastos_importacion__gasto_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 gasto_id: number;
             };
@@ -2360,7 +4767,9 @@ export interface operations {
                 vin?: string | null;
                 proveedor_id?: number | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2389,7 +4798,9 @@ export interface operations {
     registrar_compra_unidad_api_v1_compras_compras_unidades_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2422,7 +4833,9 @@ export interface operations {
     consultar_compra_unidad_api_v1_compras_compras_unidades__compra_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 compra_id: number;
             };
@@ -2437,6 +4850,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompraUnidadSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hoja_de_costo_api_v1_compras_hoja_costo__vin__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HojaCosto"];
                 };
             };
             /** @description Validation Error */
@@ -2500,6 +4946,40 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    partida_de_documento_api_v1_contabilidad_documentos__documento_tipo___documento_id__partida_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                documento_tipo: string;
+                documento_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2691,10 +5171,191 @@ export interface operations {
             };
         };
     };
+    revertir_api_v1_contabilidad_partidas__partida_id__revertir_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                partida_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReversionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_reglas_api_v1_contabilidad_reglas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReglaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_regla_api_v1_contabilidad_reglas__regla_id__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                regla_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReglaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReglaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_comprobacion_api_v1_contabilidad_balance_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                linea_negocio?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mayor_api_v1_contabilidad_mayor__cuenta_id__get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                linea_negocio?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MayorSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     catalogos_api_v1_unidades_catalogos_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2709,6 +5370,15 @@ export interface operations {
                     "application/json": components["schemas"]["Catalogos"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     etapas_importacion_api_v1_unidades_etapas_importacion_get: {
@@ -2716,7 +5386,9 @@ export interface operations {
             query?: {
                 etapa?: ("en_transito" | "en_aduana" | "en_taller" | "lista") | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2742,13 +5414,180 @@ export interface operations {
             };
         };
     };
+    candidatas_alta_api_v1_unidades_alta_flota_candidatas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidataAltaFlota"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_depreciacion_tipos_api_v1_unidades_depreciacion_tipos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_depreciacion_tipo_api_v1_unidades_depreciacion_tipos__tipo_vehiculo__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                tipo_vehiculo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepreciacionTipoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionTipoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fin_vida_util_api_v1_unidades_fin_vida_util_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinVidaUtil"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    definir_regla_fin_vida_api_v1_unidades_fin_vida_util_regla_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReglaFinVidaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReglaFinVidaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_unidades_api_v1_unidades_get: {
         parameters: {
             query?: {
-                estado?: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "en_venta" | "vendida" | "recuperada") | null;
+                estado?: ("en_transito" | "en_aduana" | "en_taller" | "lista" | "en_flota" | "alquilada" | "en_venta" | "vendida" | "recuperada") | null;
                 buscar?: string | null;
             };
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2777,7 +5616,9 @@ export interface operations {
     registrar_unidad_api_v1_unidades_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2810,7 +5651,9 @@ export interface operations {
     consultar_unidad_api_v1_unidades__vin__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2841,7 +5684,9 @@ export interface operations {
     cambiar_estado_api_v1_unidades__vin__estado_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2876,7 +5721,9 @@ export interface operations {
     historial_api_v1_unidades__vin__historial_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string | null;
+            };
             path: {
                 vin: string;
             };
@@ -2891,6 +5738,1141 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CambioEstadoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dar_de_alta_api_v1_unidades__vin__alta_flota_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AltaFlotaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AltaFlotaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parametros_depreciacion_api_v1_unidades__vin__parametros_depreciacion_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cambiar_parametros_api_v1_unidades__vin__parametros_depreciacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParametroDepreciacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDepreciacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    valor_en_libros_api_v1_unidades__vin__valor_libros_get: {
+        parameters: {
+            query?: {
+                fecha?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                vin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValorEnLibros"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_clientes_api_v1_facturacion_clientes_get: {
+        parameters: {
+            query?: {
+                buscar?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_cliente_api_v1_facturacion_clientes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_cliente_api_v1_facturacion_clientes__cliente_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                cliente_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_facturas_api_v1_facturacion_facturas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    emitir_factura_api_v1_facturacion_facturas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FacturaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_factura_api_v1_facturacion_facturas__factura_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                factura_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    catalogos_api_v1_alquileres_tarifas_catalogos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogosTarifas"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_tarifas_api_v1_alquileres_tarifas_get: {
+        parameters: {
+            query?: {
+                tipo_vehiculo?: string | null;
+                vin?: string | null;
+                modalidad?: ("diaria" | "semanal" | "mensual" | "por_kilometraje") | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_tarifa_api_v1_alquileres_tarifas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TarifaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tarifa_vigente_api_v1_alquileres_tarifas_vigente_get: {
+        parameters: {
+            query: {
+                modalidad: "diaria" | "semanal" | "mensual" | "por_kilometraje";
+                moneda: "GTQ" | "USD";
+                tipo_vehiculo: string;
+                fecha?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_contratos_api_v1_alquileres_contratos_get: {
+        parameters: {
+            query?: {
+                estado?: ("abierto" | "cerrado") | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_contrato_api_v1_alquileres_contratos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContratoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    obtener_contrato_api_v1_alquileres_contratos__contrato_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_contrato_api_v1_alquileres_contratos__contrato_id__cierre_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CierreContratoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContratoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    facturar_contrato_api_v1_alquileres_contratos__contrato_id__factura_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacturaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_de_contrato_api_v1_alquileres_contratos__contrato_id__depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recibir_deposito_api_v1_alquileres_contratos__contrato_id__depositos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                contrato_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    depositos_vigentes_api_v1_alquileres_depositos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositosVigentes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aplicar_deposito_api_v1_alquileres_depositos__deposito_id__aplicacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AplicacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    devolver_deposito_api_v1_alquileres_depositos__deposito_id__devolucion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                deposito_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevolucionDepositoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_tarifas_api_v1_taller_tarifas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaManoObraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crear_tarifa_api_v1_taller_tarifas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TarifaManoObraEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarifaManoObraSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_ordenes_api_v1_taller_ordenes_get: {
+        parameters: {
+            query?: {
+                estado?: ("abierta" | "cerrada") | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrir_orden_api_v1_taller_ordenes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrdenEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_orden_api_v1_taller_ordenes__orden_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_horas_api_v1_taller_ordenes__orden_id__horas_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_horas_api_v1_taller_ordenes__orden_id__horas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoraEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoraSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_orden_api_v1_taller_ordenes__orden_id__cerrar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                orden_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CierreOrdenEntrada"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrdenSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unidades_por_etapa_api_v1_reportes_unidades_por_etapa_get: {
+        parameters: {
+            query?: {
+                limite_dias?: number;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteUnidadesEtapa"];
                 };
             };
             /** @description Validation Error */

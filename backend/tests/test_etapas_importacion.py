@@ -9,6 +9,13 @@ from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
 from app.modulos.configuracion.semilla import crear_catalogo_inicial
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/unidades"
 URL_ETAPAS = f"{URL}/etapas-importacion"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
@@ -112,9 +119,9 @@ def test_no_se_salta_etapas_ni_regresa(cliente, previos, estado, mensaje):
 
 def test_la_flota_entra_al_taller_pero_no_vuelve_a_lista(cliente):
     """Fuera de importación el taller es mantenimiento (HU-5.01): no vuelve a lista ni a aduana."""
-    cliente.post(URL, json=_unidad())
-    for estado in ("en_aduana", "en_taller", "lista", "en_flota", "en_taller"):
-        assert _cambiar(cliente, estado).status_code == 200, estado
+    # De lista a la flota solo se pasa con el alta (HU-3.01): la unidad se carga ya en flota.
+    cliente.post(URL, json=_unidad(estado="en_flota"))
+    assert _cambiar(cliente, "en_taller").status_code == 200
 
     respuesta = _cambiar(cliente, "lista")
 

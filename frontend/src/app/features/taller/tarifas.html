@@ -1,0 +1,50 @@
+<section class="encabezado">
+  <h1>Tarifas de taller</h1>
+  <p>
+    Tarifa horaria de costo de la mano de obra, en quetzales. Un cambio es una tarifa nueva: aplica
+    a las horas registradas desde su fecha de vigencia y no altera las ya costeadas.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label>
+    Tarifa por hora (Q)
+    <input type="text" inputmode="decimal" formControlName="tarifa_hora" placeholder="45.00" />
+    @if (formulario.controls.tarifa_hora.touched && formulario.controls.tarifa_hora.invalid) {
+      <small class="falla">Número positivo con hasta 6 decimales</small>
+    }
+  </label>
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" />
+  </label>
+  <button type="submit" [disabled]="guardando()">Guardar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<table class="tarjeta">
+  <thead>
+    <tr>
+      <th>Vigente desde</th>
+      <th class="numero">Tarifa por hora</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (tarifa of tarifas(); track tarifa.id) {
+      <tr>
+        <td>{{ tarifa.vigente_desde }}</td>
+        <td class="numero">{{ tarifa.tarifa_hora | monto }}</td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="2" class="vacio">Todavía no hay tarifas definidas</td>
+      </tr>
+    }
+  </tbody>
+</table>

@@ -1,0 +1,121 @@
+/* Estilos comunes de las pantallas que viven dentro del layout (encabezado, tarjeta, formulario,
+   tabla y mensajes). Una pantalla nueva usa estas clases y solo agrega en su CSS lo que le es propio. */
+
+/* Al imprimir (por ejemplo, un contrato) solo queda el documento: sin barra, menú ni lo marcado. */
+@media print {
+  .topbar,
+  .menu,
+  .no-imprimir {
+    display: none !important;
+  }
+}
+
+.contenido {
+  .encabezado {
+    margin-bottom: 24px;
+  }
+
+  .encabezado h1 {
+    font-size: 28px;
+  }
+
+  .encabezado p {
+    color: var(--gray);
+    margin-top: 4px;
+  }
+
+  .tarjeta {
+    background: var(--white);
+    border: 1px solid var(--gray-light);
+    border-radius: var(--radius);
+  }
+
+  .formulario {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  input,
+  select,
+  textarea {
+    font: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--gray-light);
+    border-radius: 8px;
+    background: var(--white);
+  }
+
+  button {
+    align-self: flex-end;
+    background: var(--teal);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button.secundario {
+    background: var(--white);
+    color: var(--teal);
+    border: 1px solid var(--teal);
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .mensaje {
+    margin-bottom: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-light);
+  }
+
+  th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray);
+  }
+
+  .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vacio,
+  small {
+    color: var(--gray);
+  }
+
+  .ok {
+    color: var(--ok);
+  }
+
+  .falla {
+    color: var(--error);
+  }
+}

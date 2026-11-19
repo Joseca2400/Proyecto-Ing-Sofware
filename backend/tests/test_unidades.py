@@ -10,6 +10,13 @@ from app.comun.db import SessionLocal
 from app.comun.errores import ErrorNegocio
 from app.modulos.unidades.service import digito_verificador, validar_vin
 
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
+
 URL = "/api/v1/unidades"
 VIN = "1HGCM82633A004352"
 
@@ -98,7 +105,7 @@ def test_registra_unidad_con_su_ficha_y_el_alta_en_el_historial(cliente):
     assert alta["estado_anterior"] is None
     assert alta["estado_nuevo"] == "en_transito"
     assert alta["documento"] == "Factura Copart 77"
-    assert alta["usuario_id"] is None  # las rutas aún no exigen sesión
+    assert alta["usuario_id"] is not None  # quien tiene la sesión (HU-1.09)
     assert alta["fecha"]
 
 
@@ -178,7 +185,8 @@ def test_catalogos_usan_las_lineas_de_negocio_de_configuracion(cliente):
 
     assert cuerpo["lineas_negocio"] == list(LINEAS_NEGOCIO)
     assert cuerpo["estados"] == [
-        "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "en_venta", "vendida", "recuperada",
+        "en_transito", "en_aduana", "en_taller", "lista", "en_flota", "alquilada", "en_venta", "vendida",
+        "recuperada",
     ]  # fmt: skip
     assert "sedan" in cuerpo["tipos_vehiculo"]
 
@@ -281,7 +289,7 @@ def test_alta_y_cambio_de_estado_se_auditan_con_el_vin(cliente):
         )
     de_unidad = [r for r in registros if r.entidad == "unidad"]
     assert [r.accion for r in de_unidad] == ["crear", "modificar"]
-    assert all(r.vin == VIN and r.usuario_id is None for r in de_unidad)
+    assert all(r.vin == VIN and r.usuario_id is not None for r in de_unidad)
     assert de_unidad[0].registro_id == str(unidad["id"])
     assert de_unidad[1].anteriores["estado"] == "en_transito"
     assert de_unidad[1].nuevos["estado"] == "en_aduana"

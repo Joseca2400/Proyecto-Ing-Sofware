@@ -2,6 +2,27 @@
   background: var(--teal);
   color: var(--white);
   padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.sesion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.sesion button {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--white);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
 }
 
 .brand {
@@ -66,10 +87,13 @@
   color: var(--white);
 }
 
-.menu .deshabilitado {
+.menu .grupo {
+  margin-top: 12px;
+  padding-bottom: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--gray);
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .contenido {

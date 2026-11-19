@@ -1,5 +1,6 @@
 """HU-4.02 (versión delgada): compra en USD que crea la unidad, la cuenta por pagar y la partida."""
 
+from contextlib import contextmanager
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -11,6 +12,13 @@ from app.comun.db import SessionLocal
 from app.comun.errores import ErrorNegocio
 from app.modulos.compras import service as compras
 from app.modulos.configuracion.semilla import crear_catalogo_inicial
+
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
 
 URL = "/api/v1/compras/compras-unidades"
 URL_PROVEEDORES = "/api/v1/compras/proveedores"
@@ -258,11 +266,35 @@ def test_sin_tipo_de_cambio_de_la_fecha_no_crea_nada(cliente, subasta):
     _nada_creado()
 
 
-def test_si_el_motor_rechaza_la_partida_no_queda_la_unidad(cliente, subasta, monkeypatch):
-    # Caja general no admite VIN: el motor rechaza la línea después de escribir la unidad.
-    monkeypatch.setattr(compras, "CUENTA_EN_TRANSITO", "1.1.01.01")
+@contextmanager
+def _regla(concepto: str, cuenta: str | None):
+    """Cambia la cuenta de una regla de contabilización de la compra y la restaura al salir."""
+    consulta = text(
+        "UPDATE regla_contabilizacion SET cuenta_codigo = :cuenta "
+        "WHERE documento_tipo = 'compra_unidad' AND concepto = :concepto RETURNING id"
+    )
+    with SessionLocal() as db:
+        original = db.scalar(
+            text(
+                "SELECT cuenta_codigo FROM regla_contabilizacion "
+                "WHERE documento_tipo = 'compra_unidad' AND concepto = :concepto"
+            ),
+            {"concepto": concepto},
+        )
+        assert db.scalar(consulta, {"cuenta": cuenta, "concepto": concepto})
+        db.commit()
+    try:
+        yield
+    finally:
+        with SessionLocal() as db:
+            db.execute(consulta, {"cuenta": original, "concepto": concepto})
+            db.commit()
 
-    respuesta = cliente.post(URL, json=_compra(subasta))
+
+def test_si_el_motor_rechaza_la_partida_no_queda_la_unidad(cliente, subasta):
+    # Caja general no admite VIN: el motor rechaza la línea después de escribir la unidad.
+    with _regla("unidad_en_transito", "1.1.01.01"):
+        respuesta = cliente.post(URL, json=_compra(subasta))
 
     assert respuesta.status_code == 400
     assert "no admite VIN" in respuesta.json()["detail"]
@@ -282,13 +314,12 @@ def test_si_la_partida_falla_por_cualquier_error_de_negocio_no_queda_nada(client
     _nada_creado()
 
 
-def test_sin_las_cuentas_del_catalogo_no_crea_nada(cliente, subasta, monkeypatch):
-    monkeypatch.setattr(compras, "CUENTA_PROVEEDORES_EXTERIOR", "9.9.99")
-
-    respuesta = cliente.post(URL, json=_compra(subasta))
+def test_sin_la_cuenta_de_la_regla_no_crea_nada(cliente, subasta):
+    with _regla("por_pagar_usd", "9.9.99"):
+        respuesta = cliente.post(URL, json=_compra(subasta))
 
     assert respuesta.status_code == 409
-    assert "no tiene 9.9.99" in respuesta.json()["detail"]
+    assert "Falta la regla de contabilización «compra_unidad · por_pagar_usd»" in respuesta.json()["detail"]
     _nada_creado()
 
 

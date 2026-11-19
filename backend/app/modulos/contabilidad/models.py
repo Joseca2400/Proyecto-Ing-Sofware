@@ -7,7 +7,17 @@ llave foránea a `cuentas`, sin importar los models de `configuracion`.
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.comun.db import Base
@@ -26,7 +36,15 @@ class Partida(Base):
 
     __tablename__ = "partida"
     __table_args__ = (
-        UniqueConstraint("documento_tipo", "documento_id", name="uq_partida_documento"),
+        # Una por documento; la reversión (HU-2.05) conserva el documento de la original.
+        Index(
+            "uq_partida_documento",
+            "documento_tipo",
+            "documento_id",
+            unique=True,
+            postgresql_where=text("revierte_a IS NULL"),
+        ),
+        UniqueConstraint("revierte_a", name="uq_partida_revierte_a"),
         CheckConstraint(
             "estado IN ('borrador', 'en_revision', 'contabilizada', 'devuelta')", name="ck_partida_estado"
         ),
@@ -51,6 +69,8 @@ class Partida(Base):
     creado_por: Mapped[int | None] = mapped_column(Integer)
     contabilizada_por: Mapped[int | None] = mapped_column(Integer)
     contabilizada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # HU-2.05: el vínculo vive en la reversión; la original contabilizada no se modifica.
+    revierte_a: Mapped[int | None] = mapped_column(ForeignKey("partida.id"))
 
     lineas: Mapped[list["LineaPartida"]] = relationship(
         back_populates="partida",
@@ -58,6 +78,14 @@ class Partida(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    reversion: Mapped["Partida | None"] = relationship(
+        remote_side="Partida.revierte_a", uselist=False, viewonly=True, lazy="selectin"
+    )
+
+    @property
+    def revertida_por(self) -> int | None:
+        """Id de la partida que revierte a esta, si la hay."""
+        return self.reversion.id if self.reversion else None
 
 
 class LineaPartida(Base):
@@ -94,3 +122,20 @@ class LineaPartida(Base):
     vin: Mapped[str | None] = mapped_column(String(17), index=True)
 
     partida: Mapped[Partida] = relationship(back_populates="lineas")
+
+
+class ReglaContabilizacion(Base):
+    """Cuenta que usa un tipo de documento para un concepto de su partida automática (HU-2.03).
+
+    Guarda el código de la cuenta y no su id: las reglas se siembran en las migraciones, antes de
+    que exista el catálogo, y el contador las ajusta después. Sin cuenta válida no hay documento.
+    """
+
+    __tablename__ = "regla_contabilizacion"
+    __table_args__ = (UniqueConstraint("documento_tipo", "concepto", name="uq_regla_contabilizacion"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    documento_tipo: Mapped[str] = mapped_column(String(30))
+    concepto: Mapped[str] = mapped_column(String(40))
+    descripcion: Mapped[str] = mapped_column(String(200))
+    cuenta_codigo: Mapped[str | None] = mapped_column(String(30))

@@ -1,10 +1,18 @@
-"""HU-1.11 en las tablas del equipo B: sin sesión (las rutas aún están abiertas) la bitácora
-registra el cambio con el actor vacío y no falla."""
+"""HU-1.11 en las tablas del equipo B: la bitácora registra cada cambio con el usuario de la sesión."""
 
+import pytest
 from sqlalchemy import select, text
 
 from app.comun.auditoria import RegistroBitacora
 from app.comun.db import SessionLocal
+from app.modulos.configuracion.semilla import crear_catalogo_inicial
+
+
+@pytest.fixture
+def cliente(cliente_contador):
+    """Las rutas exigen sesión (HU-1.09): las reglas se prueban como contador."""
+    return cliente_contador
+
 
 VIN = "1HGCM82633A004352"
 PROVEEDOR = {
@@ -39,7 +47,7 @@ def _registros(desde: int, entidad: str, registro_id: int) -> list[RegistroBitac
         )
 
 
-def test_tipo_cambio_y_transaccion_usd_se_auditan_sin_actor(cliente):
+def test_tipo_cambio_y_transaccion_usd_se_auditan_con_su_actor(cliente):
     with SessionLocal() as db:
         db.execute(text("DELETE FROM transaccion_usd"))
         db.execute(text("DELETE FROM tipo_cambio"))
@@ -55,17 +63,18 @@ def test_tipo_cambio_y_transaccion_usd_se_auditan_sin_actor(cliente):
 
     [alta_tipo] = _registros(desde, "tipo_cambio", tipo.json()["id"])
     assert alta_tipo.accion == "crear"
-    assert alta_tipo.usuario_id is None
+    assert alta_tipo.usuario_id is not None
     assert alta_tipo.nuevos["origen"] == "manual"
 
     [alta_transaccion] = _registros(desde, "transaccion_usd", transaccion.json()["id"])
-    assert alta_transaccion.usuario_id is None
+    assert alta_transaccion.usuario_id is not None
     assert alta_transaccion.nuevos["monto_gtq"] == 775
 
 
 def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE proveedor, unidad RESTART IDENTITY CASCADE"))
+        crear_catalogo_inicial(db)
+        db.execute(text("TRUNCATE proveedor, unidad, partida RESTART IDENTITY CASCADE"))
         db.commit()
     unidad = {"vin": VIN, "marca": "Honda", "linea": "Accord", "modelo": 2003, "color": "Gris"}
     assert cliente.post("/api/v1/unidades", json={**unidad, "tipo_vehiculo": "sedan"}).status_code == 201
@@ -84,7 +93,7 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
             "lineas": [
                 {
                     "descripcion": "Juego de pastillas de freno",
-                    "cuenta": "5.1.02",
+                    "cuenta": "1.1.04.03",
                     "linea_negocio": "taller",
                     "vin": VIN,
                     "base": "1000.00",
@@ -97,11 +106,11 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     cuerpo = factura.json()
 
     [alta_proveedor] = _registros(desde, "proveedor", proveedor.json()["id"])
-    assert alta_proveedor.usuario_id is None
+    assert alta_proveedor.usuario_id is not None
     assert alta_proveedor.nuevos["nit"] == "12345679"  # se guarda normalizado
 
     [alta_factura] = _registros(desde, "factura_compra", cuerpo["id"])
-    assert alta_factura.usuario_id is None
+    assert alta_factura.usuario_id is not None
 
     with SessionLocal() as db:
         linea_id = db.scalar(
@@ -116,4 +125,4 @@ def test_factura_de_compra_se_audita_con_el_vin_de_la_linea(cliente):
     assert alta_linea.nuevos["vin"] == VIN
 
     [alta_cxp] = _registros(desde, "cuenta_por_pagar", cxp_id)
-    assert alta_cxp.usuario_id is None
+    assert alta_cxp.usuario_id is not None

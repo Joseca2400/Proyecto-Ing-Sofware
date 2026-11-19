@@ -54,3 +54,27 @@ def esquema_migrado():
 @pytest.fixture
 def cliente() -> TestClient:
     return TestClient(app)
+
+
+CLAVE_PRUEBAS = "Prueba-2026!"  # la misma de test_seguridad y test_contabilidad: las cuentas se crean una vez
+
+
+@pytest.fixture(scope="module")
+def sesion_contador(esquema_migrado) -> dict[str, str]:
+    """Encabezado de una sesión de contador. Una por archivo: el hash scrypt del login es lento y
+    test_seguridad vence todas las sesiones, así que no puede durar toda la corrida."""
+    from app.comun.db import SessionLocal
+    from app.modulos.seguridad.semilla import crear_cuentas_iniciales
+
+    with SessionLocal() as db:
+        crear_cuentas_iniciales(db, CLAVE_PRUEBAS)
+    respuesta = TestClient(app).post(
+        "/api/v1/seguridad/login", json={"correo": "contador@empresa.gt", "clave": CLAVE_PRUEBAS}
+    )
+    return {"Authorization": f"Bearer {respuesta.json()['token']}"}
+
+
+@pytest.fixture
+def cliente_contador(sesion_contador) -> TestClient:
+    """Para probar reglas de negocio en rutas que exigen sesión; los permisos se prueban aparte."""
+    return TestClient(app, headers=sesion_contador)
