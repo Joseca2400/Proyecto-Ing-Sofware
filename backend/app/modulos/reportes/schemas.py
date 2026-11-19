@@ -137,3 +137,73 @@ class ReporteRentabilidadContratos(BaseModel):
     contratos: list[RentabilidadContrato]
     totales: MontosRentabilidadContrato
     pendientes: list[str]
+
+
+# ── HU-7.02: rentabilidad de cada unidad en su ciclo (hasta la flota) ─────────
+
+_MONTOS_CICLO = (
+    "compra", "importacion", "reacondicionamiento", "costo_total", "ingreso_alquiler", "mantenimiento",
+    "seguro", "marchamo", "depreciacion", "resultado",
+)  # fmt: skip
+
+
+class MontosCiclo(BaseModel):
+    """Montos en quetzales; None = concepto pendiente. La rentabilidad es un porcentaje (texto)."""
+
+    compra: Decimal | None
+    importacion: Decimal | None
+    reacondicionamiento: Decimal | None
+    costo_total: Decimal | None
+    ingreso_alquiler: Decimal | None
+    mantenimiento: Decimal | None
+    seguro: Decimal | None
+    marchamo: Decimal | None
+    depreciacion: Decimal | None
+    resultado: Decimal | None
+    rentabilidad: Decimal | None
+
+    @field_serializer(*_MONTOS_CICLO)
+    def monto_a_texto(self, valor: Decimal | None) -> str | None:
+        return _monto_o_pendiente(valor)
+
+    @field_serializer("rentabilidad")
+    def porcentaje_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.2f}"
+
+
+class RentabilidadCiclo(MontosCiclo):
+    vin: str
+    marca: str
+    linea: str
+    modelo: int
+    estado: str
+    proveedor: str | None
+    fecha_compra: date | None
+    fecha_alta: date | None
+    dias_en_flota: int | None
+    dias_alquilados: int
+    ocupacion: Decimal | None
+
+    @field_serializer("ocupacion")
+    def ocupacion_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.2f}"
+
+
+class ProveedorFiltro(BaseModel):
+    id: int
+    nombre: str
+
+
+class FiltrosCiclo(BaseModel):
+    marcas: list[str]
+    lineas: list[str]
+    anios_compra: list[int]
+    proveedores: list[ProveedorFiltro]
+
+
+class ReporteRentabilidadCiclo(BaseModel):
+    orden: str
+    unidades: list[RentabilidadCiclo]
+    totales: MontosCiclo
+    filtros: FiltrosCiclo
+    pendientes: list[str]

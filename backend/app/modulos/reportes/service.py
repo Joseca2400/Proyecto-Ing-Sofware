@@ -23,11 +23,26 @@ no tiene cuenta se muestra como pendiente, sin cifra (hoy seguro y marchamo).
 HU-3.13 (diferido): exportar a Excel (HU-7.09, Sprint 5); costos directos del contrato (taller por
 daños y combustible repuesto), que hoy se muestran pendientes porque ni la orden de taller
 (Sprint 5) ni el cargo de combustible (HU-3.09) se ligan aún al contrato.
+
+HU-7.02 "hasta la flota" (incluido): por VIN, el costo de compra, importación y
+reacondicionamiento (hoja de costo, HU-4.08), y de toda su historia en el mayor el ingreso de
+alquiler, mantenimiento, seguro, marchamo y depreciación (las mismas reglas de HU-3.13).
+- Resultado acumulado = ingreso − mantenimiento − seguro − marchamo − depreciación. El costo no se
+  resta: entra al resultado por la depreciación (y en la venta, por el valor en libros).
+- Rentabilidad sobre el costo = resultado / costo total × 100, a dos decimales; sin costo, vacía.
+- Días en flota: desde el alta hasta que la unidad pasa a en venta, vendida o recuperada (o hasta
+  hoy). Días alquilados: los efectivos de los contratos cerrados más los transcurridos de los
+  abiertos; ocupación = días alquilados / días en flota (a lo sumo 100 %).
+- Filtros por estado, marca, línea (el modelo comercial), año de compra y proveedor de la compra;
+  orden por resultado o por rentabilidad, de mayor a menor.
+HU-7.02 (diferido, Release 2): resultado de la venta (precio menos valor en libros, comisión y
+garantía) e intereses del financiamiento, con HU-8.12 y el módulo de financiamiento.
 """
 
 import csv
 import io
-from datetime import date
+import math
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
@@ -323,3 +338,123 @@ def csv_rentabilidad_contratos(reporte: dict) -> str:
     ]
     filas.append(["Total", "", "", "", "", "", ""] + [_cifra(reporte["totales"][c]) for c in CAMPOS_CONTRATO])
     return _csv(encabezados, filas)
+
+
+# ── HU-7.02: rentabilidad de cada unidad en su ciclo (hasta la flota) ─────────
+
+# Hasta que exista la baja formal (HU-3.15), una unidad en estos estados ya salió de la flota.
+FUERA_DE_FLOTA = ("en_venta", "vendida", "recuperada")
+ORDENES = ("resultado", "rentabilidad")
+CAMPOS_CICLO = (
+    "compra", "importacion", "reacondicionamiento", "costo_total",
+    *CONCEPTOS_INGRESO, *CONCEPTOS_COSTO, "resultado",
+)  # fmt: skip
+
+
+def _dias_en_flota(db: Session, vin: str, fecha_alta: date, hoy: date) -> int:
+    """Del alta al primer paso a un estado fuera de la flota posterior a ella, o a hoy."""
+    salida = next(
+        (
+            cambio.fecha.date()
+            for cambio in unidades.historial(db, vin)
+            if cambio.estado_nuevo in FUERA_DE_FLOTA and cambio.fecha.date() >= fecha_alta
+        ),
+        hoy,
+    )
+    return max((salida - fecha_alta).days, 0)
+
+
+def _dias_alquilados(db: Session, vin: str) -> int:
+    ahora = datetime.now(UTC)
+    dias = 0
+    for contrato in alquileres.listar_contratos(db, vin=vin):
+        if contrato.dias_efectivos is not None:
+            dias += contrato.dias_efectivos
+        else:
+            dias += max(math.ceil((ahora - contrato.salida) / timedelta(days=1)), 1)  # como el cierre
+    return dias
+
+
+def _porcentaje(parte: Decimal, total: Decimal) -> Decimal:
+    return (parte * 100 / total).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+
+def rentabilidad_ciclo(
+    db: Session,
+    estado: str | None = None,
+    marca: str | None = None,
+    linea: str | None = None,
+    anio_compra: int | None = None,
+    proveedor_id: int | None = None,
+    orden: str = "resultado",
+) -> dict:
+    """HU-7.02: costo, ingreso, costos de flota, resultado acumulado y rentabilidad de cada unidad."""
+    if orden not in ORDENES:
+        raise ErrorNegocio(f"Orden desconocido ({orden}); use uno de: {', '.join(ORDENES)}")
+    cuentas = cuentas_rentabilidad(db)
+    compras_por_vin = {c.vin: c for c in compras.listar_compras_unidad(db)}
+    todas = unidades.listar_unidades(db)
+    proveedores = {c.proveedor_id: c.proveedor.nombre for c in compras_por_vin.values()}
+    filtros = {
+        "marcas": sorted({u.marca for u in todas}),
+        "lineas": sorted({u.linea for u in todas}),
+        "anios_compra": sorted({c.fecha.year for c in compras_por_vin.values()}, reverse=True),
+        "proveedores": [{"id": i, "nombre": n} for i, n in sorted(proveedores.items(), key=lambda p: p[1])],
+    }
+    hoy = date.today()
+    filas = []
+    for unidad in todas:
+        compra = compras_por_vin.get(unidad.vin)
+        if (
+            (estado and unidad.estado != estado)
+            or (marca and unidad.marca.casefold() != marca.strip().casefold())
+            or (linea and unidad.linea.casefold() != linea.strip().casefold())
+            or (anio_compra is not None and (compra is None or compra.fecha.year != anio_compra))
+            or (proveedor_id is not None and (compra is None or compra.proveedor_id != proveedor_id))
+        ):
+            continue
+        # shortcut: hoja de costo, balance, historial y contratos por VIN; por lote si la flota crece.
+        hoja = compras.hoja_de_costo(db, unidad.vin)
+        cifras = cifras_de_unidad(db, unidad.vin, cuentas, None, None)
+        alta = unidades.alta_de_unidad(db, unidad.vin)
+        dias_flota = _dias_en_flota(db, unidad.vin, alta.fecha, hoy) if alta else None
+        dias_alquilados = _dias_alquilados(db, unidad.vin)
+        costo = hoja["total_gtq"]
+        filas.append(
+            {
+                "vin": unidad.vin,
+                "marca": unidad.marca,
+                "linea": unidad.linea,
+                "modelo": unidad.modelo,
+                "estado": unidad.estado,
+                "proveedor": compra.proveedor.nombre if compra else None,
+                "fecha_compra": compra.fecha if compra else None,
+                "fecha_alta": alta.fecha if alta else None,
+                "compra": hoja["compra_gtq"],
+                "importacion": hoja["importacion_gtq"],
+                "reacondicionamiento": hoja["reacondicionamiento_gtq"],
+                "costo_total": costo,
+                **{c: cifras[c] for c in (*CONCEPTOS_INGRESO, *CONCEPTOS_COSTO)},
+                "resultado": cifras["resultado"],
+                "rentabilidad": _porcentaje(cifras["resultado"], costo) if costo else None,
+                "dias_en_flota": dias_flota,
+                "dias_alquilados": dias_alquilados,
+                "ocupacion": min(_porcentaje(Decimal(dias_alquilados), Decimal(dias_flota)), Decimal(100))
+                if dias_flota
+                else None,
+            }
+        )
+    clave = "resultado" if orden == "resultado" else "rentabilidad"
+    filas.sort(key=lambda f: (f[clave] is None, -(f[clave] or 0), f["vin"]))
+    totales = sumar(filas, CAMPOS_CICLO)
+    costo_total = totales["costo_total"] or Decimal(0)
+    return {
+        "orden": orden,
+        "unidades": filas,
+        "totales": {
+            **totales,
+            "rentabilidad": _porcentaje(totales["resultado"], costo_total) if costo_total else None,
+        },
+        "filtros": filtros,
+        "pendientes": pendientes_de_reglas(cuentas),
+    }

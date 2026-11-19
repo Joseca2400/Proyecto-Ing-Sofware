@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ from app.comun import config
 from app.comun.db import get_db
 from app.modulos.reportes import service
 from app.modulos.reportes.schemas import (
+    ReporteRentabilidadCiclo,
     ReporteRentabilidadContratos,
     ReporteRentabilidadUnidades,
     ReporteUnidadesEtapa,
@@ -92,3 +94,21 @@ def rentabilidad_contratos_csv(
     reporte = service.rentabilidad_contratos(db, desde, hasta, vin)
     nombre = f"rentabilidad-contratos-{reporte['desde']}-{reporte['hasta']}.csv"
     return _archivo_csv(service.csv_rentabilidad_contratos(reporte), nombre)
+
+
+@router.get("/rentabilidad/ciclo", response_model=ReporteRentabilidadCiclo)
+def rentabilidad_ciclo(
+    estado: str | None = None,
+    marca: str | None = None,
+    linea: str | None = None,
+    anio_compra: int | None = Query(default=None, ge=1900, le=2100),
+    proveedor_id: int | None = None,
+    orden: Literal["resultado", "rentabilidad"] = "resultado",
+    db: Session = Depends(get_db),
+) -> ReporteRentabilidadCiclo:
+    """HU-7.02 (hasta la flota): por VIN, costo de compra, importación y reacondicionamiento,
+    ingreso de alquiler, costos de flota, depreciación, resultado acumulado, rentabilidad sobre el
+    costo, días en flota y ocupación; con filtros y orden."""
+    return ReporteRentabilidadCiclo(
+        **service.rentabilidad_ciclo(db, estado, marca, linea, anio_compra, proveedor_id, orden)
+    )

@@ -1544,6 +1544,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reportes/rentabilidad/ciclo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rentabilidad Ciclo
+         * @description HU-7.02 (hasta la flota): por VIN, costo de compra, importación y reacondicionamiento,
+         *     ingreso de alquiler, costos de flota, depreciación, resultado acumulado, rentabilidad sobre el
+         *     costo, días en flota y ocupación; con filtros y orden.
+         */
+        get: operations["rentabilidad_ciclo_api_v1_reportes_rentabilidad_ciclo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2665,6 +2687,17 @@ export interface components {
             /** Saldo Final */
             saldo_final: string;
         };
+        /** FiltrosCiclo */
+        FiltrosCiclo: {
+            /** Marcas */
+            marcas: string[];
+            /** Lineas */
+            lineas: string[];
+            /** Anios Compra */
+            anios_compra: number[];
+            /** Proveedores */
+            proveedores: components["schemas"]["ProveedorFiltro"][];
+        };
         /** FinVidaUtil */
         FinVidaUtil: {
             regla: components["schemas"]["ReglaFinVidaSalida"] | null;
@@ -3042,6 +3075,34 @@ export interface components {
             /** Mes */
             mes: number;
         };
+        /**
+         * MontosCiclo
+         * @description Montos en quetzales; None = concepto pendiente. La rentabilidad es un porcentaje (texto).
+         */
+        MontosCiclo: {
+            /** Compra */
+            compra: string | null;
+            /** Importacion */
+            importacion: string | null;
+            /** Reacondicionamiento */
+            reacondicionamiento: string | null;
+            /** Costo Total */
+            costo_total: string | null;
+            /** Ingreso Alquiler */
+            ingreso_alquiler: string | null;
+            /** Mantenimiento */
+            mantenimiento: string | null;
+            /** Seguro */
+            seguro: string | null;
+            /** Marchamo */
+            marchamo: string | null;
+            /** Depreciacion */
+            depreciacion: string | null;
+            /** Resultado */
+            resultado: string | null;
+            /** Rentabilidad */
+            rentabilidad: string | null;
+        };
         /** MontosRentabilidadContrato */
         MontosRentabilidadContrato: {
             /** Alquiler */
@@ -3378,6 +3439,13 @@ export interface components {
             /** Cuenta Bancaria */
             cuenta_bancaria?: string | null;
         };
+        /** ProveedorFiltro */
+        ProveedorFiltro: {
+            /** Id */
+            id: number;
+            /** Nombre */
+            nombre: string;
+        };
         /** ProveedorGasto */
         ProveedorGasto: {
             /** Id */
@@ -3495,6 +3563,53 @@ export interface components {
             /** Cuenta Codigo */
             cuenta_codigo: string | null;
         };
+        /** RentabilidadCiclo */
+        RentabilidadCiclo: {
+            /** Compra */
+            compra: string | null;
+            /** Importacion */
+            importacion: string | null;
+            /** Reacondicionamiento */
+            reacondicionamiento: string | null;
+            /** Costo Total */
+            costo_total: string | null;
+            /** Ingreso Alquiler */
+            ingreso_alquiler: string | null;
+            /** Mantenimiento */
+            mantenimiento: string | null;
+            /** Seguro */
+            seguro: string | null;
+            /** Marchamo */
+            marchamo: string | null;
+            /** Depreciacion */
+            depreciacion: string | null;
+            /** Resultado */
+            resultado: string | null;
+            /** Rentabilidad */
+            rentabilidad: string | null;
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            /** Proveedor */
+            proveedor: string | null;
+            /** Fecha Compra */
+            fecha_compra: string | null;
+            /** Fecha Alta */
+            fecha_alta: string | null;
+            /** Dias En Flota */
+            dias_en_flota: number | null;
+            /** Dias Alquilados */
+            dias_alquilados: number;
+            /** Ocupacion */
+            ocupacion: string | null;
+        };
         /** RentabilidadContrato */
         RentabilidadContrato: {
             /** Alquiler */
@@ -3558,6 +3673,17 @@ export interface components {
              * Format: date
              */
             fecha_alta: string;
+        };
+        /** ReporteRentabilidadCiclo */
+        ReporteRentabilidadCiclo: {
+            /** Orden */
+            orden: string;
+            /** Unidades */
+            unidades: components["schemas"]["RentabilidadCiclo"][];
+            totales: components["schemas"]["MontosCiclo"];
+            filtros: components["schemas"]["FiltrosCiclo"];
+            /** Pendientes */
+            pendientes: string[];
         };
         /** ReporteRentabilidadContratos */
         ReporteRentabilidadContratos: {
@@ -7875,6 +8001,44 @@ export interface operations {
                 };
                 content: {
                     "text/csv": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rentabilidad_ciclo_api_v1_reportes_rentabilidad_ciclo_get: {
+        parameters: {
+            query?: {
+                estado?: string | null;
+                marca?: string | null;
+                linea?: string | null;
+                anio_compra?: number | null;
+                proveedor_id?: number | null;
+                orden?: "resultado" | "rentabilidad";
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteRentabilidadCiclo"];
                 };
             };
             /** @description Validation Error */

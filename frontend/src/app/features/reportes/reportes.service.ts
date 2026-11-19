@@ -19,6 +19,18 @@ export interface FiltrosRentabilidad {
   vin: string;
 }
 
+// ── HU-7.02: rentabilidad de cada unidad en su ciclo (hasta la flota) ─────────
+
+export type ReporteRentabilidadCiclo = components['schemas']['ReporteRentabilidadCiclo'];
+export interface FiltrosCiclo {
+  estado: string;
+  marca: string;
+  linea: string;
+  anio_compra: string;
+  proveedor_id: string;
+  orden: 'resultado' | 'rentabilidad';
+}
+
 const sinVacios = (filtros: object): Record<string, string> =>
   Object.fromEntries(
     Object.entries(filtros)
@@ -44,6 +56,12 @@ export class ReportesService {
 
   rentabilidadContratos(filtros: FiltrosRentabilidad): Observable<ReporteRentabilidadContratos> {
     return this.http.get<ReporteRentabilidadContratos>(`${this.url}/rentabilidad/contratos`, {
+      params: sinVacios(filtros),
+    });
+  }
+
+  rentabilidadCiclo(filtros: FiltrosCiclo): Observable<ReporteRentabilidadCiclo> {
+    return this.http.get<ReporteRentabilidadCiclo>(`${this.url}/rentabilidad/ciclo`, {
       params: sinVacios(filtros),
     });
   }
