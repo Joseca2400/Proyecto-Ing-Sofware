@@ -154,6 +154,13 @@ export const routes: Routes = [
           import('./features/reportes/unidades-etapa').then((m) => m.UnidadesEtapaPantalla),
       },
       {
+        path: 'reportes/rentabilidad',
+        title: 'Rentabilidad · Kilómetro Cero',
+        data: soloRoles('gerencia', 'gerente_financiero', 'contador'),
+        loadComponent: () =>
+          import('./features/reportes/rentabilidad').then((m) => m.RentabilidadPantalla),
+      },
+      {
         path: 'contabilidad/partidas',
         title: 'Partidas · Kilómetro Cero',
         loadComponent: () =>

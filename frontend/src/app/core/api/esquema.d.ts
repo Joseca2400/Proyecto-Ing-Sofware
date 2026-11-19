@@ -1462,6 +1462,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reportes/rentabilidad/unidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rentabilidad Unidades
+         * @description HU-3.13: ingreso, depreciación, mantenimiento, seguro, marchamo y resultado de cada unidad
+         *     de la flota en el período (por defecto, del 1 de enero a hoy), del mayor filtrado por VIN.
+         */
+        get: operations["rentabilidad_unidades_api_v1_reportes_rentabilidad_unidades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/rentabilidad/unidades/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rentabilidad Unidades Csv
+         * @description HU-3.13: la misma consulta por unidad, en CSV.
+         */
+        get: operations["rentabilidad_unidades_csv_api_v1_reportes_rentabilidad_unidades_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/rentabilidad/contratos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rentabilidad Contratos
+         * @description HU-3.13: alquiler, cargos adicionales, costos directos y resultado de cada contrato con
+         *     salida en el período, de las partidas de sus facturas.
+         */
+        get: operations["rentabilidad_contratos_api_v1_reportes_rentabilidad_contratos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/rentabilidad/contratos/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rentabilidad Contratos Csv
+         * @description HU-3.13: la misma consulta por contrato, en CSV.
+         */
+        get: operations["rentabilidad_contratos_csv_api_v1_reportes_rentabilidad_contratos_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2960,6 +3042,19 @@ export interface components {
             /** Mes */
             mes: number;
         };
+        /** MontosRentabilidadContrato */
+        MontosRentabilidadContrato: {
+            /** Alquiler */
+            alquiler: string | null;
+            /** Cargos Adicionales */
+            cargos_adicionales: string | null;
+            /** Ingresos */
+            ingresos: string | null;
+            /** Costos Directos */
+            costos_directos: string | null;
+            /** Resultado */
+            resultado: string | null;
+        };
         /** MovimientoMayor */
         MovimientoMayor: {
             /**
@@ -3400,6 +3495,106 @@ export interface components {
             /** Cuenta Codigo */
             cuenta_codigo: string | null;
         };
+        /** RentabilidadContrato */
+        RentabilidadContrato: {
+            /** Alquiler */
+            alquiler: string | null;
+            /** Cargos Adicionales */
+            cargos_adicionales: string | null;
+            /** Ingresos */
+            ingresos: string | null;
+            /** Costos Directos */
+            costos_directos: string | null;
+            /** Resultado */
+            resultado: string | null;
+            /** Contrato Id */
+            contrato_id: number;
+            /** Numero */
+            numero: number;
+            /** Vin */
+            vin: string;
+            /** Cliente */
+            cliente: string;
+            /**
+             * Salida
+             * Format: date-time
+             */
+            salida: string;
+            /** Devolucion */
+            devolucion: string | null;
+            /** Estado */
+            estado: string;
+            /** Facturas */
+            facturas: string[];
+        };
+        /** RentabilidadUnidad */
+        RentabilidadUnidad: {
+            /** Ingreso Alquiler */
+            ingreso_alquiler: string | null;
+            /** Depreciacion */
+            depreciacion: string | null;
+            /** Mantenimiento */
+            mantenimiento: string | null;
+            /** Seguro */
+            seguro: string | null;
+            /** Marchamo */
+            marchamo: string | null;
+            /** Costos */
+            costos: string | null;
+            /** Resultado */
+            resultado: string | null;
+            /** Vin */
+            vin: string;
+            /** Marca */
+            marca: string;
+            /** Linea */
+            linea: string;
+            /** Modelo */
+            modelo: number;
+            /** Estado */
+            estado: string;
+            /**
+             * Fecha Alta
+             * Format: date
+             */
+            fecha_alta: string;
+        };
+        /** ReporteRentabilidadContratos */
+        ReporteRentabilidadContratos: {
+            /**
+             * Desde
+             * Format: date
+             */
+            desde: string;
+            /**
+             * Hasta
+             * Format: date
+             */
+            hasta: string;
+            /** Contratos */
+            contratos: components["schemas"]["RentabilidadContrato"][];
+            totales: components["schemas"]["MontosRentabilidadContrato"];
+            /** Pendientes */
+            pendientes: string[];
+        };
+        /** ReporteRentabilidadUnidades */
+        ReporteRentabilidadUnidades: {
+            /**
+             * Desde
+             * Format: date
+             */
+            desde: string;
+            /**
+             * Hasta
+             * Format: date
+             */
+            hasta: string;
+            /** Unidades */
+            unidades: components["schemas"]["RentabilidadUnidad"][];
+            totales: components["schemas"]["TotalesRentabilidadUnidad"];
+            /** Pendientes */
+            pendientes: string[];
+        };
         /** ReporteUnidadesEtapa */
         ReporteUnidadesEtapa: {
             /** Limite Dias */
@@ -3669,6 +3864,23 @@ export interface components {
             valor: string;
             /** Origen */
             origen: string;
+        };
+        /** TotalesRentabilidadUnidad */
+        TotalesRentabilidadUnidad: {
+            /** Ingreso Alquiler */
+            ingreso_alquiler: string | null;
+            /** Depreciacion */
+            depreciacion: string | null;
+            /** Mantenimiento */
+            mantenimiento: string | null;
+            /** Seguro */
+            seguro: string | null;
+            /** Marchamo */
+            marchamo: string | null;
+            /** Costos */
+            costos: string | null;
+            /** Resultado */
+            resultado: string | null;
         };
         /**
          * TransaccionUSDEntrada
@@ -7523,6 +7735,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReporteUnidadesEtapa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rentabilidad_unidades_api_v1_reportes_rentabilidad_unidades_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteRentabilidadUnidades"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rentabilidad_unidades_csv_api_v1_reportes_rentabilidad_unidades_csv_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Archivo CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rentabilidad_contratos_api_v1_reportes_rentabilidad_contratos_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteRentabilidadContratos"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rentabilidad_contratos_csv_api_v1_reportes_rentabilidad_contratos_csv_get: {
+        parameters: {
+            query?: {
+                desde?: string | null;
+                hasta?: string | null;
+                vin?: string | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Archivo CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
             /** @description Validation Error */
