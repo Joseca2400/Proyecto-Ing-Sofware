@@ -1,0 +1,189 @@
+<section class="encabezado">
+  <h1>Registrar cliente</h1>
+  <p>
+    Registra clientes de alquiler, venta y taller. Una empresa se identifica con su NIT; una persona
+    guatemalteca con su CUI o NIT, y una extranjera con pasaporte y país. El NIT se valida con su
+    dígito verificador y no se admiten clientes repetidos por NIT, CUI ni pasaporte.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <fieldset class="tipo">
+    <legend>Tipo</legend>
+    <label class="opcion">
+      <input type="radio" formControlName="tipo" value="individual" /> Individual
+    </label>
+    <label class="opcion">
+      <input type="radio" formControlName="tipo" value="empresa" /> Empresa
+    </label>
+  </fieldset>
+
+  @if (tipo() === 'individual') {
+    <fieldset class="tipo">
+      <legend>Origen</legend>
+      <label class="opcion">
+        <input type="radio" formControlName="origen" value="nacional" /> Guatemalteco
+      </label>
+      <label class="opcion">
+        <input type="radio" formControlName="origen" value="extranjero" /> Extranjero
+      </label>
+    </fieldset>
+  }
+
+  <label class="ancho">
+    {{ tipo() === 'empresa' ? 'Razón social' : 'Nombre completo' }}
+    <input type="text" formControlName="nombre" name="nombre" />
+    @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+      <small class="falla">El nombre es obligatorio</small>
+    }
+  </label>
+
+  @if (tipo() === 'individual' && origen() === 'extranjero') {
+    <label>
+      Pasaporte
+      <input type="text" formControlName="pasaporte" name="pasaporte" />
+    </label>
+    <label class="corto">
+      País
+      <input type="text" formControlName="pais" name="pais" placeholder="US" maxlength="2" />
+      @if (formulario.controls.pais.touched && formulario.controls.pais.invalid) {
+        <small class="falla">Código de dos letras</small>
+      }
+    </label>
+  } @else if (tipo() === 'individual') {
+    <label>
+      CUI (DPI)
+      <input type="text" formControlName="cui" name="cui" placeholder="2584 12345 0101" />
+      @if (formulario.controls.cui.touched && formulario.controls.cui.invalid) {
+        <small class="falla">13 dígitos, como aparece en el DPI</small>
+      }
+    </label>
+  }
+
+  <label>
+    {{
+      tipo() === 'empresa'
+        ? 'NIT'
+        : 'NIT (opcional si tiene ' + (origen() === 'extranjero' ? 'pasaporte' : 'CUI') + ')'
+    }}
+    <input type="text" formControlName="nit" name="nit" placeholder="1234567-9" />
+    @if (formulario.controls.nit.touched && formulario.controls.nit.invalid) {
+      <small class="falla">Dígitos y verificador (dígito o K)</small>
+    }
+  </label>
+
+  <label class="ancho">
+    Dirección (opcional)
+    <input type="text" formControlName="direccion" name="direccion" />
+  </label>
+
+  <label>
+    Teléfono (opcional)
+    <input type="tel" formControlName="telefono" name="telefono" />
+  </label>
+
+  <label>
+    Correo (opcional)
+    <input type="email" formControlName="correo" name="correo" />
+    @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
+      <small class="falla">Correo no válido</small>
+    }
+  </label>
+
+  <fieldset class="tipo">
+    <legend>Retenciones</legend>
+    <label class="opcion">
+      <input type="checkbox" formControlName="agente_retencion_iva" name="agente_retencion_iva" />
+      Agente de retención de IVA
+    </label>
+    <label class="opcion">
+      <input type="checkbox" formControlName="agente_retencion_isr" name="agente_retencion_isr" />
+      Agente de retención de ISR
+    </label>
+  </fieldset>
+
+  <button type="submit" [disabled]="guardando()">Registrar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<form class="filtros" [formGroup]="filtro" (ngSubmit)="cargar()">
+  <input
+    type="search"
+    formControlName="buscar"
+    name="buscar"
+    placeholder="Buscar por nombre, NIT, CUI o pasaporte"
+    aria-label="Buscar cliente"
+  />
+  <select formControlName="tipo" name="filtro_tipo" aria-label="Filtrar por tipo">
+    <option value="">Todos los tipos</option>
+    <option value="individual">Individuales</option>
+    <option value="empresa">Empresas</option>
+  </select>
+  <button type="submit" class="secundario">Consultar</button>
+</form>
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Identificación</th>
+        <th>Contacto</th>
+        <th>Retenciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of clientes(); track c.id) {
+        <tr>
+          <td>{{ c.nombre }}</td>
+          <td>
+            <span class="chip" [class.empresa]="c.tipo === 'empresa'">{{
+              c.tipo === 'empresa' ? 'Empresa' : 'Individual'
+            }}</span>
+          </td>
+          <td>
+            @if (c.nit_formateado) {
+              NIT {{ c.nit_formateado }}
+            }
+            @if (c.cui) {
+              <small>{{ c.nit_formateado ? '· ' : '' }}CUI {{ c.cui }}</small>
+            }
+            @if (c.pasaporte) {
+              <small
+                >{{ c.nit_formateado ? '· ' : '' }}Pasaporte {{ c.pasaporte }} · {{ c.pais }}</small
+              >
+            }
+          </td>
+          <td>
+            {{ c.telefono }}
+            @if (c.correo) {
+              <small>{{ c.telefono ? '· ' : '' }}{{ c.correo }}</small>
+            }
+          </td>
+          <td>
+            @if (c.agente_retencion_iva) {
+              <span class="chip retencion">IVA</span>
+            }
+            @if (c.agente_retencion_isr) {
+              <span class="chip retencion">ISR</span>
+            }
+            @if (!c.agente_retencion_iva && !c.agente_retencion_isr) {
+              <small>—</small>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="vacio">No hay clientes que coincidan</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
