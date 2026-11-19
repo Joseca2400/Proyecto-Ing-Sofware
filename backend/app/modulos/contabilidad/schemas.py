@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     PlainSerializer,
     StringConstraints,
     computed_field,
@@ -175,3 +176,49 @@ class MayorSalida(BaseModel):
     saldo_inicial: Monto
     movimientos: list[MovimientoMayor]
     saldo_final: Monto
+
+
+# ── HU-2.07: depreciación mensual ─────────────────────────────────────────────
+
+
+class MesEntrada(BaseModel):
+    """Mes contable sobre el que corre un proceso de cierre (depreciación, revaluación, cierre)."""
+
+    anio: int = Field(ge=2000, le=2100)
+    mes: int = Field(ge=1, le=12)
+
+
+class DepreciacionLineaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    vin: str
+    financiera: Monto
+    fiscal: Monto
+
+    @computed_field
+    @property
+    def diferencia(self) -> str:
+        """Fiscal menos financiera: lo que se concilia para el ISR."""
+        return f"{self.fiscal - self.financiera:.6f}"
+
+
+class DepreciacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    calculado_por: int | None
+    calculado_en: datetime
+    partida: PartidaSalida
+    lineas: list[DepreciacionLineaSalida]
+
+    @computed_field
+    @property
+    def total_financiera(self) -> str:
+        return f"{sum((linea.financiera for linea in self.lineas), Decimal(0)):.6f}"
+
+    @computed_field
+    @property
+    def total_fiscal(self) -> str:
+        return f"{sum((linea.fiscal for linea in self.lineas), Decimal(0)):.6f}"

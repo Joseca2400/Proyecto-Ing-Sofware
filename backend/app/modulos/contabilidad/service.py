@@ -27,22 +27,39 @@ HU-2.09 (incluido, pieza del motor): `diferencial_cambiario` calcula la ganancia
 realizada de un pago o cobro en USD (proporcional al monto aplicado, desde el tipo de cambio en
 libros) y da su línea; una `LineaAutomatica` lleva la línea en USD del saldo a su tasa en libros.
 HU-2.09 (diferido): la partida de pagos y cobros la arma su módulo en el Sprint 3.
+HU-2.07 (incluido): depreciación mensual de la flota. `calcular_depreciacion_mes` genera la partida
+en borrador (una línea de gasto y una de depreciación acumulada por unidad, con su VIN y la línea de
+alquiler) y guarda por unidad la depreciación financiera y la fiscal; su diferencia queda para la
+conciliación del ISR. La cuota sale del mismo cálculo que el valor en libros (`unidades`): lo
+acumulado al cierre del mes menos lo ya contabilizado, así nunca pasa del residual y un mes sin
+calcular se recupera en el siguiente. No deprecia unidades en venta, vendidas o recuperadas.
+Recalcular el mes reemplaza el borrador; contabilizado, no se recalcula. La partida sigue la
+revisión normal: quien la calcula no la contabiliza (HU-1.10).
+HU-2.07 (diferido): activos que no son flota (mobiliario, equipo de taller, cómputo), cuando exista
+su registro de activos fijos; otros métodos además de la línea recta.
 Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
 (HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
 """
 
+from calendar import monthrange
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
-from app.modulos.contabilidad.models import LineaPartida, Partida, ReglaContabilizacion
+from app.modulos.contabilidad.models import (
+    DepreciacionMes,
+    DepreciacionMesLinea,
+    LineaPartida,
+    Partida,
+    ReglaContabilizacion,
+)
 from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
 
 DECIMALES = 6
@@ -188,6 +205,8 @@ def corregir(db: Session, partida_id: int, datos: PartidaEntrada, usuario_id: in
     # Si otro pudiera editarla, podría escribir el contenido y luego aprobarlo (HU-1.10).
     if usuario_id is not None and partida.creado_por != usuario_id:
         raise ErrorNegocio("Solo quien registró la partida puede corregirla", 403)
+    if db.scalar(select(DepreciacionMes.id).where(DepreciacionMes.partida_id == partida.id)):
+        raise ErrorNegocio("La partida de la depreciación no se edita: vuelva a calcular el mes", 409)
     nuevas = _lineas(db, datos.fecha, datos.lineas)  # valida todo antes de tocar la partida
     partida.fecha, partida.concepto = datos.fecha, datos.concepto
     partida.documento_soporte = datos.documento_soporte or None
@@ -661,3 +680,117 @@ def mayor(
         "movimientos": movimientos,
         "saldo_final": saldo,
     }
+
+
+# ── HU-2.07: depreciación mensual de la flota ─────────────────────────────────
+
+_MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)  # fmt: skip
+# Hasta que exista la baja formal (HU-3.15), una unidad en estos estados ya salió de la flota.
+_FUERA_DE_FLOTA = ("en_venta", "vendida", "recuperada")
+
+
+def fin_de_mes(anio: int, mes: int) -> date:
+    return date(anio, mes, monthrange(anio, mes)[1])
+
+
+def listar_depreciaciones(db: Session) -> list[DepreciacionMes]:
+    return list(
+        db.scalars(select(DepreciacionMes).order_by(DepreciacionMes.anio.desc(), DepreciacionMes.mes.desc()))
+    )
+
+
+def calcular_depreciacion_mes(
+    db: Session, anio: int, mes: int, usuario_id: int | None = None
+) -> DepreciacionMes:
+    """Calcula la depreciación del mes y deja su partida en borrador; reemplaza un cálculo previo
+    del mismo mes mientras no esté contabilizado."""
+    # Import diferido: `unidades` ya importa este service al cargarse.
+    from app.modulos.unidades import service as unidades
+
+    fin = fin_de_mes(anio, mes)
+    periodo = tuple_(DepreciacionMes.anio, DepreciacionMes.mes)
+    for otra in db.scalars(select(DepreciacionMes).where(periodo != (anio, mes)).with_for_update()):
+        nombre = f"{_MESES[otra.mes - 1]} de {otra.anio}"
+        if (otra.anio, otra.mes) > (anio, mes):
+            # El mes posterior ya recuperó lo que faltaba de este: calcularlo lo contaría dos veces.
+            raise ErrorNegocio(f"Ya se calculó la depreciación de {nombre}, un mes posterior", 409)
+        if otra.partida.estado != "contabilizada":
+            raise ErrorNegocio(f"Contabilice primero la depreciación de {nombre}", 409)
+    previa = db.scalar(select(DepreciacionMes).where(periodo == (anio, mes)).with_for_update())
+    if previa is not None:
+        if previa.partida.estado == "contabilizada":
+            raise ErrorNegocio(
+                f"La depreciación de {_MESES[mes - 1]} de {anio} ya está contabilizada "
+                f"(partida No. {previa.partida.numero})",
+                409,
+            )
+        borrador = previa.partida
+        db.delete(previa)
+        db.flush()
+        db.delete(borrador)
+        db.flush()
+
+    gasto = cuenta_regla(db, "depreciacion", "gasto")
+    acumulada = cuenta_regla(db, "depreciacion", "acumulada")
+    # Lo ya contabilizado por unidad: financiero en el mayor, fiscal en los cálculos anteriores.
+    en_libros = dict(
+        db.execute(
+            _contabilizadas(
+                select(LineaPartida.vin, func.sum(LineaPartida.haber - LineaPartida.debe)).where(
+                    LineaPartida.cuenta_id == acumulada
+                ),
+                fin,
+                None,
+                None,
+            ).group_by(LineaPartida.vin)
+        ).all()
+    )
+    fiscal_previo = dict(
+        db.execute(
+            select(DepreciacionMesLinea.vin, func.sum(DepreciacionMesLinea.fiscal)).group_by(
+                DepreciacionMesLinea.vin
+            )
+        ).all()
+    )
+    detalle, lineas = [], []
+    # shortcut: una lectura del alta y de sus parámetros por unidad; agruparlas si la flota crece.
+    for unidad in unidades.listar_unidades(db):
+        if unidad.estado in _FUERA_DE_FLOTA or unidades.alta_de_unidad(db, unidad.vin) is None:
+            continue
+        valor = unidades.valor_en_libros(db, unidad.vin, fin)
+        financiera = valor["depreciacion_financiera"] - en_libros.get(unidad.vin, Decimal(0))
+        fiscal = max(valor["depreciacion_fiscal"] - fiscal_previo.get(unidad.vin, Decimal(0)), Decimal(0))
+        if financiera <= 0 and fiscal <= 0:
+            continue
+        financiera = max(financiera, Decimal(0))
+        detalle.append(DepreciacionMesLinea(vin=unidad.vin, financiera=financiera, fiscal=fiscal))
+        if financiera > 0:
+            comun = {"monto": f"{financiera:f}", "linea_negocio": "alquiler", "vin": unidad.vin}
+            lineas.append(LineaEntrada(cuenta_id=gasto, lado="debe", **comun))
+            lineas.append(LineaEntrada(cuenta_id=acumulada, lado="haber", **comun))
+    if not lineas:
+        raise ErrorNegocio(f"No hay unidades de la flota por depreciar en {_MESES[mes - 1]} de {anio}")
+
+    partida = Partida(
+        fecha=fin,
+        concepto=f"Depreciación de la flota de {_MESES[mes - 1]} de {anio}",
+        documento_soporte=f"DEP-{anio}-{mes:02d}",
+        creado_por=usuario_id,
+        lineas=_lineas(db, fin, lineas),
+    )
+    db.add(partida)
+    db.flush()
+    calculo = DepreciacionMes(
+        anio=anio, mes=mes, partida_id=partida.id, calculado_por=usuario_id, lineas=detalle
+    )
+    db.add(calculo)
+    try:
+        db.commit()
+    except IntegrityError as error:  # dos cálculos simultáneos del mismo mes
+        db.rollback()
+        raise ErrorNegocio("La depreciación de ese mes se está calculando en otra sesión", 409) from error
+    db.refresh(calculo)
+    return calculo

@@ -1,0 +1,70 @@
+<section class="encabezado">
+  <h1>Cierre de mes</h1>
+  <p>
+    Los procesos del cierre, en su orden. Cada uno deja su partida ligada al mes; los cálculos los
+    hace el servidor.
+  </p>
+</section>
+
+<form class="tarjeta formulario">
+  <label>
+    Mes
+    <input
+      type="month"
+      name="mes"
+      [value]="mes()"
+      (change)="elegirMes($any($event.target).value)"
+    />
+  </label>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<h2>1. Depreciación de la flota</h2>
+@if (depreciacion(); as d) {
+  <p>
+    Partida {{ d.partida.numero ? 'No. ' + d.partida.numero : '' }}
+    {{ estados[d.partida.estado] ?? d.partida.estado }} con fecha {{ d.partida.fecha }}.
+    <a routerLink="/contabilidad/partidas">Ver en Partidas</a>
+  </p>
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>VIN</th>
+        <th class="numero">Financiera</th>
+        <th class="numero">Fiscal</th>
+        <th class="numero">Diferencia para el ISR</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of d.lineas; track l.vin) {
+        <tr>
+          <td class="codigo">{{ l.vin }}</td>
+          <td class="numero">{{ l.financiera | monto }}</td>
+          <td class="numero">{{ l.fiscal | monto }}</td>
+          <td class="numero">{{ l.diferencia | monto }}</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>Total</th>
+        <th class="numero">{{ d.total_financiera | monto }}</th>
+        <th class="numero">{{ d.total_fiscal | monto }}</th>
+        <th></th>
+      </tr>
+    </tfoot>
+  </table>
+} @else {
+  <p class="vacio">La depreciación de este mes no se ha calculado</p>
+}
+@if (depreciacion()?.partida?.estado !== 'contabilizada') {
+  <button type="button" name="depreciar" (click)="depreciar()">
+    {{ depreciacion() ? 'Volver a calcular' : 'Calcular depreciación' }}
+  </button>
+}

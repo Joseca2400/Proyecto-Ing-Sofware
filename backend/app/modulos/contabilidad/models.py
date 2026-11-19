@@ -139,3 +139,41 @@ class ReglaContabilizacion(Base):
     concepto: Mapped[str] = mapped_column(String(40))
     descripcion: Mapped[str] = mapped_column(String(200))
     cuenta_codigo: Mapped[str | None] = mapped_column(String(30))
+
+
+class DepreciacionMes(Base):
+    """Cálculo de la depreciación de un mes (HU-2.07): su partida y el detalle por unidad."""
+
+    __tablename__ = "depreciacion_mes"
+    __table_args__ = (
+        UniqueConstraint("anio", "mes", name="uq_depreciacion_mes"),
+        CheckConstraint("mes BETWEEN 1 AND 12", name="ck_depreciacion_mes_mes"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    anio: Mapped[int] = mapped_column(Integer)
+    mes: Mapped[int] = mapped_column(Integer)
+    partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_depreciacion_mes_partida"))
+    calculado_por: Mapped[int | None] = mapped_column(Integer)
+    calculado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    partida: Mapped[Partida] = relationship(lazy="selectin")
+    lineas: Mapped[list["DepreciacionMesLinea"]] = relationship(
+        order_by="DepreciacionMesLinea.vin", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class DepreciacionMesLinea(Base):
+    """Depreciación financiera (la de la partida) y fiscal de una unidad en el mes; su diferencia
+    es la base de la conciliación fiscal del ISR (criterio 3)."""
+
+    __tablename__ = "depreciacion_mes_linea"
+    __table_args__ = (UniqueConstraint("depreciacion_id", "vin", name="uq_depreciacion_mes_linea"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    depreciacion_id: Mapped[int] = mapped_column(
+        ForeignKey("depreciacion_mes.id", name="fk_depreciacion_mes_linea", ondelete="CASCADE")
+    )
+    vin: Mapped[str] = mapped_column(String(17), index=True)
+    financiera: Mapped[Decimal] = mapped_column(MONTO)
+    fiscal: Mapped[Decimal] = mapped_column(MONTO)

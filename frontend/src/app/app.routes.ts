@@ -159,6 +159,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contabilidad/reglas').then((m) => m.ReglasPantalla),
       },
       {
+        path: 'contabilidad/cierre-mes',
+        title: 'Cierre de mes · Kilómetro Cero',
+        data: soloRoles('auxiliar_contable', 'contador', 'gerente_financiero'),
+        loadComponent: () =>
+          import('./features/contabilidad/cierre-mes').then((m) => m.CierreMesPantalla),
+      },
+      {
         path: 'contabilidad/balance',
         title: 'Balance de comprobación · Kilómetro Cero',
         data: soloRoles('contador', 'gerente_financiero', 'gerencia'),

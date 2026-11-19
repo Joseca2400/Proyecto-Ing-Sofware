@@ -1,0 +1,93 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { CierreMesPantalla } from './cierre-mes';
+
+const API = '/api/v1/contabilidad';
+const VIN = '1HGCM82633A004352';
+const DEPRECIACION = {
+  id: 1,
+  anio: 2024,
+  mes: 2,
+  calculado_por: 2,
+  calculado_en: '2024-03-01T10:00:00Z',
+  partida: { id: 9, numero: null, estado: 'borrador', fecha: '2024-02-29', lineas: [] },
+  lineas: [
+    { vin: VIN, financiera: '1157.950000', fiscal: '1286.610000', diferencia: '128.660000' },
+  ],
+  total_financiera: '1157.950000',
+  total_fiscal: '1286.610000',
+};
+
+describe('CierreMesPantalla', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [CierreMesPantalla],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  async function crear(depreciaciones: unknown[] = []) {
+    const fixture = TestBed.createComponent(CierreMesPantalla);
+    http.expectOne(`${API}/depreciaciones`).flush(depreciaciones);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const mes = el.querySelector<HTMLInputElement>('[name=mes]')!;
+    mes.value = '2024-02';
+    mes.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    return { fixture, el };
+  }
+
+  it('calcula la depreciación del mes elegido y muestra el detalle por unidad', async () => {
+    const { fixture, el } = await crear();
+    expect(el.textContent).toContain('no se ha calculado');
+
+    el.querySelector<HTMLButtonElement>('[name=depreciar]')!.click();
+    const peticion = http.expectOne(`${API}/depreciaciones`);
+    expect(peticion.request.body).toEqual({ anio: 2024, mes: 2 });
+    peticion.flush(DEPRECIACION);
+    await fixture.whenStable();
+
+    const celdas = [...el.querySelectorAll('tbody td')].map((td) => td.textContent!.trim());
+    expect(celdas[0]).toBe(VIN);
+    // El pipe separa el símbolo con un espacio duro: se compara solo la cifra.
+    expect(celdas.slice(1).map((c) => c.replace(/^Q\s/, ''))).toEqual([
+      '1,157.95',
+      '1,286.61',
+      '128.66',
+    ]);
+    expect(el.textContent).toContain('en borrador');
+    expect(el.querySelector('[name=depreciar]')!.textContent).toContain('Volver a calcular');
+  });
+
+  it('no ofrece recalcular un mes contabilizado y muestra el rechazo del servidor', async () => {
+    const contabilizada = {
+      ...DEPRECIACION,
+      partida: { ...DEPRECIACION.partida, numero: 14, estado: 'contabilizada' },
+    };
+    const { fixture, el } = await crear([contabilizada]);
+    expect(el.textContent).toContain('No. 14');
+    expect(el.querySelector('[name=depreciar]')).toBeNull();
+
+    const mes = el.querySelector<HTMLInputElement>('[name=mes]')!;
+    mes.value = '2024-03';
+    mes.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    el.querySelector<HTMLButtonElement>('[name=depreciar]')!.click();
+    http
+      .expectOne(`${API}/depreciaciones`)
+      .flush(
+        { detail: 'No hay unidades de la flota por depreciar' },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await fixture.whenStable();
+    expect(el.querySelector('[role=alert]')!.textContent).toContain('No hay unidades');
+  });
+});

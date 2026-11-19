@@ -10,6 +10,7 @@ export type Cuenta = components['schemas']['CuentaSalida'];
 export type Regla = components['schemas']['ReglaSalida'];
 export type Balance = components['schemas']['BalanceSalida'];
 export type Mayor = components['schemas']['MayorSalida'];
+export type Depreciacion = components['schemas']['DepreciacionSalida'];
 
 /** Filtros del balance y del mayor; los vacíos no se envían. */
 export interface FiltrosLibro {
@@ -88,5 +89,13 @@ export class ContabilidadService {
     return this.http.get<Mayor>(`${API_URL}/contabilidad/mayor/${cuentaId}`, {
       params: sinVacios(filtros),
     });
+  }
+
+  depreciaciones(): Observable<Depreciacion[]> {
+    return this.http.get<Depreciacion[]>(`${API_URL}/contabilidad/depreciaciones`);
+  }
+
+  calcularDepreciacion(anio: number, mes: number): Observable<Depreciacion> {
+    return this.http.post<Depreciacion>(`${API_URL}/contabilidad/depreciaciones`, { anio, mes });
   }
 }

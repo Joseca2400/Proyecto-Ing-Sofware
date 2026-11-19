@@ -704,6 +704,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/depreciaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Depreciaciones */
+        get: operations["listar_depreciaciones_api_v1_contabilidad_depreciaciones_get"];
+        put?: never;
+        /**
+         * Calcular Depreciacion
+         * @description Calcula (o recalcula) el mes y deja la partida en borrador; la contabiliza otra persona.
+         */
+        post: operations["calcular_depreciacion_api_v1_contabilidad_depreciaciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades/catalogos": {
         parameters: {
             query?: never;
@@ -2151,6 +2172,43 @@ export interface components {
             /** Cuadra */
             cuadra: boolean;
         };
+        /** DepreciacionLineaSalida */
+        DepreciacionLineaSalida: {
+            /** Vin */
+            vin: string;
+            /** Financiera */
+            financiera: string;
+            /** Fiscal */
+            fiscal: string;
+            /**
+             * Diferencia
+             * @description Fiscal menos financiera: lo que se concilia para el ISR.
+             */
+            readonly diferencia: string;
+        };
+        /** DepreciacionSalida */
+        DepreciacionSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /** Calculado Por */
+            calculado_por: number | null;
+            /**
+             * Calculado En
+             * Format: date-time
+             */
+            calculado_en: string;
+            partida: components["schemas"]["PartidaSalida"];
+            /** Lineas */
+            lineas: components["schemas"]["DepreciacionLineaSalida"][];
+            /** Total Financiera */
+            readonly total_financiera: string;
+            /** Total Fiscal */
+            readonly total_fiscal: string;
+        };
         /** DepreciacionTipoEntrada */
         DepreciacionTipoEntrada: {
             /** Vida Util Meses */
@@ -2786,6 +2844,16 @@ export interface components {
             movimientos: components["schemas"]["MovimientoMayor"][];
             /** Saldo Final */
             saldo_final: string;
+        };
+        /**
+         * MesEntrada
+         * @description Mes contable sobre el que corre un proceso de cierre (depreciación, revaluación, cierre).
+         */
+        MesEntrada: {
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
         };
         /** MovimientoMayor */
         MovimientoMayor: {
@@ -5337,6 +5405,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MayorSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_depreciaciones_api_v1_contabilidad_depreciaciones_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calcular_depreciacion_api_v1_contabilidad_depreciaciones_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionSalida"];
                 };
             };
             /** @description Validation Error */

@@ -43,6 +43,7 @@ CATALOGO = (
     ("1.1.04.03", "Repuestos e insumos de taller", "activo", D, True, {"linea_defecto": "taller", **_OPC}),
     ("1.2", "Activo no corriente", "activo", D, False, {}),
     ("1.2.01", "Vehículos de flota para alquiler", "activo", D, True, {"linea_defecto": "alquiler", **_VIN}),
+    ("1.2.02", "Depreciación acumulada de flota", "activo", A, True, {"linea_defecto": "alquiler", **_VIN}),
     ("2", "Pasivo", "pasivo", A, False, {}),
     ("2.1", "Pasivo corriente", "pasivo", A, False, {}),
     ("2.1.01", "Cuentas por pagar", "pasivo", A, False, {}),
@@ -69,6 +70,7 @@ CATALOGO = (
     ("6.1.02", "Servicios y suministros", "gasto", D, True, _linea("administracion")),
     ("6.2", "Mantenimiento de la flota", "gasto", D, True, _linea("alquiler", **_VIN)),
     ("6.3", "Pérdida por diferencial cambiario", "gasto", D, True, _linea("administracion")),
+    ("6.4", "Depreciación de la flota", "gasto", D, True, _linea("alquiler", **_VIN)),
 )  # fmt: skip
 
 

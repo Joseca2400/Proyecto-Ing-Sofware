@@ -7,8 +7,10 @@ from app.comun.db import get_db
 from app.modulos.contabilidad import service
 from app.modulos.contabilidad.schemas import (
     BalanceSalida,
+    DepreciacionSalida,
     DevolucionEntrada,
     MayorSalida,
+    MesEntrada,
     PartidaEntrada,
     PartidaSalida,
     ReglaEntrada,
@@ -138,3 +140,19 @@ def mayor(
     db: Session = Depends(get_db),
 ):
     return service.mayor(db, cuenta_id, desde, hasta, linea_negocio, vin)
+
+
+# ── HU-2.07: depreciación mensual ─────────────────────────────────────────────
+
+
+@router.get("/depreciaciones", response_model=list[DepreciacionSalida])
+def listar_depreciaciones(_: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
+    return service.listar_depreciaciones(db)
+
+
+@router.post("/depreciaciones", response_model=DepreciacionSalida, status_code=201)
+def calcular_depreciacion(
+    datos: MesEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+):
+    """Calcula (o recalcula) el mes y deja la partida en borrador; la contabiliza otra persona."""
+    return service.calcular_depreciacion_mes(db, datos.anio, datos.mes, usuario.id)

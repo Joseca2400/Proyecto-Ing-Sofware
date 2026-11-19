@@ -67,6 +67,7 @@ export class Layout {
     { etiqueta: 'Partidas', ruta: '/contabilidad/partidas' },
     { etiqueta: 'Balance de comprobación', ruta: '/contabilidad/balance' },
     { etiqueta: 'Mayor', ruta: '/contabilidad/mayor' },
+    { etiqueta: 'Cierre de mes', ruta: '/contabilidad/cierre-mes' },
     { etiqueta: 'Reglas de contabilización', ruta: '/contabilidad/reglas' },
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
     { etiqueta: 'Reportes' },
