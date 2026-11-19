@@ -27,23 +27,59 @@ HU-2.09 (incluido, pieza del motor): `diferencial_cambiario` calcula la ganancia
 realizada de un pago o cobro en USD (proporcional al monto aplicado, desde el tipo de cambio en
 libros) y da su línea; una `LineaAutomatica` lleva la línea en USD del saldo a su tasa en libros.
 HU-2.09 (diferido): la partida de pagos y cobros la arma su módulo en el Sprint 3.
-Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
-(HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
+HU-2.07 (incluido): depreciación mensual de la flota. `calcular_depreciacion_mes` genera la partida
+en borrador (una línea de gasto y una de depreciación acumulada por unidad, con su VIN y la línea de
+alquiler) y guarda por unidad la depreciación financiera y la fiscal; su diferencia queda para la
+conciliación del ISR. La cuota sale del mismo cálculo que el valor en libros (`unidades`): lo
+acumulado al cierre del mes menos lo ya contabilizado, así nunca pasa del residual y un mes sin
+calcular se recupera en el siguiente. No deprecia unidades en venta, vendidas o recuperadas.
+Recalcular el mes reemplaza el borrador; contabilizado, no se recalcula. La partida sigue la
+revisión normal: quien la calcula no la contabiliza (HU-1.10).
+HU-2.07 (diferido): activos que no son flota (mobiliario, equipo de taller, cómputo), cuando exista
+su registro de activos fijos; otros métodos además de la línea recta.
+HU-2.08 (incluido): revaluación al cierre de los saldos de las cuentas monetarias en USD (bancos,
+por cobrar, por pagar, depósitos) con el tipo de cambio del último día del mes. `revaluar_mes`
+lleva cada saldo (por cuenta, línea de negocio y VIN) a ese tipo de cambio en una partida
+automática con el diferencial no realizado, y según la política elegida la revierte el primer día
+del mes siguiente o mantiene el saldo revaluado. Guarda el reporte: saldo en USD, tipo de cambio
+anterior, de cierre y diferencial. `tipo_cambio_en_libros` da a pagos y cobros (HU-2.09) el tipo
+de cambio vigente de un saldo tras las revaluaciones que se mantuvieron.
+HU-2.08 (diferido): detalle por cliente o proveedor (las líneas del mayor aún no llevan tercero);
+política fija en la configuración (hoy el contador la elige en cada revaluación); préstamos en
+USD, cuando exista su módulo (entran solos si su cuenta es monetaria en USD).
+HU-2.12 (incluido): cierre mensual. `cerrar_mes` no cierra con partidas sin contabilizar en el
+mes, cierra los meses en orden y guarda usuario, fecha e instantánea del balance de comprobación.
+Un mes cerrado no acepta partidas nuevas, correcciones, reversiones ni documentos con esa fecha:
+lo impide el motor (`exigir_periodo_abierto`) para todos los módulos, porque todos piden aquí sus
+partidas (cubre también el criterio 2 de HU-2.05).
+HU-2.12 (diferido): reabrir un período con aprobación (HU-2.13, Sprint 6); lista de verificación
+del cierre (HU-2.11, Sprint 4), que exigirá la depreciación y la revaluación antes de cerrar.
+Pendiente: límites monetarios de aprobación; lotes; adjuntos.
 """
 
+from calendar import monthrange
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
 from app.modulos.configuracion import service as configuracion
-from app.modulos.contabilidad.models import LineaPartida, Partida, ReglaContabilizacion
-from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
+from app.modulos.contabilidad.models import (
+    DepreciacionMes,
+    DepreciacionMesLinea,
+    LineaPartida,
+    Partida,
+    PeriodoCerrado,
+    ReglaContabilizacion,
+    Revaluacion,
+    RevaluacionLinea,
+)
+from app.modulos.contabilidad.schemas import BalanceSalida, LineaEntrada, PartidaEntrada
 
 DECIMALES = 6
 _LIMITE = Decimal("1000000000000")  # cabe en NUMERIC(18, 6)
@@ -109,9 +145,23 @@ def _linea(db: Session, fecha: date, numero: int, datos: LineaEntrada) -> LineaP
     )
 
 
+def exigir_periodo_abierto(db: Session, fecha: date) -> None:
+    """HU-2.12: rechaza una fecha de un mes cerrado. Los meses se cierran en orden, así que basta
+    comparar con el último cierre. Otros módulos pueden llamarla para avisar antes de armar su
+    documento; de todas formas el motor la aplica a cada partida."""
+    cierre = db.scalar(select(func.max(PeriodoCerrado.fecha)))
+    if cierre is not None and fecha <= cierre:
+        raise ErrorNegocio(
+            f"El período está cerrado hasta el {cierre:%d/%m/%Y}: no se registra nada con fecha "
+            f"{fecha:%d/%m/%Y}",
+            409,
+        )
+
+
 def _lineas(db: Session, fecha: date, entradas: list[LineaEntrada]) -> list[LineaPartida]:
     if fecha > date.today():
         raise ErrorNegocio("La fecha de la partida no puede ser futura")
+    exigir_periodo_abierto(db, fecha)
     if not entradas:
         raise ErrorNegocio("La partida necesita al menos una línea")
     return [_linea(db, fecha, numero, datos) for numero, datos in enumerate(entradas, start=1)]
@@ -155,6 +205,7 @@ def _exigir_estado(partida: Partida, *estados: str, accion: str) -> None:
 def _contabilizar(db: Session, partida: Partida, usuario_id: int | None) -> None:
     # El candado dura hasta el commit: dos contabilizaciones simultáneas no repiten ni saltan número.
     db.execute(select(func.pg_advisory_xact_lock(_BLOQUEO_CORRELATIVO)))
+    exigir_periodo_abierto(db, partida.fecha)  # tras el candado: el cierre toma el mismo
     siguiente = db.scalar(select(func.coalesce(func.max(Partida.numero), 0) + 1))
     partida.numero = siguiente
     partida.estado = "contabilizada"
@@ -188,6 +239,8 @@ def corregir(db: Session, partida_id: int, datos: PartidaEntrada, usuario_id: in
     # Si otro pudiera editarla, podría escribir el contenido y luego aprobarlo (HU-1.10).
     if usuario_id is not None and partida.creado_por != usuario_id:
         raise ErrorNegocio("Solo quien registró la partida puede corregirla", 403)
+    if db.scalar(select(DepreciacionMes.id).where(DepreciacionMes.partida_id == partida.id)):
+        raise ErrorNegocio("La partida de la depreciación no se edita: vuelva a calcular el mes", 409)
     nuevas = _lineas(db, datos.fecha, datos.lineas)  # valida todo antes de tocar la partida
     partida.fecha, partida.concepto = datos.fecha, datos.concepto
     partida.documento_soporte = datos.documento_soporte or None
@@ -314,6 +367,7 @@ def _revertir(db: Session, original: Partida, fecha: date, motivo: str, usuario_
         raise ErrorNegocio("La fecha de la reversión no puede ser futura")
     if fecha < original.fecha:
         raise ErrorNegocio("La reversión no puede tener fecha anterior a la partida original")
+    exigir_periodo_abierto(db, fecha)  # antes de crear nada: la original puede ser de un mes cerrado
     reversion = Partida(
         fecha=fecha,
         concepto=f"Reversión de la partida No. {original.numero}",
@@ -661,3 +715,307 @@ def mayor(
         "movimientos": movimientos,
         "saldo_final": saldo,
     }
+
+
+# ── HU-2.07: depreciación mensual de la flota ─────────────────────────────────
+
+_MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)  # fmt: skip
+# Hasta que exista la baja formal (HU-3.15), una unidad en estos estados ya salió de la flota.
+_FUERA_DE_FLOTA = ("en_venta", "vendida", "recuperada")
+
+
+def fin_de_mes(anio: int, mes: int) -> date:
+    return date(anio, mes, monthrange(anio, mes)[1])
+
+
+def listar_depreciaciones(db: Session) -> list[DepreciacionMes]:
+    return list(
+        db.scalars(select(DepreciacionMes).order_by(DepreciacionMes.anio.desc(), DepreciacionMes.mes.desc()))
+    )
+
+
+def calcular_depreciacion_mes(
+    db: Session, anio: int, mes: int, usuario_id: int | None = None
+) -> DepreciacionMes:
+    """Calcula la depreciación del mes y deja su partida en borrador; reemplaza un cálculo previo
+    del mismo mes mientras no esté contabilizado."""
+    # Import diferido: `unidades` ya importa este service al cargarse.
+    from app.modulos.unidades import service as unidades
+
+    fin = fin_de_mes(anio, mes)
+    periodo = tuple_(DepreciacionMes.anio, DepreciacionMes.mes)
+    for otra in db.scalars(select(DepreciacionMes).where(periodo != (anio, mes)).with_for_update()):
+        nombre = f"{_MESES[otra.mes - 1]} de {otra.anio}"
+        if (otra.anio, otra.mes) > (anio, mes):
+            # El mes posterior ya recuperó lo que faltaba de este: calcularlo lo contaría dos veces.
+            raise ErrorNegocio(f"Ya se calculó la depreciación de {nombre}, un mes posterior", 409)
+        if otra.partida.estado != "contabilizada":
+            raise ErrorNegocio(f"Contabilice primero la depreciación de {nombre}", 409)
+    previa = db.scalar(select(DepreciacionMes).where(periodo == (anio, mes)).with_for_update())
+    if previa is not None:
+        if previa.partida.estado == "contabilizada":
+            raise ErrorNegocio(
+                f"La depreciación de {_MESES[mes - 1]} de {anio} ya está contabilizada "
+                f"(partida No. {previa.partida.numero})",
+                409,
+            )
+        borrador = previa.partida
+        db.delete(previa)
+        db.flush()
+        db.delete(borrador)
+        db.flush()
+
+    gasto = cuenta_regla(db, "depreciacion", "gasto")
+    acumulada = cuenta_regla(db, "depreciacion", "acumulada")
+    # Lo ya contabilizado por unidad: financiero en el mayor, fiscal en los cálculos anteriores.
+    en_libros = dict(
+        db.execute(
+            _contabilizadas(
+                select(LineaPartida.vin, func.sum(LineaPartida.haber - LineaPartida.debe)).where(
+                    LineaPartida.cuenta_id == acumulada
+                ),
+                fin,
+                None,
+                None,
+            ).group_by(LineaPartida.vin)
+        ).all()
+    )
+    fiscal_previo = dict(
+        db.execute(
+            select(DepreciacionMesLinea.vin, func.sum(DepreciacionMesLinea.fiscal)).group_by(
+                DepreciacionMesLinea.vin
+            )
+        ).all()
+    )
+    detalle, lineas = [], []
+    # shortcut: una lectura del alta y de sus parámetros por unidad; agruparlas si la flota crece.
+    for unidad in unidades.listar_unidades(db):
+        if unidad.estado in _FUERA_DE_FLOTA or unidades.alta_de_unidad(db, unidad.vin) is None:
+            continue
+        valor = unidades.valor_en_libros(db, unidad.vin, fin)
+        financiera = valor["depreciacion_financiera"] - en_libros.get(unidad.vin, Decimal(0))
+        fiscal = max(valor["depreciacion_fiscal"] - fiscal_previo.get(unidad.vin, Decimal(0)), Decimal(0))
+        if financiera <= 0 and fiscal <= 0:
+            continue
+        financiera = max(financiera, Decimal(0))
+        detalle.append(DepreciacionMesLinea(vin=unidad.vin, financiera=financiera, fiscal=fiscal))
+        if financiera > 0:
+            comun = {"monto": f"{financiera:f}", "linea_negocio": "alquiler", "vin": unidad.vin}
+            lineas.append(LineaEntrada(cuenta_id=gasto, lado="debe", **comun))
+            lineas.append(LineaEntrada(cuenta_id=acumulada, lado="haber", **comun))
+    if not lineas:
+        raise ErrorNegocio(f"No hay unidades de la flota por depreciar en {_MESES[mes - 1]} de {anio}")
+
+    partida = Partida(
+        fecha=fin,
+        concepto=f"Depreciación de la flota de {_MESES[mes - 1]} de {anio}",
+        documento_soporte=f"DEP-{anio}-{mes:02d}",
+        creado_por=usuario_id,
+        lineas=_lineas(db, fin, lineas),
+    )
+    db.add(partida)
+    db.flush()
+    calculo = DepreciacionMes(
+        anio=anio, mes=mes, partida_id=partida.id, calculado_por=usuario_id, lineas=detalle
+    )
+    db.add(calculo)
+    try:
+        db.commit()
+    except IntegrityError as error:  # dos cálculos simultáneos del mismo mes
+        db.rollback()
+        raise ErrorNegocio("La depreciación de ese mes se está calculando en otra sesión", 409) from error
+    db.refresh(calculo)
+    return calculo
+
+
+# ── HU-2.08: revaluación de saldos en dólares al cierre ───────────────────────
+
+POLITICAS_REVALUACION = ("revertir", "mantener")
+
+
+def listar_revaluaciones(db: Session) -> list[Revaluacion]:
+    return list(db.scalars(select(Revaluacion).order_by(Revaluacion.fecha.desc())))
+
+
+def tipo_cambio_en_libros(
+    db: Session, fecha_documento: date, tipo_cambio_documento: Decimal, hasta: date
+) -> Decimal:
+    """Tipo de cambio al que está en libros, a la fecha `hasta`, un saldo en USD que nació en
+    `fecha_documento`: el de la última revaluación que se mantuvo desde entonces o, si no hubo, el
+    del documento. Es el `tipo_cambio_libros` de `diferencial_cambiario` al pagar o cobrar."""
+    revaluado = db.scalar(
+        select(Revaluacion.tipo_cambio)
+        .where(
+            Revaluacion.politica == "mantener",
+            Revaluacion.fecha >= fecha_documento,
+            Revaluacion.fecha <= hasta,
+        )
+        .order_by(Revaluacion.fecha.desc())
+        .limit(1)
+    )
+    return revaluado if revaluado is not None else tipo_cambio_documento
+
+
+def revaluar_mes(
+    db: Session, anio: int, mes: int, politica: str, usuario_id: int | None = None
+) -> Revaluacion:
+    """Revalúa los saldos en USD al cierre del mes y contabiliza el diferencial no realizado."""
+    if politica not in POLITICAS_REVALUACION:
+        raise ErrorNegocio(f"La política debe ser una de: {', '.join(POLITICAS_REVALUACION)}")
+    fin = fin_de_mes(anio, mes)
+    nombre = f"{_MESES[mes - 1]} de {anio}"
+    if fin >= date.today():
+        # Con el mes terminado la reversión del día 1 ya no es una fecha futura.
+        raise ErrorNegocio(f"El mes debe haber terminado para revaluarlo: {nombre} sigue abierto")
+    ultima = db.scalar(select(func.max(Revaluacion.fecha)))
+    if ultima is not None and ultima >= fin:
+        raise ErrorNegocio(
+            f"Ya se revaluó {nombre}" if ultima == fin else "Ya se revaluó un mes posterior", 409
+        )
+    tipo_cambio = configuracion.tipo_cambio_de(db, fin)
+
+    cuentas = {
+        cuenta.id: _signo(cuenta.naturaleza)
+        for cuenta in configuracion.listar_cuentas(db, solo_detalle=True)
+        if cuenta.monetaria_usd
+    }
+    usd = case(
+        (LineaPartida.moneda != "USD", Decimal(0)),
+        (LineaPartida.debe > 0, LineaPartida.monto_usd),
+        else_=-LineaPartida.monto_usd,
+    )
+    saldos = db.execute(
+        _contabilizadas(
+            select(
+                LineaPartida.cuenta_id,
+                LineaPartida.linea_negocio,
+                LineaPartida.vin,
+                func.sum(usd),
+                func.sum(LineaPartida.debe - LineaPartida.haber),
+            ).where(LineaPartida.cuenta_id.in_(cuentas)),
+            fin,
+            None,
+            None,
+        )
+        .group_by(LineaPartida.cuenta_id, LineaPartida.linea_negocio, LineaPartida.vin)
+        .order_by(LineaPartida.cuenta_id, LineaPartida.linea_negocio, LineaPartida.vin)
+    ).all()
+
+    detalle, lineas = [], []
+    for cuenta_id, linea_negocio, vin, saldo_usd, saldo_gtq in saldos:
+        if saldo_usd == 0:
+            continue
+        # Saldos con el débito en positivo: subir un activo o bajar un pasivo es ganancia.
+        objetivo = redondear(convertir(abs(saldo_usd), tipo_cambio), DECIMALES).copy_sign(saldo_usd)
+        diferencial = objetivo - saldo_gtq
+        detalle.append(
+            RevaluacionLinea(
+                cuenta_id=cuenta_id,
+                linea_negocio=linea_negocio,
+                vin=vin,
+                saldo_usd=saldo_usd * cuentas[cuenta_id],  # con el signo normal de la cuenta
+                tipo_cambio_anterior=redondear(abs(saldo_gtq / saldo_usd), 8),
+                diferencial=diferencial,
+            )
+        )
+        if diferencial == 0:
+            continue
+        gana = diferencial > 0
+        monto = f"{abs(diferencial):f}"
+        lineas.append(
+            LineaEntrada(
+                cuenta_id=cuenta_id,
+                lado="debe" if gana else "haber",
+                monto=monto,
+                linea_negocio=linea_negocio,
+                vin=vin,
+            )
+        )
+        lineas.append(
+            LineaEntrada(
+                cuenta_id=cuenta_regla(db, "revaluacion", "ganancia" if gana else "perdida"),
+                lado="haber" if gana else "debe",
+                monto=monto,
+            )
+        )
+    if not lineas:
+        raise ErrorNegocio(f"No hay saldos en dólares con diferencial que revaluar en {nombre}")
+
+    documento = f"{anio}-{mes:02d}"
+    partida = registrar_automatica(
+        db, fin, f"Revaluación de saldos en USD de {nombre}", lineas, "revaluacion", documento, usuario_id
+    )
+    reversion = None
+    if politica == "revertir":
+        reversion = _revertir(
+            db,
+            partida,
+            fin + timedelta(days=1),
+            f"Reversión automática de la revaluación de {nombre}",
+            usuario_id,
+        )
+    revaluacion = Revaluacion(
+        anio=anio,
+        mes=mes,
+        fecha=fin,
+        tipo_cambio=tipo_cambio,
+        politica=politica,
+        partida_id=partida.id,
+        reversion_id=reversion.id if reversion else None,
+        usuario_id=usuario_id,
+        lineas=detalle,
+    )
+    db.add(revaluacion)
+    db.commit()
+    db.refresh(revaluacion)
+    return revaluacion
+
+
+# ── HU-2.12: cierre de un período mensual ─────────────────────────────────────
+
+
+def listar_periodos(db: Session) -> list[PeriodoCerrado]:
+    return list(db.scalars(select(PeriodoCerrado).order_by(PeriodoCerrado.fecha.desc())))
+
+
+def cerrar_mes(db: Session, anio: int, mes: int, usuario_id: int | None = None) -> PeriodoCerrado:
+    """Cierra el mes: desde aquí no acepta partidas ni documentos. Guarda la instantánea del
+    balance de comprobación del mes (saldo inicial, movimientos y saldo final por cuenta)."""
+    inicio, fin = date(anio, mes, 1), fin_de_mes(anio, mes)
+    nombre = f"{_MESES[mes - 1]} de {anio}"
+    if fin >= date.today():
+        raise ErrorNegocio(f"El mes debe haber terminado para cerrarlo: {nombre} sigue en curso")
+    # El mismo candado de la contabilización: ninguna partida entra al mes mientras se cierra.
+    db.execute(select(func.pg_advisory_xact_lock(_BLOQUEO_CORRELATIVO)))
+    ultimo = db.scalar(select(func.max(PeriodoCerrado.fecha)))
+    if ultimo is not None and fin <= ultimo:
+        raise ErrorNegocio(f"El mes de {nombre} ya está cerrado", 409)
+    # En orden: toca el mes siguiente al último cierre o, si es el primero, el de la partida más antigua.
+    if ultimo is not None:
+        toca = ultimo + timedelta(days=1)
+    else:
+        toca = min(db.scalar(select(func.min(Partida.fecha))) or inicio, inicio)
+    if (toca.year, toca.month) != (anio, mes):
+        raise ErrorNegocio(
+            f"Los meses se cierran en orden: cierre primero {_MESES[toca.month - 1]} de {toca.year}", 409
+        )
+    pendientes = db.scalar(
+        select(func.count())
+        .select_from(Partida)
+        .where(Partida.fecha <= fin, Partida.estado != "contabilizada")
+    )
+    if pendientes:
+        raise ErrorNegocio(
+            f"Hay {pendientes} partida(s) en borrador, en revisión o devueltas con fecha hasta el "
+            f"{fin:%d/%m/%Y}: contabilícelas antes de cerrar {nombre}",
+            409,
+        )
+    balance = BalanceSalida.model_validate(balance_comprobacion(db, inicio, fin)).model_dump(mode="json")
+    periodo = PeriodoCerrado(anio=anio, mes=mes, fecha=fin, cerrado_por=usuario_id, balance=balance)
+    db.add(periodo)
+    db.commit()
+    db.refresh(periodo)
+    return periodo

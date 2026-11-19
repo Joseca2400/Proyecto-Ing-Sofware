@@ -16,6 +16,9 @@ if not DATABASE_URL.startswith("postgresql"):
     raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL (postgresql+psycopg://...)")
 
 SESION_MINUTOS = int(os.getenv("SESION_MINUTOS", "480"))
+# HU-1.09: tras INTENTOS_MAXIMOS claves erróneas seguidas la cuenta se bloquea BLOQUEO_MINUTOS (temporal).
+INTENTOS_MAXIMOS = int(os.getenv("INTENTOS_MAXIMOS", "5"))
+BLOQUEO_MINUTOS = int(os.getenv("BLOQUEO_MINUTOS", "15"))
 # Contraseña de las cuentas iniciales (`python -m app.modulos.seguridad.semilla`); sin valor por defecto.
 CLAVE_INICIAL = os.getenv("CLAVE_INICIAL")
 

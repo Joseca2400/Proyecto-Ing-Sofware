@@ -94,6 +94,7 @@ def test_usuarios_se_auditan_sin_hashes_y_sesiones_no_se_copian(cliente, db_audi
     assert registros[0]["anteriores"]["nombre"] == "Contador"
     assert registros[0]["nuevos"]["nombre"] == "Contador actualizado"
     permitidos = {"id", "correo", "nombre", "rol", "activo", "creado_en"}
+    permitidos |= {"intentos_fallidos", "bloqueado_hasta", "baja_en"}  # HU-1.09: bloqueo y baja
     for registro in registros:
         for campo in ("anteriores", "nuevos"):
             assert set(registro[campo] or {}) <= permitidos

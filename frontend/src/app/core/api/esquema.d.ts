@@ -112,6 +112,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/seguridad/usuarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Usuarios */
+        get: operations["listar_usuarios_api_v1_seguridad_usuarios_get"];
+        put?: never;
+        /** Alta Usuario */
+        post: operations["alta_usuario_api_v1_seguridad_usuarios_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seguridad/usuarios/{usuario_id}/suspender": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suspender */
+        post: operations["suspender_api_v1_seguridad_usuarios__usuario_id__suspender_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seguridad/usuarios/{usuario_id}/reactivar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reactivar */
+        post: operations["reactivar_api_v1_seguridad_usuarios__usuario_id__reactivar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seguridad/usuarios/{usuario_id}/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Baja */
+        post: operations["baja_api_v1_seguridad_usuarios__usuario_id__baja_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/configuracion/lineas-negocio": {
         parameters: {
             query?: never;
@@ -698,6 +767,63 @@ export interface paths {
         get: operations["mayor_api_v1_contabilidad_mayor__cuenta_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/depreciaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Depreciaciones */
+        get: operations["listar_depreciaciones_api_v1_contabilidad_depreciaciones_get"];
+        put?: never;
+        /**
+         * Calcular Depreciacion
+         * @description Calcula (o recalcula) el mes y deja la partida en borrador; la contabiliza otra persona.
+         */
+        post: operations["calcular_depreciacion_api_v1_contabilidad_depreciaciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/revaluaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Revaluaciones */
+        get: operations["listar_revaluaciones_api_v1_contabilidad_revaluaciones_get"];
+        put?: never;
+        /** Revaluar */
+        post: operations["revaluar_api_v1_contabilidad_revaluaciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/periodos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Periodos */
+        get: operations["listar_periodos_api_v1_contabilidad_periodos_get"];
+        put?: never;
+        /** Cerrar Mes */
+        post: operations["cerrar_mes_api_v1_contabilidad_periodos_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2151,6 +2277,43 @@ export interface components {
             /** Cuadra */
             cuadra: boolean;
         };
+        /** DepreciacionLineaSalida */
+        DepreciacionLineaSalida: {
+            /** Vin */
+            vin: string;
+            /** Financiera */
+            financiera: string;
+            /** Fiscal */
+            fiscal: string;
+            /**
+             * Diferencia
+             * @description Fiscal menos financiera: lo que se concilia para el ISR.
+             */
+            readonly diferencia: string;
+        };
+        /** DepreciacionSalida */
+        DepreciacionSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /** Calculado Por */
+            calculado_por: number | null;
+            /**
+             * Calculado En
+             * Format: date-time
+             */
+            calculado_en: string;
+            partida: components["schemas"]["PartidaSalida"];
+            /** Lineas */
+            lineas: components["schemas"]["DepreciacionLineaSalida"][];
+            /** Total Financiera */
+            readonly total_financiera: string;
+            /** Total Fiscal */
+            readonly total_fiscal: string;
+        };
         /** DepreciacionTipoEntrada */
         DepreciacionTipoEntrada: {
             /** Vida Util Meses */
@@ -2787,6 +2950,16 @@ export interface components {
             /** Saldo Final */
             saldo_final: string;
         };
+        /**
+         * MesEntrada
+         * @description Mes contable sobre el que corre un proceso de cierre (depreciación, revaluación, cierre).
+         */
+        MesEntrada: {
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+        };
         /** MovimientoMayor */
         MovimientoMayor: {
             /**
@@ -3047,6 +3220,28 @@ export interface components {
             /** Agente Retencion Isr */
             agente_retencion_isr: boolean;
         };
+        /** PeriodoSalida */
+        PeriodoSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Cerrado Por */
+            cerrado_por: number | null;
+            /**
+             * Cerrado En
+             * Format: date-time
+             */
+            cerrado_en: string;
+            balance: components["schemas"]["BalanceSalida"];
+        };
         /**
          * ProveedorEntrada
          * @description Alta de proveedor. Las reglas que cruzan campos (NIT para locales, identificación fiscal y
@@ -3267,6 +3462,69 @@ export interface components {
             compra_gtq: string;
             /** Costo Total Gtq */
             costo_total_gtq: string;
+        };
+        /** RevaluacionEntrada */
+        RevaluacionEntrada: {
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Politica
+             * @enum {string}
+             */
+            politica: "revertir" | "mantener";
+        };
+        /** RevaluacionLineaSalida */
+        RevaluacionLineaSalida: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Linea Negocio */
+            linea_negocio: string | null;
+            /** Vin */
+            vin: string | null;
+            /** Saldo Usd */
+            saldo_usd: string;
+            /** Tipo Cambio Anterior */
+            tipo_cambio_anterior: string;
+            /** Diferencial */
+            diferencial: string;
+        };
+        /** RevaluacionSalida */
+        RevaluacionSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Politica */
+            politica: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Reversion Id */
+            reversion_id: number | null;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Lineas */
+            lineas: components["schemas"]["RevaluacionLineaSalida"][];
+            /**
+             * Total Diferencial
+             * @description Ganancia neta (positiva) o pérdida neta (negativa) no realizada del mes.
+             */
+            readonly total_diferencial: string;
         };
         /** ReversionEntrada */
         ReversionEntrada: {
@@ -3572,6 +3830,35 @@ export interface components {
              */
             creado_en: string;
         };
+        /** UsuarioAdminSalida */
+        UsuarioAdminSalida: {
+            /** Id */
+            id: number;
+            /** Correo */
+            correo: string;
+            /** Nombre */
+            nombre: string;
+            /** Rol */
+            rol: string;
+            /** Estado */
+            estado: string;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+        };
+        /** UsuarioAltaEntrada */
+        UsuarioAltaEntrada: {
+            /** Correo */
+            correo: string;
+            /** Nombre */
+            nombre: string;
+            /** Rol */
+            rol: string;
+            /** Clave */
+            clave: string;
+        };
         /** UsuarioSalida */
         UsuarioSalida: {
             /** Id */
@@ -3800,6 +4087,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BitacoraSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_usuarios_api_v1_seguridad_usuarios_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAdminSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alta_usuario_api_v1_seguridad_usuarios_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsuarioAltaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAdminSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suspender_api_v1_seguridad_usuarios__usuario_id__suspender_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                usuario_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAdminSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reactivar_api_v1_seguridad_usuarios__usuario_id__reactivar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                usuario_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAdminSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    baja_api_v1_seguridad_usuarios__usuario_id__baja_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                usuario_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAdminSalida"];
                 };
             };
             /** @description Validation Error */
@@ -5337,6 +5789,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MayorSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_depreciaciones_api_v1_contabilidad_depreciaciones_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calcular_depreciacion_api_v1_contabilidad_depreciaciones_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepreciacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_revaluaciones_api_v1_contabilidad_revaluaciones_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevaluacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revaluar_api_v1_contabilidad_revaluaciones_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevaluacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevaluacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_periodos_api_v1_contabilidad_periodos_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cerrar_mes_api_v1_contabilidad_periodos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MesEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodoSalida"];
                 };
             };
             /** @description Validation Error */

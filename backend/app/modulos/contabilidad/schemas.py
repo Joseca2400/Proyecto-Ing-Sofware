@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     PlainSerializer,
     StringConstraints,
     computed_field,
@@ -175,3 +176,104 @@ class MayorSalida(BaseModel):
     saldo_inicial: Monto
     movimientos: list[MovimientoMayor]
     saldo_final: Monto
+
+
+# ── HU-2.07: depreciación mensual ─────────────────────────────────────────────
+
+
+class MesEntrada(BaseModel):
+    """Mes contable sobre el que corre un proceso de cierre (depreciación, revaluación, cierre)."""
+
+    anio: int = Field(ge=2000, le=2100)
+    mes: int = Field(ge=1, le=12)
+
+
+class DepreciacionLineaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    vin: str
+    financiera: Monto
+    fiscal: Monto
+
+    @computed_field
+    @property
+    def diferencia(self) -> str:
+        """Fiscal menos financiera: lo que se concilia para el ISR."""
+        return f"{self.fiscal - self.financiera:.6f}"
+
+
+class DepreciacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    calculado_por: int | None
+    calculado_en: datetime
+    partida: PartidaSalida
+    lineas: list[DepreciacionLineaSalida]
+
+    @computed_field
+    @property
+    def total_financiera(self) -> str:
+        return f"{sum((linea.financiera for linea in self.lineas), Decimal(0)):.6f}"
+
+    @computed_field
+    @property
+    def total_fiscal(self) -> str:
+        return f"{sum((linea.fiscal for linea in self.lineas), Decimal(0)):.6f}"
+
+
+# ── HU-2.08: revaluación de saldos en dólares ─────────────────────────────────
+
+
+class RevaluacionEntrada(MesEntrada):
+    politica: Literal["revertir", "mantener"]
+
+
+class RevaluacionLineaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    cuenta_id: int
+    linea_negocio: str | None
+    vin: str | None
+    saldo_usd: Monto
+    tipo_cambio_anterior: TipoCambio
+    diferencial: Monto
+
+
+class RevaluacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    fecha: date
+    tipo_cambio: TipoCambio
+    politica: str
+    partida_id: int
+    reversion_id: int | None
+    usuario_id: int | None
+    creado_en: datetime
+    lineas: list[RevaluacionLineaSalida]
+
+    @computed_field
+    @property
+    def total_diferencial(self) -> str:
+        """Ganancia neta (positiva) o pérdida neta (negativa) no realizada del mes."""
+        return f"{sum((linea.diferencial for linea in self.lineas), Decimal(0)):.6f}"
+
+
+# ── HU-2.12: cierre de un período mensual ─────────────────────────────────────
+
+
+class PeriodoSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    fecha: date
+    cerrado_por: int | None
+    cerrado_en: datetime
+    balance: BalanceSalida

@@ -29,6 +29,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
       {
+        path: 'seguridad/usuarios',
+        title: 'Usuarios · Kilómetro Cero',
+        data: soloRoles('gerente_financiero'),
+        loadComponent: () =>
+          import('./features/seguridad/usuarios').then((m) => m.UsuariosPantalla),
+      },
+      {
         path: 'seguridad/bitacora',
         title: 'Bitácora · Kilómetro Cero',
         data: soloRoles('contador', 'gerente_financiero'),
@@ -157,6 +164,13 @@ export const routes: Routes = [
         title: 'Reglas de contabilización · Kilómetro Cero',
         data: soloRoles('contador', 'gerente_financiero'),
         loadComponent: () => import('./features/contabilidad/reglas').then((m) => m.ReglasPantalla),
+      },
+      {
+        path: 'contabilidad/cierre-mes',
+        title: 'Cierre de mes · Kilómetro Cero',
+        data: soloRoles('auxiliar_contable', 'contador', 'gerente_financiero'),
+        loadComponent: () =>
+          import('./features/contabilidad/cierre-mes').then((m) => m.CierreMesPantalla),
       },
       {
         path: 'contabilidad/balance',
