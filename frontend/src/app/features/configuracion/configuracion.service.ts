@@ -37,11 +37,135 @@ export interface TransaccionUSDEntrada {
   justificacion?: string;
 }
 
+// ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+export type RegimenISR = 'opcional_simplificado' | 'sobre_utilidades';
+
+export const REGIMENES_ISR: { valor: RegimenISR; etiqueta: string; descripcion: string }[] = [
+  {
+    valor: 'opcional_simplificado',
+    etiqueta: 'Opcional simplificado sobre ingresos',
+    descripcion:
+      'El ISR se calcula por tramos sobre la facturación bruta del mes; no se deducen costos ni gastos.',
+  },
+  {
+    valor: 'sobre_utilidades',
+    etiqueta: 'Sobre utilidades de actividades lucrativas',
+    descripcion:
+      'El ISR se calcula sobre la utilidad (ingresos menos costos deducibles: importación, repuestos, taller) y se paga además el ISO.',
+  },
+];
+
+export type TipoTasa =
+  | 'IVA_GENERAL'
+  | 'ISR_SIMPLIFICADO_1'
+  | 'ISR_SIMPLIFICADO_2'
+  | 'ISR_UTILIDADES'
+  | 'ISO'
+  | 'UMBRAL_CF';
+
+/** Qué lleva cada tipo al registrarse: porcentaje, monto límite o ambos. */
+export const TIPOS_TASA: {
+  valor: TipoTasa;
+  etiqueta: string;
+  porcentaje: boolean;
+  monto: boolean;
+}[] = [
+  { valor: 'IVA_GENERAL', etiqueta: 'IVA general', porcentaje: true, monto: false },
+  {
+    valor: 'ISR_SIMPLIFICADO_1',
+    etiqueta: 'ISR simplificado, primer tramo',
+    porcentaje: true,
+    monto: true,
+  },
+  {
+    valor: 'ISR_SIMPLIFICADO_2',
+    etiqueta: 'ISR simplificado, excedente',
+    porcentaje: true,
+    monto: false,
+  },
+  { valor: 'ISR_UTILIDADES', etiqueta: 'ISR sobre utilidades', porcentaje: true, monto: false },
+  { valor: 'ISO', etiqueta: 'Impuesto de Solidaridad (ISO)', porcentaje: true, monto: false },
+  {
+    valor: 'UMBRAL_CF',
+    etiqueta: 'Umbral para facturar a Consumidor Final',
+    porcentaje: false,
+    monto: true,
+  },
+];
+
+export interface PerfilFiscal {
+  id: number;
+  vigente_desde: string;
+  razon_social: string;
+  nombre_comercial: string;
+  /** Normalizado, sin guion; para mostrar se usa `nit_formateado`. */
+  nit: string;
+  nit_formateado: string;
+  direccion_fiscal: string;
+  establecimiento_sat: number;
+  regimen_isr: RegimenISR;
+  agente_retencion_iva: boolean;
+  agente_retencion_isr: boolean;
+  /** Tipos de tasa que aplican con este régimen; los calcula el servidor. */
+  tasas_del_regimen: TipoTasa[];
+  creado_en: string;
+}
+
+export interface PerfilFiscalEntrada {
+  vigente_desde: string;
+  razon_social: string;
+  nombre_comercial: string;
+  nit: string;
+  direccion_fiscal: string;
+  establecimiento_sat: number;
+  regimen_isr: RegimenISR;
+  agente_retencion_iva: boolean;
+  agente_retencion_isr: boolean;
+}
+
+/** Tasa con vigencia. `tasa` es la fracción ("0.120000"); `porcentaje` ya viene listo para mostrar ("12"). */
+export interface TasaImpositiva {
+  id: number;
+  tipo: TipoTasa;
+  tasa: string | null;
+  porcentaje: string | null;
+  monto_limite: string | null;
+  vigente_desde: string;
+}
+
+export interface TasaImpositivaEntrada {
+  tipo: TipoTasa;
+  vigente_desde: string;
+  porcentaje?: string;
+  monto_limite?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionService {
   private readonly http = inject(HttpClient);
   private readonly urlTipos = `${API_URL}/configuracion/tipos-cambio`;
   private readonly urlTransacciones = `${API_URL}/configuracion/transacciones-usd`;
+  private readonly urlPerfil = `${API_URL}/configuracion/perfil-fiscal`;
+  private readonly urlTasas = `${API_URL}/configuracion/tasas-impositivas`;
+
+  /** Versiones del perfil fiscal, de la más reciente a la más antigua. */
+  historialPerfil(): Observable<PerfilFiscal[]> {
+    return this.http.get<PerfilFiscal[]>(this.urlPerfil);
+  }
+
+  registrarPerfil(datos: PerfilFiscalEntrada): Observable<PerfilFiscal> {
+    return this.http.post<PerfilFiscal>(this.urlPerfil, datos);
+  }
+
+  /** Historial de tasas, por tipo y de la más reciente a la más antigua. */
+  tasas(): Observable<TasaImpositiva[]> {
+    return this.http.get<TasaImpositiva[]>(this.urlTasas);
+  }
+
+  registrarTasa(datos: TasaImpositivaEntrada): Observable<TasaImpositiva> {
+    return this.http.post<TasaImpositiva>(this.urlTasas, datos);
+  }
 
   tiposCambio(): Observable<TipoCambio[]> {
     return this.http.get<TipoCambio[]>(this.urlTipos);

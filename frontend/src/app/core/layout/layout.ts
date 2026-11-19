@@ -23,6 +23,7 @@ export class Layout {
     { etiqueta: 'Unidades' },
     { etiqueta: 'Contabilidad' },
     { etiqueta: 'Reportes' },
+    { etiqueta: 'Perfil fiscal', ruta: '/configuracion/perfil-fiscal' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
   ];

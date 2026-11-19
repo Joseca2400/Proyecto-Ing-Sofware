@@ -1,10 +1,20 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    computed_field,
+    field_serializer,
+    field_validator,
+)
 
+from app.comun.nit import formatear_nit
 from app.modulos.configuracion import service
+from app.modulos.configuracion.models import REGIMENES_ISR, TIPOS_TASA
 
 # ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
 
@@ -124,3 +134,92 @@ class TransaccionUSDSalida(BaseModel):
     @field_serializer("tipo_cambio_aplicado")
     def tipo_cambio_a_texto(self, valor: Decimal) -> str:
         return f"{valor:.8f}"
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+RegimenISR = Literal[*REGIMENES_ISR]
+TipoTasa = Literal[*TIPOS_TASA]
+
+
+class PerfilFiscalEntrada(BaseModel):
+    """Nueva versión del perfil. El NIT, los textos obligatorios y la vigencia se validan en el service."""
+
+    vigente_desde: date
+    razon_social: str = Field(max_length=200)
+    nombre_comercial: str = Field(max_length=200)
+    nit: str = Field(max_length=20)
+    direccion_fiscal: str = Field(max_length=300)
+    establecimiento_sat: int = Field(ge=1, le=9999)
+    regimen_isr: RegimenISR
+    agente_retencion_iva: bool = False
+    agente_retencion_isr: bool = False
+
+
+class PerfilFiscalSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    vigente_desde: date
+    razon_social: str
+    nombre_comercial: str
+    nit: str
+    direccion_fiscal: str
+    establecimiento_sat: int
+    regimen_isr: RegimenISR
+    agente_retencion_iva: bool
+    agente_retencion_isr: bool
+    creado_en: datetime
+
+    @computed_field
+    @property
+    def nit_formateado(self) -> str:
+        return formatear_nit(self.nit)
+
+    @computed_field
+    @property
+    def tasas_del_regimen(self) -> list[str]:
+        """Tipos de tasa que aplican a la empresa con este régimen (lo que la pantalla resalta)."""
+        return list(service.TASAS_POR_REGIMEN[self.regimen_isr])
+
+
+class TasaImpositivaEntrada(BaseModel):
+    """El porcentaje ("12") y el monto límite ("30000.00") llegan como texto, sin pasar por float."""
+
+    tipo: TipoTasa
+    vigente_desde: date
+    porcentaje: str | None = None
+    monto_limite: str | None = None
+
+    @field_validator("porcentaje", "monto_limite", mode="before")
+    @classmethod
+    def como_texto(cls, valor: object) -> object:
+        if valor is None:
+            return None
+        if not isinstance(valor, str):
+            raise ValueError('Se envía como texto, por ejemplo "12"')
+        return valor.strip() or None
+
+
+class TasaImpositivaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tipo: TipoTasa
+    tasa: Decimal | None
+    monto_limite: Decimal | None
+    vigente_desde: date
+
+    @field_serializer("tasa")
+    def tasa_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.6f}"
+
+    @field_serializer("monto_limite")
+    def monto_a_texto(self, valor: Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.6f}"
+
+    @computed_field
+    @property
+    def porcentaje(self) -> str | None:
+        """Para mostrar ("12", "5.5"): calculado aquí en Decimal para que el front no multiplique."""
+        return None if self.tasa is None else f"{(self.tasa * 100).normalize():f}"

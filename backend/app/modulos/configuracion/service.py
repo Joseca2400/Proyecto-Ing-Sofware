@@ -10,18 +10,34 @@ aprobación del gerente financiero.
 HU-1.07 (incluido): registro de transacciones en USD con monto original, tipo de cambio aplicado
 y equivalente en quetzales; tipo personalizado positivo con justificación obligatoria.
 HU-1.07 (diferido): reportes de saldos en USD.
+
+Equipo C — perfil fiscal de la empresa (HU-1.01, Sprint 1):
+Datos de la empresa con NIT validado, régimen de ISR y calidad de agente de retención, en
+versiones con fecha de vigencia que no se modifican; y las tasas impositivas, también con
+vigencia. Los demás módulos leen `perfil_vigente` y `tasa_vigente` para la fecha de su
+documento; los cálculos (provisión de ISR, retenciones, IVA de intereses) son de sus historias.
 """
 
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.comun.dinero import a_decimal, convertir, redondear
 from app.comun.errores import ErrorNegocio
-from app.modulos.configuracion.models import Cuenta, TipoCambio, TransaccionUSD
+from app.comun.nit import NITInvalido, normalizar_nit
+from app.modulos.configuracion.models import (
+    REGIMENES_ISR,
+    TIPOS_TASA,
+    Cuenta,
+    PerfilFiscal,
+    TasaImpositiva,
+    TipoCambio,
+    TransaccionUSD,
+)
 
 # ── HU-1.02 y HU-1.04: catálogo de cuentas y dimensiones ──────────────────────
 
@@ -267,3 +283,192 @@ def listar_transacciones_usd(
     if hasta:
         consulta = consulta.where(TransaccionUSD.fecha <= hasta)
     return list(db.scalars(consulta))
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+# Tasas que usa cada régimen de ISR, además del IVA y del umbral de Consumidor Final. El ISO
+# solo aplica en el régimen sobre utilidades.
+TASAS_POR_REGIMEN = {
+    "opcional_simplificado": ("IVA_GENERAL", "ISR_SIMPLIFICADO_1", "ISR_SIMPLIFICADO_2", "UMBRAL_CF"),
+    "sobre_utilidades": ("IVA_GENERAL", "ISR_UTILIDADES", "ISO", "UMBRAL_CF"),
+}
+
+# Qué lleva cada tipo: porcentaje, monto límite o ambos (el primer tramo del ISR simplificado).
+_LLEVA_PORCENTAJE = {t for t in TIPOS_TASA if t != "UMBRAL_CF"}
+_LLEVA_MONTO = {"ISR_SIMPLIFICADO_1", "UMBRAL_CF"}
+
+
+def _texto_obligatorio(valor: str, campo: str, maximo: int) -> str:
+    valor = (valor or "").strip()
+    if not valor:
+        raise ErrorNegocio(f"{campo} es obligatorio")
+    if len(valor) > maximo:
+        raise ErrorNegocio(f"{campo} admite hasta {maximo} caracteres", 422)
+    return valor
+
+
+def registrar_perfil(
+    db: Session,
+    vigente_desde: date,
+    razon_social: str,
+    nombre_comercial: str,
+    nit: str,
+    direccion_fiscal: str,
+    establecimiento_sat: int,
+    regimen_isr: str,
+    agente_retencion_iva: bool = False,
+    agente_retencion_isr: bool = False,
+) -> PerfilFiscal:
+    """Agrega una versión del perfil fiscal. Las anteriores no se tocan (criterio 4)."""
+    razon_social = _texto_obligatorio(razon_social, "La razón social", 200)
+    nombre_comercial = _texto_obligatorio(nombre_comercial, "El nombre comercial", 200)
+    direccion_fiscal = _texto_obligatorio(direccion_fiscal, "La dirección fiscal", 300)
+    try:
+        nit = normalizar_nit(nit)
+    except NITInvalido as error:
+        raise ErrorNegocio(str(error)) from None
+    if establecimiento_sat is None or establecimiento_sat < 1:
+        raise ErrorNegocio("Indique el número de establecimiento registrado ante la SAT")
+    if regimen_isr not in REGIMENES_ISR:
+        raise ErrorNegocio("El régimen de ISR debe ser opcional simplificado o sobre utilidades")
+
+    # Un cambio con fecha anterior o igual a la última versión reescribiría el perfil de
+    # transacciones que ya lo usaron; solo se aceptan fechas posteriores.
+    ultima = db.scalar(select(func.max(PerfilFiscal.vigente_desde)))
+    if ultima is not None and vigente_desde <= ultima:
+        raise ErrorNegocio(
+            f"La vigencia debe ser posterior a la del perfil actual ({ultima:%d/%m/%Y}): "
+            "un cambio no altera las fechas que ya cubre otra versión"
+        )
+
+    perfil = PerfilFiscal(
+        vigente_desde=vigente_desde,
+        razon_social=razon_social,
+        nombre_comercial=nombre_comercial,
+        nit=nit,
+        direccion_fiscal=direccion_fiscal,
+        establecimiento_sat=establecimiento_sat,
+        regimen_isr=regimen_isr,
+        agente_retencion_iva=agente_retencion_iva,
+        agente_retencion_isr=agente_retencion_isr,
+    )
+    db.add(perfil)
+    try:
+        db.commit()
+    except IntegrityError:
+        # Dos cambios simultáneos con la misma fecha: la restricción UNIQUE decide.
+        db.rollback()
+        raise ErrorNegocio(
+            f"Ya existe una versión del perfil vigente desde el {vigente_desde:%d/%m/%Y}"
+        ) from None
+    db.refresh(perfil)
+    return perfil
+
+
+def historial_perfil(db: Session) -> list[PerfilFiscal]:
+    """Todas las versiones, de la más reciente a la más antigua."""
+    return list(db.scalars(select(PerfilFiscal).order_by(PerfilFiscal.vigente_desde.desc())))
+
+
+def perfil_vigente(db: Session, fecha: date) -> PerfilFiscal:
+    """Perfil que aplica a un documento de esa fecha: la última versión vigente a esa fecha."""
+    perfil = db.scalar(
+        select(PerfilFiscal)
+        .where(PerfilFiscal.vigente_desde <= fecha)
+        .order_by(PerfilFiscal.vigente_desde.desc())
+        .limit(1)
+    )
+    if perfil is None:
+        raise ErrorNegocio(f"No hay perfil fiscal vigente al {fecha:%d/%m/%Y}", status=404)
+    return perfil
+
+
+def _decimal_positivo(texto: str, campo: str, decimales: int, maximo: Decimal) -> Decimal:
+    try:
+        valor = a_decimal(texto.strip())
+    except (InvalidOperation, ValueError):
+        raise ErrorNegocio(f"{campo} debe ser un número, por ejemplo 12") from None
+    if not valor.is_finite() or valor <= 0:
+        raise ErrorNegocio(f"{campo} debe ser mayor que cero")
+    if -valor.as_tuple().exponent > decimales:
+        raise ErrorNegocio(f"{campo} admite como máximo {decimales} decimales")
+    if valor > maximo:
+        raise ErrorNegocio(f"{campo} no puede ser mayor que {maximo}")
+    return valor
+
+
+def registrar_tasa(
+    db: Session,
+    tipo: str,
+    vigente_desde: date,
+    porcentaje: str | None = None,
+    monto_limite: str | None = None,
+) -> TasaImpositiva:
+    """Agrega una tasa con su vigencia. El porcentaje llega como texto ("12") y se guarda como
+    fracción exacta (0.12); las tasas anteriores no se modifican."""
+    if tipo not in TIPOS_TASA:
+        raise ErrorNegocio(f"Tipo de impuesto desconocido: {tipo}")
+    tasa = limite = None
+    if tipo in _LLEVA_PORCENTAJE:
+        if not porcentaje:
+            raise ErrorNegocio(f"Indique el porcentaje de {tipo}")
+        tasa = _decimal_positivo(porcentaje, "El porcentaje", 4, Decimal(100)) / 100
+    elif porcentaje:
+        raise ErrorNegocio(f"{tipo} es un monto, no lleva porcentaje")
+    if tipo in _LLEVA_MONTO:
+        if not monto_limite:
+            raise ErrorNegocio(f"Indique el monto límite de {tipo}")
+        limite = _decimal_positivo(monto_limite, "El monto límite", 2, Decimal("1000000000000"))
+    elif monto_limite:
+        raise ErrorNegocio(f"{tipo} no lleva monto límite")
+
+    ultima = db.scalar(select(func.max(TasaImpositiva.vigente_desde)).where(TasaImpositiva.tipo == tipo))
+    if ultima is not None and vigente_desde <= ultima:
+        raise ErrorNegocio(
+            f"La vigencia debe ser posterior a la de la tasa actual de {tipo} ({ultima:%d/%m/%Y})"
+        )
+
+    registro = TasaImpositiva(tipo=tipo, tasa=tasa, monto_limite=limite, vigente_desde=vigente_desde)
+    db.add(registro)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ErrorNegocio(
+            f"Ya existe una tasa de {tipo} vigente desde el {vigente_desde:%d/%m/%Y}"
+        ) from None
+    db.refresh(registro)
+    return registro
+
+
+def listar_tasas(db: Session) -> list[TasaImpositiva]:
+    """Historial completo, por tipo y de la más reciente a la más antigua."""
+    return list(
+        db.scalars(select(TasaImpositiva).order_by(TasaImpositiva.tipo, TasaImpositiva.vigente_desde.desc()))
+    )
+
+
+def tasas_vigentes(db: Session, fecha: date) -> list[TasaImpositiva]:
+    """La tasa de cada tipo vigente a esa fecha (una por tipo)."""
+    return list(
+        db.scalars(
+            select(TasaImpositiva)
+            .where(TasaImpositiva.vigente_desde <= fecha)
+            .order_by(TasaImpositiva.tipo, TasaImpositiva.vigente_desde.desc())
+            .ext(distinct_on(TasaImpositiva.tipo))
+        )
+    )
+
+
+def tasa_vigente(db: Session, tipo: str, fecha: date) -> TasaImpositiva:
+    """Lo que leen facturación, financiamiento y el cierre: la tasa de `tipo` a la fecha del documento."""
+    registro = db.scalar(
+        select(TasaImpositiva)
+        .where(TasaImpositiva.tipo == tipo, TasaImpositiva.vigente_desde <= fecha)
+        .order_by(TasaImpositiva.vigente_desde.desc())
+        .limit(1)
+    )
+    if registro is None:
+        raise ErrorNegocio(f"No hay tasa de {tipo} vigente al {fecha:%d/%m/%Y}", status=404)
+    return registro

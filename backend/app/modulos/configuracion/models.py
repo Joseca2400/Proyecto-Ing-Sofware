@@ -2,12 +2,25 @@
 
 Equipo A: catálogo de cuentas y dimensiones analíticas (HU-1.02, HU-1.04).
 Equipo B: tipo de cambio (HU-1.06) y transacciones en USD (HU-1.07).
+Equipo C: perfil fiscal de la empresa y tasas impositivas con vigencia (HU-1.01).
 """
 
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.comun.db import Base
@@ -80,4 +93,75 @@ class TransaccionUSD(Base):
     tipo_cambio_aplicado: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
     monto_gtq: Mapped[Decimal] = mapped_column(MONTO)
     justificacion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+
+REGIMENES_ISR = ("opcional_simplificado", "sobre_utilidades")
+TIPOS_TASA = (
+    "IVA_GENERAL",
+    "ISR_SIMPLIFICADO_1",
+    "ISR_SIMPLIFICADO_2",
+    "ISR_UTILIDADES",
+    "ISO",
+    "UMBRAL_CF",
+)
+
+
+class PerfilFiscal(Base):
+    """Una versión del perfil fiscal, vigente desde `vigente_desde` hasta la siguiente versión.
+
+    Las versiones no se modifican: cada cambio agrega una fila nueva (criterio 4), así una
+    transacción anterior a la fecha de un cambio sigue usando el perfil que tenía.
+    """
+
+    __tablename__ = "perfil_fiscal"
+    __table_args__ = (
+        CheckConstraint(
+            "regimen_isr IN ('opcional_simplificado', 'sobre_utilidades')",
+            name="ck_perfil_fiscal_regimen",
+        ),
+        CheckConstraint("establecimiento_sat >= 1", name="ck_perfil_fiscal_establecimiento"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vigente_desde: Mapped[date] = mapped_column(Date, unique=True)
+    razon_social: Mapped[str] = mapped_column(String(200))
+    nombre_comercial: Mapped[str] = mapped_column(String(200))
+    nit: Mapped[str] = mapped_column(String(13))
+    direccion_fiscal: Mapped[str] = mapped_column(String(300))
+    establecimiento_sat: Mapped[int] = mapped_column(Integer)
+    regimen_isr: Mapped[str] = mapped_column(String(25))
+    agente_retencion_iva: Mapped[bool] = mapped_column(Boolean)
+    agente_retencion_isr: Mapped[bool] = mapped_column(Boolean)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TasaImpositiva(Base):
+    """Tasa (fracción: 0.12 es el 12 %) o monto límite de un impuesto, vigente desde una fecha.
+
+    Igual que el perfil, cada cambio de ley agrega una fila: las facturas y las cuotas de
+    crédito ya calculadas conservan la tasa de su fecha. `monto_limite` es el tope del primer
+    tramo del ISR simplificado (Q30,000) y el umbral para facturar a Consumidor Final.
+    """
+
+    __tablename__ = "tasa_impositiva"
+    __table_args__ = (
+        UniqueConstraint("tipo", "vigente_desde", name="uq_tasa_impositiva_tipo_fecha"),
+        CheckConstraint(
+            "tipo IN ('IVA_GENERAL', 'ISR_SIMPLIFICADO_1', 'ISR_SIMPLIFICADO_2', 'ISR_UTILIDADES', "
+            "'ISO', 'UMBRAL_CF')",
+            name="ck_tasa_impositiva_tipo",
+        ),
+        CheckConstraint("tasa IS NULL OR (tasa > 0 AND tasa <= 1)", name="ck_tasa_impositiva_tasa"),
+        CheckConstraint("monto_limite IS NULL OR monto_limite > 0", name="ck_tasa_impositiva_limite"),
+        CheckConstraint("tasa IS NOT NULL OR monto_limite IS NOT NULL", name="ck_tasa_impositiva_valor"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tipo: Mapped[str] = mapped_column(String(25), index=True)
+    tasa: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
+    monto_limite: Mapped[Decimal | None] = mapped_column(MONTO, nullable=True)
+    vigente_desde: Mapped[date] = mapped_column(Date)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

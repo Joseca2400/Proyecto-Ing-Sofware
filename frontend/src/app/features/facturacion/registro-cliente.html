@@ -102,6 +102,26 @@
     </label>
   </fieldset>
 
+  <fieldset class="tipo">
+    <legend>IVA</legend>
+    <label class="opcion">
+      <input type="checkbox" formControlName="exento_iva" name="exento_iva" />
+      Exento de IVA
+    </label>
+    @if (exento()) {
+      <select
+        formControlName="motivo_exencion"
+        name="motivo_exencion"
+        aria-label="Motivo de la exención"
+      >
+        <option value="">Motivo de la exención…</option>
+        @for (motivo of motivos; track motivo.valor) {
+          <option [value]="motivo.valor">{{ motivo.etiqueta }}</option>
+        }
+      </select>
+    }
+  </fieldset>
+
   <button type="submit" [disabled]="guardando()">Registrar</button>
 </form>
 
@@ -136,7 +156,7 @@
         <th>Tipo</th>
         <th>Identificación</th>
         <th>Contacto</th>
-        <th>Retenciones</th>
+        <th>Impuestos</th>
       </tr>
     </thead>
     <tbody>
@@ -174,7 +194,10 @@
             @if (c.agente_retencion_isr) {
               <span class="chip retencion">ISR</span>
             }
-            @if (!c.agente_retencion_iva && !c.agente_retencion_isr) {
+            @if (c.exento_iva) {
+              <span class="chip exento">Exento · {{ etiquetaMotivo(c.motivo_exencion) }}</span>
+            }
+            @if (!c.agente_retencion_iva && !c.agente_retencion_isr && !c.exento_iva) {
               <small>—</small>
             }
           </td>

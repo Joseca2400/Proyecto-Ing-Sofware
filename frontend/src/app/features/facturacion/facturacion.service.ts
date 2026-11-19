@@ -7,6 +7,15 @@ import { API_URL } from '../../core/api/api';
 
 export type TipoCliente = 'individual' | 'empresa';
 
+export type MotivoExencion = 'diplomatico' | 'ong' | 'estado' | 'otro';
+
+export const MOTIVOS_EXENCION: { valor: MotivoExencion; etiqueta: string }[] = [
+  { valor: 'diplomatico', etiqueta: 'Diplomático' },
+  { valor: 'ong', etiqueta: 'ONG' },
+  { valor: 'estado', etiqueta: 'Organismo del Estado' },
+  { valor: 'otro', etiqueta: 'Otro' },
+];
+
 export interface Cliente {
   id: number;
   tipo: TipoCliente;
@@ -23,6 +32,8 @@ export interface Cliente {
   correo: string | null;
   agente_retencion_iva: boolean;
   agente_retencion_isr: boolean;
+  exento_iva: boolean;
+  motivo_exencion: MotivoExencion | null;
   creado_en: string;
 }
 
@@ -38,6 +49,8 @@ export interface ClienteEntrada {
   correo?: string;
   agente_retencion_iva: boolean;
   agente_retencion_isr: boolean;
+  exento_iva?: boolean;
+  motivo_exencion?: MotivoExencion;
 }
 
 export interface FiltroClientes {

@@ -169,6 +169,11 @@ small {
   color: var(--error);
 }
 
+.chip.exento {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
 .chip.retencion {
   background: #fff3e0;
   color: #e65100;

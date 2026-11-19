@@ -32,6 +32,12 @@ export const routes: Routes = [
           import('./features/facturacion/registro-cliente').then((m) => m.RegistroClientePantalla),
       },
       {
+        path: 'configuracion/perfil-fiscal',
+        title: 'Perfil fiscal · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/configuracion/perfil-fiscal').then((m) => m.PerfilFiscalPantalla),
+      },
+      {
         path: 'configuracion/tipo-cambio',
         title: 'Tipo de cambio · Kilómetro Cero',
         loadComponent: () =>

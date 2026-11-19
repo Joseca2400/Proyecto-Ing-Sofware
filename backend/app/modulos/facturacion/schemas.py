@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validat
 from app.comun.nit import formatear_nit
 
 TipoCliente = Literal["individual", "empresa"]
+MotivoExencion = Literal["diplomatico", "ong", "estado", "otro"]
 
 # ── HU-6.01: clientes ──────────────────────────────────────────────────────────
 
@@ -25,6 +26,8 @@ class ClienteEntrada(BaseModel):
     correo: str | None = Field(default=None, max_length=100)
     agente_retencion_iva: bool = False
     agente_retencion_isr: bool = False
+    exento_iva: bool = False
+    motivo_exencion: MotivoExencion | None = None
 
     @field_validator("nombre", mode="before")
     @classmethod
@@ -56,6 +59,8 @@ class ClienteSalida(BaseModel):
     correo: str | None
     agente_retencion_iva: bool
     agente_retencion_isr: bool
+    exento_iva: bool
+    motivo_exencion: MotivoExencion | None
     creado_en: datetime
 
     @computed_field

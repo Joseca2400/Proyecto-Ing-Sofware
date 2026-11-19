@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.comun.db import Base
 
 TIPOS_CLIENTE = ("individual", "empresa")
+MOTIVOS_EXENCION = ("diplomatico", "ong", "estado", "otro")
 
 
 class Cliente(Base):
@@ -33,6 +34,11 @@ class Cliente(Base):
         CheckConstraint("tipo = 'individual' OR nit IS NOT NULL", name="ck_cliente_empresa_nit"),
         CheckConstraint("cui IS NULL OR cui ~ '^[0-9]{13}$'", name="ck_cliente_cui"),
         UniqueConstraint("pais", "pasaporte", name="uq_cliente_pasaporte"),
+        CheckConstraint(
+            "(exento_iva AND motivo_exencion IN ('diplomatico', 'ong', 'estado', 'otro'))"
+            " OR (NOT exento_iva AND motivo_exencion IS NULL)",
+            name="ck_cliente_exencion",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -49,4 +55,8 @@ class Cliente(Base):
     # al cobrarle (HU-6.07).
     agente_retencion_iva: Mapped[bool] = mapped_column(Boolean, default=False)
     agente_retencion_isr: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Diplomáticos, ONG y organismos del Estado: su factura no lleva el IVA del perfil fiscal
+    # (lo aplica la factura FEL, HU-6.02). El motivo es obligatorio cuando es exento.
+    exento_iva: Mapped[bool] = mapped_column(Boolean, default=False)
+    motivo_exencion: Mapped[str | None] = mapped_column(String(15), nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

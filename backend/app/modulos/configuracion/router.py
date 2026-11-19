@@ -10,6 +10,10 @@ from app.modulos.configuracion.schemas import (
     CuentaEntrada,
     CuentaSalida,
     DimensionesEntrada,
+    PerfilFiscalEntrada,
+    PerfilFiscalSalida,
+    TasaImpositivaEntrada,
+    TasaImpositivaSalida,
     TipoCambioEntrada,
     TipoCambioSalida,
     TransaccionUSDEntrada,
@@ -105,3 +109,44 @@ def registrar_transaccion_usd(
             datos.justificacion,
         )
     )
+
+
+# ── HU-1.01: perfil fiscal de la empresa ──────────────────────────────────────
+# Pendiente (criterio 5): solo el contador y el gerente financiero modifican el perfil y las
+# tasas. Igual que las rutas del equipo B, quedan abiertas hasta que el front tenga login
+# (tarea C1); entonces los POST llevan `Depends(requiere_rol(CONTADOR, GERENTE_FINANCIERO))`
+# y los GET `Depends(usuario_actual)`.
+
+
+@router.get("/perfil-fiscal", response_model=list[PerfilFiscalSalida])
+def historial_perfil_fiscal(db: Session = Depends(get_db)) -> list[PerfilFiscalSalida]:
+    return [PerfilFiscalSalida.model_validate(p) for p in service.historial_perfil(db)]
+
+
+@router.get("/perfil-fiscal/vigente", response_model=PerfilFiscalSalida)
+def perfil_fiscal_vigente(fecha: date | None = None, db: Session = Depends(get_db)) -> PerfilFiscalSalida:
+    return PerfilFiscalSalida.model_validate(service.perfil_vigente(db, fecha or date.today()))
+
+
+@router.post("/perfil-fiscal", response_model=PerfilFiscalSalida, status_code=201)
+def registrar_perfil_fiscal(datos: PerfilFiscalEntrada, db: Session = Depends(get_db)) -> PerfilFiscalSalida:
+    return PerfilFiscalSalida.model_validate(service.registrar_perfil(db, **datos.model_dump()))
+
+
+@router.get("/tasas-impositivas", response_model=list[TasaImpositivaSalida])
+def listar_tasas_impositivas(db: Session = Depends(get_db)) -> list[TasaImpositivaSalida]:
+    return [TasaImpositivaSalida.model_validate(t) for t in service.listar_tasas(db)]
+
+
+@router.get("/tasas-impositivas/vigentes", response_model=list[TasaImpositivaSalida])
+def tasas_impositivas_vigentes(
+    fecha: date | None = None, db: Session = Depends(get_db)
+) -> list[TasaImpositivaSalida]:
+    return [TasaImpositivaSalida.model_validate(t) for t in service.tasas_vigentes(db, fecha or date.today())]
+
+
+@router.post("/tasas-impositivas", response_model=TasaImpositivaSalida, status_code=201)
+def registrar_tasa_impositiva(
+    datos: TasaImpositivaEntrada, db: Session = Depends(get_db)
+) -> TasaImpositivaSalida:
+    return TasaImpositivaSalida.model_validate(service.registrar_tasa(db, **datos.model_dump()))

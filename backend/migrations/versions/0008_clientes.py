@@ -19,7 +19,7 @@ depends_on: str | Sequence[str] | None = None
 
 COLUMNAS = (
     "id", "tipo", "nombre", "nit", "cui", "pasaporte", "pais", "direccion", "telefono", "correo",
-    "agente_retencion_iva", "agente_retencion_isr", "creado_en",
+    "agente_retencion_iva", "agente_retencion_isr", "exento_iva", "motivo_exencion", "creado_en",
 )  # fmt: skip
 
 
@@ -38,6 +38,8 @@ def upgrade() -> None:
         sa.Column("correo", sa.String(100), nullable=True),
         sa.Column("agente_retencion_iva", sa.Boolean(), nullable=False),
         sa.Column("agente_retencion_isr", sa.Boolean(), nullable=False),
+        sa.Column("exento_iva", sa.Boolean(), nullable=False),
+        sa.Column("motivo_exencion", sa.String(15), nullable=True),
         sa.Column(
             "creado_en",
             sa.DateTime(timezone=True),
@@ -55,6 +57,11 @@ def upgrade() -> None:
         sa.CheckConstraint("(pasaporte IS NULL) = (pais IS NULL)", name="ck_cliente_pasaporte_pais"),
         sa.CheckConstraint("tipo = 'individual' OR nit IS NOT NULL", name="ck_cliente_empresa_nit"),
         sa.CheckConstraint("cui IS NULL OR cui ~ '^[0-9]{13}$'", name="ck_cliente_cui"),
+        sa.CheckConstraint(
+            "(exento_iva AND motivo_exencion IN ('diplomatico', 'ong', 'estado', 'otro'))"
+            " OR (NOT exento_iva AND motivo_exencion IS NULL)",
+            name="ck_cliente_exencion",
+        ),
     )
     op.create_index("ix_cliente_nombre", "cliente", ["nombre"])
     argumentos = ", ".join(f"'{columna}'" for columna in COLUMNAS)

@@ -118,6 +118,28 @@ def test_evita_clientes_duplicados(cliente, primero, repetido, mensaje):
     assert mensaje in respuesta.json()["detail"]
 
 
+def test_registra_cliente_exento_de_iva_con_su_motivo(cliente):
+    respuesta = cliente.post(URL, json={**EMPRESA, "exento_iva": True, "motivo_exencion": "diplomatico"})
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["exento_iva"] is True
+    assert respuesta.json()["motivo_exencion"] == "diplomatico"
+
+
+@pytest.mark.parametrize(
+    ("datos", "mensaje"),
+    [
+        ({"exento_iva": True}, "motivo de la exención"),
+        ({"exento_iva": False, "motivo_exencion": "ong"}, "solo aplica a un cliente exento"),
+    ],
+)
+def test_la_exencion_lleva_motivo(cliente, datos, mensaje):
+    respuesta = cliente.post(URL, json={**EMPRESA, **datos})
+
+    assert respuesta.status_code == 400
+    assert mensaje in respuesta.json()["detail"]
+
+
 def test_el_mismo_pasaporte_de_otro_pais_no_es_duplicado(cliente):
     assert cliente.post(URL, json=EXTRANJERO).status_code == 201
 

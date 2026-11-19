@@ -2,13 +2,21 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Cliente, ClienteEntrada, FacturacionService, TipoCliente } from './facturacion.service';
+import {
+  Cliente,
+  ClienteEntrada,
+  FacturacionService,
+  MOTIVOS_EXENCION,
+  MotivoExencion,
+  TipoCliente,
+} from './facturacion.service';
 
 type Origen = 'nacional' | 'extranjero';
 
 // HU-6.01 (Sprint 1): alta y consulta de clientes individuales o empresas.
 // La empresa se identifica con NIT; la persona guatemalteca con CUI o NIT; la extranjera con
 // pasaporte y país. El dígito verificador del NIT y los duplicados los valida el servidor.
+// Exento de IVA (diplomáticos, ONG, Estado): la factura FEL no le aplicará el IVA del perfil fiscal.
 // Diferido: consulta del nombre en la SAT y estado de cuenta integrado (Sprint 3).
 @Component({
   selector: 'app-registro-cliente',
@@ -38,7 +46,19 @@ export class RegistroClientePantalla {
     correo: ['', Validators.email],
     agente_retencion_iva: [false],
     agente_retencion_isr: [false],
+    exento_iva: [false],
+    motivo_exencion: ['' as MotivoExencion | ''],
   });
+
+  protected readonly motivos = MOTIVOS_EXENCION;
+
+  protected readonly exento = toSignal(this.formulario.controls.exento_iva.valueChanges, {
+    initialValue: this.formulario.controls.exento_iva.value,
+  });
+
+  protected etiquetaMotivo(valor: MotivoExencion | null): string {
+    return this.motivos.find((m) => m.valor === valor)?.etiqueta ?? '';
+  }
 
   protected readonly filtro = this.fb.group({
     buscar: [''],
@@ -82,6 +102,9 @@ export class RegistroClientePantalla {
       faltante =
         !valores.cui.trim() && !valores.nit.trim() && 'Indique el CUI o el NIT del cliente';
     }
+    if (!faltante && valores.exento_iva && !valores.motivo_exencion) {
+      faltante = 'Indique el motivo de la exención de IVA';
+    }
 
     if (this.formulario.invalid || faltante) {
       this.formulario.markAllAsTouched();
@@ -104,6 +127,9 @@ export class RegistroClientePantalla {
       correo: opcional(valores.correo),
       agente_retencion_iva: valores.agente_retencion_iva,
       agente_retencion_isr: valores.agente_retencion_isr,
+      ...(valores.exento_iva && valores.motivo_exencion
+        ? { exento_iva: true, motivo_exencion: valores.motivo_exencion }
+        : {}),
     };
     // Sin claves vacías: el servidor recibe solo lo que se capturó.
     for (const clave of Object.keys(entrada) as (keyof ClienteEntrada)[]) {

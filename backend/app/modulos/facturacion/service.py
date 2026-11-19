@@ -2,7 +2,8 @@
 
 HU-6.01 (Sprint 1): alta y consulta de clientes individuales o empresas, identificados con NIT o
 CUI, o con pasaporte y país si son extranjeros. El NIT se valida con su dígito verificador y no
-se repiten clientes por NIT, CUI ni pasaporte.
+se repiten clientes por NIT, CUI ni pasaporte. Un cliente puede marcarse exento de IVA (con su
+motivo) para que la factura FEL (HU-6.02) no le aplique el IVA del perfil fiscal.
 
 Diferido: consultar el nombre registrado en la SAT mediante el certificador (criterio 2) y el
 estado de cuenta que integra alquileres, ventas y créditos (criterio 4, Sprint 3).
@@ -79,6 +80,11 @@ def registrar_cliente(db: Session, datos: ClienteEntrada) -> Cliente:
     if datos.correo is not None and not _CORREO.fullmatch(datos.correo):
         raise ErrorNegocio("El correo no tiene una forma válida, por ejemplo nombre@dominio.com")
 
+    if datos.exento_iva and datos.motivo_exencion is None:
+        raise ErrorNegocio("Indique el motivo de la exención: diplomático, ONG, Estado u otro")
+    if not datos.exento_iva and datos.motivo_exencion is not None:
+        raise ErrorNegocio("El motivo de exención solo aplica a un cliente exento de IVA")
+
     if error := _duplicado(db, nit, cui, pasaporte, pais):
         raise error
 
@@ -94,6 +100,8 @@ def registrar_cliente(db: Session, datos: ClienteEntrada) -> Cliente:
         correo=datos.correo.lower() if datos.correo else None,
         agente_retencion_iva=datos.agente_retencion_iva,
         agente_retencion_isr=datos.agente_retencion_isr,
+        exento_iva=datos.exento_iva,
+        motivo_exencion=datos.motivo_exencion,
     )
     db.add(cliente)
     try:

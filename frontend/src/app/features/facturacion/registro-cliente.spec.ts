@@ -19,6 +19,8 @@ const INDIVIDUAL = {
   correo: 'maria@correo.com',
   agente_retencion_iva: false,
   agente_retencion_isr: false,
+  exento_iva: false,
+  motivo_exencion: null,
   creado_en: '2026-11-18T10:00:00Z',
 };
 
@@ -141,6 +143,35 @@ describe('RegistroClientePantalla', () => {
     envio.flush(EMPRESA);
     http.expectOne(URL).flush([EMPRESA]);
     await fixture.whenStable();
+  });
+
+  it('registra un cliente exento de IVA con su motivo', async () => {
+    const fixture = await crear();
+    const el = elemento(fixture);
+
+    el.querySelector<HTMLInputElement>('input[value=empresa]')!.click();
+    escribir(el, 'nombre', 'Embajada de Ejemplo');
+    escribir(el, 'nit', '576937-k');
+    el.querySelector<HTMLInputElement>('[name=exento_iva]')!.click();
+    await fixture.whenStable();
+
+    enviar(el);
+    await fixture.whenStable();
+    http.expectNone({ method: 'POST', url: URL });
+    expect(el.textContent).toContain('Indique el motivo de la exención de IVA');
+
+    escribir(el, 'motivo_exencion', 'diplomatico');
+    enviar(el);
+
+    const envio = http.expectOne({ method: 'POST', url: URL });
+    expect(envio.request.body.exento_iva).toBe(true);
+    expect(envio.request.body.motivo_exencion).toBe('diplomatico');
+    const exento = { ...EMPRESA, exento_iva: true, motivo_exencion: 'diplomatico' };
+    envio.flush(exento);
+    http.expectOne(URL).flush([exento]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('tbody')!.textContent).toContain('Exento · Diplomático');
   });
 
   it('pide pasaporte y país a un extranjero', async () => {

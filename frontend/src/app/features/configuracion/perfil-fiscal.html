@@ -1,0 +1,270 @@
+<section class="encabezado">
+  <h1>Perfil fiscal</h1>
+  <p>
+    Datos de la empresa ante la SAT, régimen de ISR y calidad de agente de retención. Cada cambio se
+    guarda como una versión nueva con su fecha de vigencia: las transacciones anteriores a esa fecha
+    conservan el perfil que tenían.
+  </p>
+</section>
+
+@if (vigente(); as perfil) {
+  <section class="tarjeta resumen">
+    <div>
+      <small>Vigente desde el {{ perfil.vigente_desde }}</small>
+      <strong>{{ perfil.nombre_comercial }}</strong>
+      <span>{{ perfil.razon_social }} · NIT {{ perfil.nit_formateado }}</span>
+    </div>
+    <div class="chips">
+      <span class="chip">{{ etiquetaRegimen(perfil.regimen_isr) }}</span>
+      @if (perfil.agente_retencion_iva) {
+        <span class="chip retencion">Agente de retención de IVA</span>
+      }
+      @if (perfil.agente_retencion_isr) {
+        <span class="chip retencion">Agente de retención de ISR</span>
+      }
+    </div>
+  </section>
+} @else {
+  <p class="mensaje vacio">Todavía no hay un perfil fiscal vigente. Regístralo para empezar.</p>
+}
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label class="ancho">
+    Razón social
+    <input type="text" formControlName="razon_social" name="razon_social" />
+    @if (formulario.controls.razon_social.touched && formulario.controls.razon_social.invalid) {
+      <small class="falla">La razón social es obligatoria</small>
+    }
+  </label>
+
+  <label class="ancho">
+    Nombre comercial
+    <input type="text" formControlName="nombre_comercial" name="nombre_comercial" />
+    @if (
+      formulario.controls.nombre_comercial.touched && formulario.controls.nombre_comercial.invalid
+    ) {
+      <small class="falla">El nombre comercial es obligatorio</small>
+    }
+  </label>
+
+  <label>
+    NIT
+    <input type="text" formControlName="nit" name="nit" placeholder="1234567-9" />
+    @if (formulario.controls.nit.touched && formulario.controls.nit.invalid) {
+      <small class="falla">Dígitos y verificador (dígito o K)</small>
+    }
+  </label>
+
+  <label class="corto">
+    Establecimiento SAT
+    <input
+      type="number"
+      min="1"
+      max="9999"
+      formControlName="establecimiento_sat"
+      name="establecimiento_sat"
+    />
+  </label>
+
+  <label class="ancho">
+    Dirección fiscal
+    <input type="text" formControlName="direccion_fiscal" name="direccion_fiscal" />
+    @if (
+      formulario.controls.direccion_fiscal.touched && formulario.controls.direccion_fiscal.invalid
+    ) {
+      <small class="falla">La dirección fiscal es obligatoria</small>
+    }
+  </label>
+
+  <label class="ancho">
+    Régimen de ISR
+    <select formControlName="regimen_isr" name="regimen_isr">
+      @for (regimen of regimenes; track regimen.valor) {
+        <option [value]="regimen.valor">{{ regimen.etiqueta }}</option>
+      }
+    </select>
+    <small>{{ descripcionRegimen() }}</small>
+  </label>
+
+  <fieldset class="tipo">
+    <legend>Retenciones</legend>
+    <label class="opcion">
+      <input type="checkbox" formControlName="agente_retencion_iva" name="agente_retencion_iva" />
+      Agente de retención de IVA
+    </label>
+    <label class="opcion">
+      <input type="checkbox" formControlName="agente_retencion_isr" name="agente_retencion_isr" />
+      Agente de retención de ISR
+    </label>
+  </fieldset>
+  <p class="nota">
+    Si la empresa es agente de retención, compras y taller descontarán la retención al pagar a
+    proveedores y emitirán la constancia (HU-4.11).
+  </p>
+
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" name="vigente_desde" />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">
+    {{ versiones().length ? 'Guardar cambio' : 'Registrar perfil' }}
+  </button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (versiones().length) {
+  <h2>Historial del perfil</h2>
+  <div class="tabla">
+    <table class="tarjeta">
+      <thead>
+        <tr>
+          <th>Vigente desde</th>
+          <th>Empresa</th>
+          <th>Régimen de ISR</th>
+          <th>Retenciones</th>
+        </tr>
+      </thead>
+      <tbody class="historial">
+        @for (v of versiones(); track v.id) {
+          <tr>
+            <td>
+              {{ v.vigente_desde }}
+              @if (v.id === vigente()?.id) {
+                <span class="chip">Vigente</span>
+              }
+            </td>
+            <td>
+              {{ v.nombre_comercial }}
+              <small>· NIT {{ v.nit_formateado }} · Est. {{ v.establecimiento_sat }}</small>
+            </td>
+            <td>{{ etiquetaRegimen(v.regimen_isr) }}</td>
+            <td>
+              @if (v.agente_retencion_iva) {
+                <span class="chip retencion">IVA</span>
+              }
+              @if (v.agente_retencion_isr) {
+                <span class="chip retencion">ISR</span>
+              }
+              @if (!v.agente_retencion_iva && !v.agente_retencion_isr) {
+                <small>—</small>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<h2>Tasas impositivas</h2>
+<p class="nota">
+  Un cambio de ley se registra como una tasa nueva con su vigencia: facturas y cuotas anteriores
+  conservan la tasa de su fecha. Se resaltan las que aplican con el régimen vigente.
+</p>
+
+<form class="tarjeta formulario" [formGroup]="formularioTasa" (ngSubmit)="guardarTasa()">
+  <label>
+    Impuesto
+    <select formControlName="tipo" name="tasa_tipo">
+      @for (tipo of tiposTasa; track tipo.valor) {
+        <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+      }
+    </select>
+  </label>
+  @if (reglaTasa().porcentaje) {
+    <label class="corto">
+      Porcentaje
+      <input
+        type="text"
+        inputmode="decimal"
+        formControlName="porcentaje"
+        name="tasa_porcentaje"
+        placeholder="12"
+      />
+      @if (
+        formularioTasa.controls.porcentaje.touched && formularioTasa.controls.porcentaje.invalid
+      ) {
+        <small class="falla">Hasta 4 decimales</small>
+      }
+    </label>
+  }
+  @if (reglaTasa().monto) {
+    <label>
+      {{ reglaTasa().porcentaje ? 'Hasta (Q)' : 'Monto (Q)' }}
+      <input
+        type="text"
+        inputmode="decimal"
+        formControlName="monto_limite"
+        name="tasa_monto"
+        placeholder="30000.00"
+      />
+      @if (
+        formularioTasa.controls.monto_limite.touched && formularioTasa.controls.monto_limite.invalid
+      ) {
+        <small class="falla">Hasta 2 decimales</small>
+      }
+    </label>
+  }
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" name="tasa_vigente_desde" />
+  </label>
+  <button type="submit" class="secundario">Agregar tasa</button>
+</form>
+
+@if (errorTasa(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (avisoTasa(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Impuesto</th>
+        <th class="numero">Valor</th>
+        <th>Vigente desde</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody class="tasas">
+      @for (t of tasas(); track t.id) {
+        <tr [class.anterior]="!tasasVigentes().has(t.id)">
+          <td>{{ etiquetaTasa(t.tipo) }}</td>
+          <td class="numero">
+            @if (t.porcentaje) {
+              {{ t.porcentaje }} %
+            }
+            @if (t.monto_limite) {
+              <small>{{ t.porcentaje ? 'hasta ' : '' }}</small
+              >{{ t.monto_limite | monto }}
+            }
+          </td>
+          <td>{{ t.vigente_desde }}</td>
+          <td>
+            @if (!tasasVigentes().has(t.id)) {
+              <small>{{ t.vigente_desde > hoy ? 'Programada' : 'Anterior' }}</small>
+            } @else if (aplica(t)) {
+              <span class="chip">Aplica a la empresa</span>
+            } @else {
+              <small>Vigente</small>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="vacio">No hay tasas registradas</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
