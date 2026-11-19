@@ -15,6 +15,10 @@ class Usuario(Base):
     rol: Mapped[str] = mapped_column(String(30))
     clave_hash: Mapped[str] = mapped_column(String(300))
     activo: Mapped[bool] = mapped_column(default=True)
+    intentos_fallidos: Mapped[int] = mapped_column(default=0, server_default="0")
+    bloqueado_hasta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # activo=False y baja_en nulo = suspendido (reversible); con fecha = de baja (definitivo).
+    baja_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

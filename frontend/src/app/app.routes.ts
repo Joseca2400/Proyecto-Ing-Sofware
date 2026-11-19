@@ -29,6 +29,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inicio/inicio').then((m) => m.Inicio),
       },
       {
+        path: 'seguridad/usuarios',
+        title: 'Usuarios · Kilómetro Cero',
+        data: soloRoles('gerente_financiero'),
+        loadComponent: () =>
+          import('./features/seguridad/usuarios').then((m) => m.UsuariosPantalla),
+      },
+      {
         path: 'seguridad/bitacora',
         title: 'Bitácora · Kilómetro Cero',
         data: soloRoles('contador', 'gerente_financiero'),

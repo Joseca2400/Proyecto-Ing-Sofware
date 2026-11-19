@@ -6,6 +6,9 @@ import { components } from '../../core/api/esquema';
 
 export type RegistroBitacora = components['schemas']['BitacoraSalida'];
 
+export type UsuarioAdmin = components['schemas']['UsuarioAdminSalida'];
+export type UsuarioAlta = components['schemas']['UsuarioAltaEntrada'];
+
 export interface FiltroBitacora {
   usuario_id?: number;
   entidad?: string;
@@ -21,5 +24,17 @@ export class SeguridadService {
     return this.http.get<RegistroBitacora[]>(`${API_URL}/seguridad/bitacora`, {
       params: { ...filtro },
     });
+  }
+
+  usuarios(): Observable<UsuarioAdmin[]> {
+    return this.http.get<UsuarioAdmin[]>(`${API_URL}/seguridad/usuarios`);
+  }
+
+  altaUsuario(datos: UsuarioAlta): Observable<UsuarioAdmin> {
+    return this.http.post<UsuarioAdmin>(`${API_URL}/seguridad/usuarios`, datos);
+  }
+
+  cambiarEstado(id: number, accion: 'suspender' | 'reactivar' | 'baja'): Observable<UsuarioAdmin> {
+    return this.http.post<UsuarioAdmin>(`${API_URL}/seguridad/usuarios/${id}/${accion}`, {});
   }
 }
