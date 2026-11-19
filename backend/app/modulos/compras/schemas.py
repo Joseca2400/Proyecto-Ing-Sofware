@@ -516,7 +516,7 @@ class HojaCosto(BaseModel):
 MontoTexto = Annotated[Decimal, PlainSerializer(_monto_texto, return_type=str)]
 TipoCambioTexto = Annotated[Decimal, PlainSerializer(lambda valor: f"{valor:.8f}", return_type=str)]
 OrigenCuentaPorPagar = Literal["factura", "gasto_importacion", "compra_unidad"]
-EstadoPagoProgramado = Literal["propuesto", "aprobado", "rechazado", "ejecutado"]
+EstadoPagoProgramado = Literal["propuesto", "aprobado", "rechazado", "ejecutado", "anulado"]
 
 
 def _texto_monto(valor: object) -> object:
@@ -592,6 +592,7 @@ class DecisionPagoEntrada(BaseModel):
 
 class PagoProgramadoSalida(BaseModel):
     id: int
+    programacion_id: int
     cuenta_por_pagar_id: int
     proveedor_id: int
     proveedor: str
@@ -637,3 +638,69 @@ class ProgramacionPagoSalida(BaseModel):
     totales: dict[str, MontoTexto]  # por moneda de salida (GTQ y USD), sin los rechazados
     tipo_cambio_estimado: TipoCambioTexto | None
     bancos: list[SaldoBancoProgramacion]
+
+
+# ── HU-4.14: pago a un proveedor ──────────────────────────────────────────────
+
+FormaPago = Literal["cheque", "transferencia"]
+
+
+class PagoProveedorEntrada(BaseModel):
+    """Ejecuta pagos programados y aprobados (HU-4.13) de un mismo proveedor y cuenta bancaria."""
+
+    cuenta_bancaria_id: int
+    forma_pago: FormaPago
+    referencia: str = Field(max_length=50)  # número de cheque o referencia de la transferencia
+    fecha: date
+    pagos_programados: list[int]
+
+    @field_validator("referencia", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return valor.strip() if isinstance(valor, str) else valor
+
+
+class AnulacionPagoEntrada(BaseModel):
+    fecha: date
+    motivo: str = Field(max_length=300)
+
+    @field_validator("motivo", mode="before")
+    @classmethod
+    def recortar(cls, valor: object) -> object:
+        return valor.strip() if isinstance(valor, str) else valor
+
+
+class AplicacionPagoSalida(BaseModel):
+    cuenta_por_pagar_id: int
+    documento: str
+    vin: str | None
+    moneda_documento: Moneda
+    monto_documento: MontoTexto
+    monto_pago: MontoTexto
+    tipo_cambio_libros: TipoCambioTexto | None
+    diferencial: MontoTexto
+    saldo_documento: MontoTexto
+
+
+class PagoProveedorSalida(BaseModel):
+    id: int
+    proveedor_id: int
+    proveedor: str
+    cuenta_bancaria_id: int
+    banco: str
+    moneda: Moneda
+    forma_pago: FormaPago
+    referencia: str
+    fecha: date
+    tipo_cambio: TipoCambioTexto | None
+    monto: MontoTexto
+    diferencial: MontoTexto  # realizado, en quetzales: positivo ganancia, negativo pérdida
+    estado: Literal["registrado", "anulado"]
+    usuario_id: int | None
+    anulado_por: int | None
+    fecha_anulacion: date | None
+    motivo_anulacion: str | None
+    partida_numero: int | None
+    reversion_numero: int | None
+    creado_en: datetime
+    aplicaciones: list[AplicacionPagoSalida]

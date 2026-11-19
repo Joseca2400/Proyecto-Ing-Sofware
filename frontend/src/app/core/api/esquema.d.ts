@@ -650,6 +650,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compras/pagos-por-ejecutar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pagos Por Ejecutar */
+        get: operations["pagos_por_ejecutar_api_v1_compras_pagos_por_ejecutar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/pagos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Pagos */
+        get: operations["listar_pagos_api_v1_compras_pagos_get"];
+        put?: never;
+        /** Registrar Pago */
+        post: operations["registrar_pago_api_v1_compras_pagos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/pagos/{pago_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Pago */
+        get: operations["consultar_pago_api_v1_compras_pagos__pago_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compras/pagos/{pago_id}/anulacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Anular Pago */
+        post: operations["anular_pago_api_v1_compras_pagos__pago_id__anulacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/partidas": {
         parameters: {
             query?: never;
@@ -1613,6 +1682,16 @@ export interface components {
              */
             creado_en: string;
         };
+        /** AnulacionPagoEntrada */
+        AnulacionPagoEntrada: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Motivo */
+            motivo: string;
+        };
         /** AplicacionEntrada */
         AplicacionEntrada: {
             /**
@@ -1622,6 +1701,30 @@ export interface components {
             fecha: string;
             /** Monto */
             monto: string;
+        };
+        /** AplicacionPagoSalida */
+        AplicacionPagoSalida: {
+            /** Cuenta Por Pagar Id */
+            cuenta_por_pagar_id: number;
+            /** Documento */
+            documento: string;
+            /** Vin */
+            vin: string | null;
+            /**
+             * Moneda Documento
+             * @enum {string}
+             */
+            moneda_documento: "GTQ" | "USD";
+            /** Monto Documento */
+            monto_documento: string;
+            /** Monto Pago */
+            monto_pago: string;
+            /** Tipo Cambio Libros */
+            tipo_cambio_libros: string | null;
+            /** Diferencial */
+            diferencial: string;
+            /** Saldo Documento */
+            saldo_documento: string;
         };
         /** BalanceSalida */
         BalanceSalida: {
@@ -3206,6 +3309,8 @@ export interface components {
         PagoProgramadoSalida: {
             /** Id */
             id: number;
+            /** Programacion Id */
+            programacion_id: number;
             /** Cuenta Por Pagar Id */
             cuenta_por_pagar_id: number;
             /** Proveedor Id */
@@ -3247,13 +3352,95 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "propuesto" | "aprobado" | "rechazado" | "ejecutado";
+            estado: "propuesto" | "aprobado" | "rechazado" | "ejecutado" | "anulado";
             /** Decidido Por */
             decidido_por: number | null;
             /** Decidido En */
             decidido_en: string | null;
             /** Comentario */
             comentario: string | null;
+        };
+        /**
+         * PagoProveedorEntrada
+         * @description Ejecuta pagos programados y aprobados (HU-4.13) de un mismo proveedor y cuenta bancaria.
+         */
+        PagoProveedorEntrada: {
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number;
+            /**
+             * Forma Pago
+             * @enum {string}
+             */
+            forma_pago: "cheque" | "transferencia";
+            /** Referencia */
+            referencia: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Pagos Programados */
+            pagos_programados: number[];
+        };
+        /** PagoProveedorSalida */
+        PagoProveedorSalida: {
+            /** Id */
+            id: number;
+            /** Proveedor Id */
+            proveedor_id: number;
+            /** Proveedor */
+            proveedor: string;
+            /** Cuenta Bancaria Id */
+            cuenta_bancaria_id: number;
+            /** Banco */
+            banco: string;
+            /**
+             * Moneda
+             * @enum {string}
+             */
+            moneda: "GTQ" | "USD";
+            /**
+             * Forma Pago
+             * @enum {string}
+             */
+            forma_pago: "cheque" | "transferencia";
+            /** Referencia */
+            referencia: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Tipo Cambio */
+            tipo_cambio: string | null;
+            /** Monto */
+            monto: string;
+            /** Diferencial */
+            diferencial: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "registrado" | "anulado";
+            /** Usuario Id */
+            usuario_id: number | null;
+            /** Anulado Por */
+            anulado_por: number | null;
+            /** Fecha Anulacion */
+            fecha_anulacion: string | null;
+            /** Motivo Anulacion */
+            motivo_anulacion: string | null;
+            /** Partida Numero */
+            partida_numero: number | null;
+            /** Reversion Numero */
+            reversion_numero: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Aplicaciones */
+            aplicaciones: components["schemas"]["AplicacionPagoSalida"][];
         };
         /** ParametroDepreciacionEntrada */
         ParametroDepreciacionEntrada: {
@@ -5770,6 +5957,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgramacionPagoSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pagos_por_ejecutar_api_v1_compras_pagos_por_ejecutar_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagoProgramadoSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_pagos_api_v1_compras_pagos_get: {
+        parameters: {
+            query?: {
+                proveedor_id?: number | null;
+            };
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagoProveedorSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_pago_api_v1_compras_pagos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PagoProveedorEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagoProveedorSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_pago_api_v1_compras_pagos__pago_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                pago_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagoProveedorSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    anular_pago_api_v1_compras_pagos__pago_id__anulacion_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path: {
+                pago_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnulacionPagoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagoProveedorSalida"];
                 };
             };
             /** @description Validation Error */

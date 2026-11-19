@@ -262,6 +262,7 @@ export class ComprasService {
   private readonly urlGastos = `${API_URL}/compras/gastos-importacion`;
   private readonly urlCompras = `${API_URL}/compras/compras-unidades`;
   private readonly urlProgramaciones = `${API_URL}/compras/programaciones-pago`;
+  private readonly urlPagos = `${API_URL}/compras/pagos`;
 
   proveedores(filtro: FiltroProveedores = {}): Observable<Proveedor[]> {
     const params: Record<string, string> = {};
@@ -352,6 +353,24 @@ export class ComprasService {
       datos,
     );
   }
+
+  // ── HU-4.14: pago a un proveedor ──
+
+  pagosPorEjecutar(): Observable<PagoProgramado[]> {
+    return this.http.get<PagoProgramado[]>(`${API_URL}/compras/pagos-por-ejecutar`);
+  }
+
+  pagos(): Observable<PagoProveedor[]> {
+    return this.http.get<PagoProveedor[]>(this.urlPagos);
+  }
+
+  registrarPago(datos: PagoProveedorEntrada): Observable<PagoProveedor> {
+    return this.http.post<PagoProveedor>(this.urlPagos, datos);
+  }
+
+  anularPago(id: number, datos: AnulacionPagoEntrada): Observable<PagoProveedor> {
+    return this.http.post<PagoProveedor>(`${this.urlPagos}/${id}/anulacion`, datos);
+  }
 }
 
 // ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
@@ -371,3 +390,9 @@ export interface FiltroCuentasPorPagar {
   moneda?: Moneda;
   vence_hasta?: string;
 }
+
+// ── HU-4.14: pago a un proveedor ──────────────────────────────────────────────
+
+export type PagoProveedor = components['schemas']['PagoProveedorSalida'];
+export type PagoProveedorEntrada = components['schemas']['PagoProveedorEntrada'];
+export type AnulacionPagoEntrada = components['schemas']['AnulacionPagoEntrada'];

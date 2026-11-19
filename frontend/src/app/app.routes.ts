@@ -74,6 +74,12 @@ export const routes: Routes = [
           import('./features/compras/programacion-pagos').then((m) => m.ProgramacionPagosPantalla),
       },
       {
+        path: 'compras/pagos',
+        title: 'Pagos a proveedores · Kilómetro Cero',
+        data: soloRoles('auxiliar_contable', 'contador', 'gerente_financiero'),
+        loadComponent: () => import('./features/compras/pagos').then((m) => m.PagosPantalla),
+      },
+      {
         path: 'compras/hoja-costo',
         title: 'Hoja de costo · Kilómetro Cero',
         loadComponent: () =>

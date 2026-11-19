@@ -50,6 +50,7 @@ export class Layout {
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Hoja de costo', ruta: '/compras/hoja-costo' },
     { etiqueta: 'Programación de pagos', ruta: '/compras/programacion-pagos' },
+    { etiqueta: 'Pagos a proveedores', ruta: '/compras/pagos' },
     { etiqueta: 'Unidades y flota' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },

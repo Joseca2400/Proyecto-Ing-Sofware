@@ -36,6 +36,7 @@ const ESTADOS: Record<string, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
   ejecutado: 'Ejecutado',
+  anulado: 'Anulado',
 };
 
 // HU-4.13 (Sprint 3): el área contable propone pagos con las cuentas por pagar vencidas o por

@@ -1,0 +1,246 @@
+<section class="encabezado no-imprimir">
+  <h1>Pagos a proveedores</h1>
+  <p>
+    Ejecuta los pagos que aprobó el gerente financiero, por cheque o transferencia, desde la cuenta
+    bancaria aprobada. Un pago puede cancelar documentos en otra moneda: el sistema aplica el tipo
+    de cambio de la fecha, calcula el diferencial cambiario y genera la partida.
+  </p>
+</section>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla no-imprimir" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok no-imprimir" role="status">{{ mensaje }}</p>
+}
+
+@if (puedeRegistrar()) {
+  <section class="tarjeta bloque no-imprimir">
+    <h2>Pagos aprobados por ejecutar</h2>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Documento</th>
+          <th>Proveedor</th>
+          <th>Cuenta bancaria</th>
+          <th class="numero">Monto aprobado</th>
+          <th class="numero">Sale del banco</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of porEjecutar(); track p.id) {
+          <tr>
+            <td>
+              <input
+                type="checkbox"
+                [attr.aria-label]="'Pagar ' + p.documento"
+                [checked]="elegidos().includes(p.id)"
+                [disabled]="!elegidos().includes(p.id) && !combinable(p)"
+                (change)="alternar(p, $any($event.target).checked)"
+              />
+            </td>
+            <td>
+              {{ p.documento }}
+              <small class="bloque-linea">
+                Vence {{ p.fecha_vencimiento | date: 'dd/MM/yyyy' }} · saldo
+                {{ p.saldo | monto: p.moneda }}
+              </small>
+            </td>
+            <td>{{ p.proveedor }}</td>
+            <td>{{ p.banco }} ({{ p.moneda_banco }})</td>
+            <td class="numero">{{ p.monto | monto: p.moneda }}</td>
+            <td class="numero">
+              {{ p.monto_banco | monto: p.moneda_banco }}
+              @if (p.moneda !== p.moneda_banco) {
+                <small class="bloque-linea">estimado; se usa el tipo de cambio de la fecha</small>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">No hay pagos aprobados por ejecutar</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="formulario">
+      <label>
+        Cuenta bancaria
+        <input
+          type="text"
+          name="banco"
+          readonly
+          [value]="banco() ? banco()!.banco + ' ' + banco()!.numero : 'La del pago aprobado'"
+        />
+      </label>
+      <label>
+        Forma de pago
+        <select
+          name="forma_pago"
+          [value]="forma()"
+          (change)="cambiarForma($any($event.target).value)"
+        >
+          <option value="cheque">Cheque</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+      </label>
+      <label>
+        {{ forma() === 'cheque' ? 'Número de cheque' : 'Referencia' }}
+        <input
+          type="text"
+          name="referencia"
+          maxlength="50"
+          [value]="referencia()"
+          (input)="referencia.set($any($event.target).value)"
+        />
+      </label>
+      <label>
+        Fecha
+        <input
+          type="date"
+          name="fecha"
+          [value]="fecha()"
+          (change)="fecha.set($any($event.target).value)"
+        />
+      </label>
+      <button type="button" [disabled]="guardando() || !seleccion().length" (click)="registrar()">
+        Registrar pago
+      </button>
+    </div>
+  </section>
+}
+
+<section class="tarjeta bloque no-imprimir">
+  <h2>Pagos registrados</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th>Forma</th>
+        <th class="numero">Monto</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of pagos(); track p.id) {
+        <tr [class.elegido]="p.id === detalleId()">
+          <td>{{ p.id }}</td>
+          <td>{{ p.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ p.proveedor }}</td>
+          <td>{{ p.forma_pago === 'cheque' ? 'Cheque' : 'Transferencia' }} {{ p.referencia }}</td>
+          <td class="numero">{{ p.monto | monto: p.moneda }}</td>
+          <td [class.falla]="p.estado === 'anulado'">
+            {{ p.estado === 'anulado' ? 'Anulado' : 'Registrado' }}
+          </td>
+          <td><button type="button" class="secundario" (click)="ver(p.id)">Ver</button></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="vacio">Aún no hay pagos registrados</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+@if (detalle(); as p) {
+  <section class="tarjeta bloque comprobante">
+    <h2>Comprobante de pago No. {{ p.id }}</h2>
+    @if (p.estado === 'anulado') {
+      <p class="falla">
+        Anulado el {{ p.fecha_anulacion | date: 'dd/MM/yyyy' }}: {{ p.motivo_anulacion }} (partida
+        de reversión No. {{ p.reversion_numero }})
+      </p>
+    }
+    <dl>
+      <dt>Proveedor</dt>
+      <dd>{{ p.proveedor }}</dd>
+      <dt>Fecha</dt>
+      <dd>{{ p.fecha | date: 'dd/MM/yyyy' }}</dd>
+      <dt>Cuenta bancaria</dt>
+      <dd>{{ p.banco }} ({{ p.moneda }})</dd>
+      <dt>Forma de pago</dt>
+      <dd>
+        {{ p.forma_pago === 'cheque' ? 'Cheque No.' : 'Transferencia, referencia' }}
+        {{ p.referencia }}
+      </dd>
+      <dt>Monto</dt>
+      <dd>{{ p.monto | monto: p.moneda }}</dd>
+      @if (p.tipo_cambio) {
+        <dt>Tipo de cambio</dt>
+        <dd>{{ p.tipo_cambio }}</dd>
+      }
+      @if (p.diferencial !== '0.000000') {
+        <dt>Diferencial cambiario</dt>
+        <dd>
+          {{ p.diferencial | monto }}
+          {{ p.diferencial.startsWith('-') ? '(pérdida)' : '(ganancia)' }}
+        </dd>
+      }
+      <dt>Partida</dt>
+      <dd>No. {{ p.partida_numero }}</dd>
+    </dl>
+    <table>
+      <thead>
+        <tr>
+          <th>Documento cancelado</th>
+          <th class="numero">Aplicado</th>
+          <th class="numero">Sale del banco</th>
+          <th class="numero">Saldo del documento</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of p.aplicaciones; track a.cuenta_por_pagar_id) {
+          <tr>
+            <td>
+              {{ a.documento }}
+              @if (a.vin) {
+                <small class="bloque-linea">{{ a.vin }}</small>
+              }
+              @if (a.tipo_cambio_libros) {
+                <small class="bloque-linea">En libros a {{ a.tipo_cambio_libros }}</small>
+              }
+            </td>
+            <td class="numero">{{ a.monto_documento | monto: a.moneda_documento }}</td>
+            <td class="numero">{{ a.monto_pago | monto: p.moneda }}</td>
+            <td class="numero">{{ a.saldo_documento | monto: a.moneda_documento }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="acciones no-imprimir">
+      <button type="button" class="secundario" (click)="imprimir()">Imprimir comprobante</button>
+    </div>
+
+    @if (p.estado === 'registrado' && puedeAnular()) {
+      <div class="formulario anular no-imprimir">
+        <label>
+          Fecha de anulación
+          <input
+            type="date"
+            name="fecha_anulacion"
+            [value]="fechaAnulacion()"
+            (change)="fechaAnulacion.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ancho-medio">
+          Motivo
+          <input
+            type="text"
+            name="motivo"
+            maxlength="300"
+            [value]="motivo()"
+            (input)="motivo.set($any($event.target).value)"
+          />
+        </label>
+        <button type="button" class="peligro" (click)="anular(p)">Anular pago</button>
+      </div>
+    }
+  </section>
+}

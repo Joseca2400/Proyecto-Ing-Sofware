@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.comun.db import get_db
 from app.modulos.compras import service
 from app.modulos.compras.schemas import (
+    AnulacionPagoEntrada,
     CompraUnidadEntrada,
     CompraUnidadSalida,
     ConceptoGastoSalida,
@@ -17,6 +18,9 @@ from app.modulos.compras.schemas import (
     GastoImportacionSalida,
     HojaCosto,
     Moneda,
+    PagoProgramadoSalida,
+    PagoProveedorEntrada,
+    PagoProveedorSalida,
     ProgramacionPagoEntrada,
     ProgramacionPagoSalida,
     ProveedorEntrada,
@@ -41,6 +45,8 @@ CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
 # quien los propuso (lo revisa el service).
 PROPONE = requiere_rol(AUXILIAR_CONTABLE, CONTADOR, GERENTE_FINANCIERO)
 APRUEBA = requiere_rol(GERENTE_FINANCIERO)
+# HU-4.14: el pago lo registra el área contable; anularlo, el contador o el gerente financiero.
+ANULA = requiere_rol(CONTADOR, GERENTE_FINANCIERO)
 
 router = APIRouter(prefix="/compras", tags=["Compras"], dependencies=[Depends(usuario_actual)])
 
@@ -202,3 +208,42 @@ def decidir_pago(
     db: Session = Depends(get_db),
 ) -> ProgramacionPagoSalida:
     return _programacion(db, service.decidir_pago(db, programacion_id, pago_id, datos, usuario.id))
+
+
+# ── HU-4.14: pago a un proveedor ──────────────────────────────────────────────
+
+
+@router.get("/pagos-por-ejecutar", response_model=list[PagoProgramadoSalida])
+def pagos_por_ejecutar(db: Session = Depends(get_db)) -> list[PagoProgramadoSalida]:
+    return [PagoProgramadoSalida.model_validate(p) for p in service.pagos_por_ejecutar(db)]
+
+
+def _pago(db: Session, pago) -> PagoProveedorSalida:
+    return PagoProveedorSalida.model_validate(service.detalle_pago(db, pago))
+
+
+@router.get("/pagos", response_model=list[PagoProveedorSalida])
+def listar_pagos(proveedor_id: int | None = None, db: Session = Depends(get_db)) -> list[PagoProveedorSalida]:
+    return [_pago(db, p) for p in service.listar_pagos(db, proveedor_id)]
+
+
+@router.post("/pagos", response_model=PagoProveedorSalida, status_code=201)
+def registrar_pago(
+    datos: PagoProveedorEntrada, usuario: Usuario = Depends(CAPTURA), db: Session = Depends(get_db)
+) -> PagoProveedorSalida:
+    return _pago(db, service.registrar_pago(db, datos, usuario.id))
+
+
+@router.get("/pagos/{pago_id}", response_model=PagoProveedorSalida)
+def consultar_pago(pago_id: int, db: Session = Depends(get_db)) -> PagoProveedorSalida:
+    return _pago(db, service.obtener_pago(db, pago_id))
+
+
+@router.post("/pagos/{pago_id}/anulacion", response_model=PagoProveedorSalida)
+def anular_pago(
+    pago_id: int,
+    datos: AnulacionPagoEntrada,
+    usuario: Usuario = Depends(ANULA),
+    db: Session = Depends(get_db),
+) -> PagoProveedorSalida:
+    return _pago(db, service.anular_pago(db, pago_id, datos, usuario.id))
