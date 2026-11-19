@@ -1,0 +1,213 @@
+<section class="encabezado">
+  <h1>Gastos de importación</h1>
+  <p>
+    Registra los gastos de cada unidad por su VIN: flete, seguro, agente aduanal, almacenaje, DAI,
+    IPRIMA, placas y otros suman a su costo; el IVA de importación es crédito fiscal y no suma. Los
+    gastos en dólares usan el tipo de cambio de la fecha y cada gasto abre su cuenta por pagar.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+  <label class="vin">
+    VIN de la unidad
+    <input
+      type="text"
+      formControlName="vin"
+      name="vin"
+      maxlength="17"
+      placeholder="1HGCM82633A004352"
+    />
+    @if (formulario.controls.vin.touched && formulario.controls.vin.invalid) {
+      <small class="falla">17 caracteres, sin I, O ni Q</small>
+    }
+  </label>
+
+  <label>
+    Concepto
+    <select formControlName="concepto" name="concepto">
+      <option value="" disabled>Selecciona</option>
+      @for (c of conceptos(); track c.codigo) {
+        <option [value]="c.codigo">{{ c.nombre }} · {{ c.cuenta }}</option>
+      }
+    </select>
+    @if (formulario.controls.concepto.touched && formulario.controls.concepto.invalid) {
+      <small class="falla">Elige el concepto</small>
+    }
+    @if (conceptoElegido(); as c) {
+      @if (!c.suma_al_costo) {
+        <small class="aviso">Crédito fiscal: no suma al costo</small>
+      }
+    }
+  </label>
+
+  <label class="ancho-medio">
+    Proveedor
+    <select formControlName="proveedor_id" name="proveedor_id">
+      <option [ngValue]="0" disabled>Selecciona el proveedor</option>
+      @for (p of proveedores(); track p.id) {
+        <option [ngValue]="p.id">{{ p.nombre }}</option>
+      }
+    </select>
+    @if (formulario.controls.proveedor_id.touched && formulario.controls.proveedor_id.invalid) {
+      <small class="falla">Elige el proveedor</small>
+    }
+  </label>
+
+  <label>
+    Fecha
+    <input type="date" formControlName="fecha" name="fecha" />
+    @if (formulario.controls.fecha.touched && formulario.controls.fecha.invalid) {
+      <small class="falla">Obligatoria</small>
+    }
+  </label>
+
+  <label>
+    Documento
+    <input
+      type="text"
+      formControlName="documento"
+      name="documento"
+      placeholder="Factura, recibo, BL…"
+    />
+    @if (formulario.controls.documento.touched && formulario.controls.documento.invalid) {
+      <small class="falla">Obligatorio</small>
+    }
+  </label>
+
+  <label class="corto">
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">GTQ</option>
+      <option value="USD">USD</option>
+    </select>
+  </label>
+
+  <label class="monto">
+    Monto
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="monto"
+      name="monto"
+      placeholder="3500.00"
+    />
+    @if (formulario.controls.monto.touched && formulario.controls.monto.invalid) {
+      <small class="falla">Número positivo</small>
+    }
+  </label>
+
+  <label class="ancho">
+    Descripción (opcional)
+    <input type="text" formControlName="descripcion" name="descripcion" />
+  </label>
+
+  <button type="submit" [disabled]="guardando()">Registrar gasto</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (registrado(); as g) {
+  <div class="tarjeta resultado" role="status">
+    <p class="ok">
+      {{ g.concepto_nombre }} de la unidad {{ g.vin }} registrado. Cuenta por pagar a
+      {{ g.proveedor.nombre }} de
+      {{ g.cuenta_por_pagar.monto | monto: g.cuenta_por_pagar.moneda }} con vencimiento
+      {{ g.cuenta_por_pagar.fecha_vencimiento }}.
+    </p>
+    @if (g.tipo_cambio) {
+      <small>
+        Equivalente {{ g.monto_gtq | monto }} con tipo de cambio {{ g.tipo_cambio }} del
+        {{ g.fecha }}.
+      </small>
+    }
+    @if (!g.suma_al_costo) {
+      <small>Queda como crédito fiscal y no suma al costo de la unidad.</small>
+    }
+  </div>
+}
+
+<form class="filtros" [formGroup]="filtro" (ngSubmit)="cargar()">
+  <input
+    type="search"
+    formControlName="vin"
+    name="filtro_vin"
+    maxlength="17"
+    placeholder="Filtrar por VIN"
+    aria-label="Filtrar por VIN"
+  />
+  <button type="submit" class="secundario">Consultar</button>
+  @if (filtro.controls.vin.touched && filtro.controls.vin.invalid) {
+    <small class="falla">17 caracteres, sin I, O ni Q</small>
+  }
+</form>
+
+@if (resumen(); as r) {
+  <dl class="tarjeta resumen" aria-label="Total de la unidad">
+    <dt>Suma al costo de {{ r.vin }}</dt>
+    <dd>
+      <strong>{{ r.total_costo_gtq | monto }}</strong>
+    </dd>
+    <dt>IVA de importación (crédito fiscal)</dt>
+    <dd>{{ r.total_credito_fiscal_gtq | monto }}</dd>
+    <dt>Gastos</dt>
+    <dd>{{ r.gastos }}</dd>
+  </dl>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>VIN</th>
+        <th>Concepto</th>
+        <th>Proveedor</th>
+        <th>Documento</th>
+        <th class="numero">Monto</th>
+        <th class="numero">En quetzales</th>
+        <th>Cuenta por pagar</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (g of gastos(); track g.id) {
+        <tr>
+          <td>{{ g.fecha }}</td>
+          <td class="codigo">{{ g.vin }}</td>
+          <td>
+            {{ g.concepto_nombre }}
+            @if (g.suma_al_costo) {
+              <span class="chip">Suma al costo</span>
+            } @else {
+              <span class="chip credito">Crédito fiscal</span>
+            }
+            <small>{{ g.cuenta }}</small>
+          </td>
+          <td>{{ g.proveedor.nombre }}</td>
+          <td>
+            {{ g.documento }}
+            @if (g.descripcion) {
+              <small>{{ g.descripcion }}</small>
+            }
+          </td>
+          <td class="numero">{{ g.monto | monto: g.moneda }}</td>
+          <td class="numero">
+            {{ g.monto_gtq | monto }}
+            @if (g.tipo_cambio) {
+              <small>TC {{ g.tipo_cambio }}</small>
+            }
+          </td>
+          <td>
+            {{ g.cuenta_por_pagar.saldo | monto: g.cuenta_por_pagar.moneda }}
+            <small>vence {{ g.cuenta_por_pagar.fecha_vencimiento }}</small>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="vacio">No hay gastos de importación registrados</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

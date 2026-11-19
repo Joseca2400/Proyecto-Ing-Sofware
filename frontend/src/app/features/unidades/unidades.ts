@@ -2,6 +2,8 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MontoPipe } from '../../shared/pipes/monto.pipe';
+import { ComprasService, ResumenGastosUnidad } from '../compras/compras.service';
 import {
   CambioEstado,
   Catalogos,
@@ -17,15 +19,18 @@ const ESTADOS_FINALES: EstadoUnidad[] = ['vendida', 'recuperada'];
 
 // HU-1.05 (Sprint 1): alta de unidades por VIN con su ficha mínima, estado vigente e historial.
 // Aquí solo se revisa la forma del VIN; el dígito verificador y la unicidad los valida el servidor.
+// La ficha muestra el total de gastos de importación que suman al costo (HU-4.04), que calcula
+// el módulo de compras; el IVA de importación es crédito fiscal y no suma.
 // Diferido: placa, número de motor, expediente y movimientos contables ligados al VIN.
 @Component({
   selector: 'app-unidades',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, MontoPipe],
   templateUrl: './unidades.html',
   styleUrl: './unidades.css',
 })
 export class UnidadesPantalla {
   private readonly servicio = inject(UnidadesService);
+  private readonly compras = inject(ComprasService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly etiqueta = etiqueta;
@@ -37,6 +42,7 @@ export class UnidadesPantalla {
   protected readonly unidades = signal<Unidad[]>([]);
   protected readonly seleccionada = signal<Unidad | null>(null);
   protected readonly historial = signal<CambioEstado[]>([]);
+  protected readonly gastos = signal<ResumenGastosUnidad | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly aviso = signal<string | null>(null);
   protected readonly guardando = signal(false);
@@ -127,6 +133,11 @@ export class UnidadesPantalla {
     this.servicio.historial(unidad.vin).subscribe({
       next: (cambios) => this.historial.set(cambios),
       error: () => this.error.set('No se pudo consultar el historial de la unidad'),
+    });
+    this.gastos.set(null);
+    this.compras.resumenGastosUnidad(unidad.vin).subscribe({
+      next: (resumen) => this.gastos.set(resumen),
+      error: () => this.error.set('No se pudo consultar los gastos de importación de la unidad'),
     });
   }
 

@@ -114,6 +114,15 @@
       <dd>{{ etiqueta(unidad.tipo_vehiculo) }}</dd>
       <dt>Línea de negocio</dt>
       <dd>{{ etiqueta(unidad.linea_negocio) || 'Sin asignar' }}</dd>
+      @if (gastos(); as g) {
+        <dt>Gastos de importación</dt>
+        <dd class="costo">
+          <strong>{{ g.total_costo_gtq | monto }}</strong> suman al costo
+          <small>
+            IVA de importación {{ g.total_credito_fiscal_gtq | monto }}: crédito fiscal, no suma
+          </small>
+        </dd>
+      }
     </dl>
 
     <form class="cambio" [formGroup]="cambio" (ngSubmit)="cambiarEstado()">
