@@ -67,6 +67,8 @@ Convenciones que ya usan todos los módulos:
 - **Cuentas por regla, no fijas en el código:** `contabilidad.service.cuenta_regla(db, documento_tipo, concepto)`; cada módulo siembra las reglas de sus documentos en su migración (`INSERT INTO regla_contabilizacion`) y el contador las cambia desde la pantalla. Si falta, el documento no se registra.
 - **Dependencias circulares:** si `unidades` necesita a `compras`, `taller` o `alquileres` (que ya lo importan), el import va dentro de la función.
 - **Nombres de esquemas únicos:** dos módulos con un esquema Pydantic del mismo nombre rompen los tipos generados del front (lo vigila `tests/test_sistema.py`).
+- **Meses cerrados:** el motor rechaza toda partida, reversión o documento con fecha en un mes cerrado (`contabilidad.service.exigir_periodo_abierto`); un módulo puede llamarla antes de armar su documento para avisar pronto. Una prueba que cierre un mes vacía `periodo_cerrado` al terminar (como `tests/test_cierre_mes.py`): un mes cerrado bloquea las partidas de los demás archivos.
+- **Pagos y cobros en USD:** el tipo de cambio en libros de un saldo sale de `contabilidad.service.tipo_cambio_en_libros` (considera las revaluaciones que se mantuvieron) y el diferencial realizado, de `diferencial_cambiario`.
 - **Pruebas con sesión:** `tests/conftest.py` da `cliente_contador` (sesión de contador) y `cliente` (sin sesión); las que crean documentos con partida siembran el catálogo y vacían `partida` como `tests/test_gastos_importacion.py`.
 
 ### Frontend (`frontend/src/app/`)

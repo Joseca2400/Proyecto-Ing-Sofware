@@ -21,6 +21,9 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sistema}:${POSTGRES_PASSWORD:-sistema}@db:5432/${POSTGRES_DB:-sistema}
+      SESION_MINUTOS: ${SESION_MINUTOS:-480}
+      INTENTOS_MAXIMOS: ${INTENTOS_MAXIMOS:-5}
+      BLOQUEO_MINUTOS: ${BLOQUEO_MINUTOS:-15}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
