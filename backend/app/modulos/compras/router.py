@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -7,11 +9,16 @@ from app.modulos.compras.schemas import (
     CompraUnidadEntrada,
     CompraUnidadSalida,
     ConceptoGastoSalida,
+    CuentaPorPagarPendiente,
+    DecisionPagoEntrada,
     FacturaCompraEntrada,
     FacturaCompraSalida,
     GastoImportacionEntrada,
     GastoImportacionSalida,
     HojaCosto,
+    Moneda,
+    ProgramacionPagoEntrada,
+    ProgramacionPagoSalida,
     ProveedorEntrada,
     ProveedorSalida,
     ResumenGastosUnidad,
@@ -21,6 +28,7 @@ from app.modulos.compras.schemas import (
 from app.modulos.seguridad.service import (
     AUXILIAR_CONTABLE,
     CONTADOR,
+    GERENTE_FINANCIERO,
     Usuario,
     requiere_rol,
     usuario_actual,
@@ -29,6 +37,10 @@ from app.modulos.seguridad.service import (
 # HU-1.09: todas las rutas exigen sesión; las altas, además, el rol que registra el documento.
 CONTADOR_ = requiere_rol(CONTADOR)
 CAPTURA = requiere_rol(AUXILIAR_CONTABLE, CONTADOR)
+# HU-4.13: proponer pagos lo hace el área contable; aprobarlos, solo el gerente financiero, y nunca
+# quien los propuso (lo revisa el service).
+PROPONE = requiere_rol(AUXILIAR_CONTABLE, CONTADOR, GERENTE_FINANCIERO)
+APRUEBA = requiere_rol(GERENTE_FINANCIERO)
 
 router = APIRouter(prefix="/compras", tags=["Compras"], dependencies=[Depends(usuario_actual)])
 
@@ -142,3 +154,51 @@ def consultar_compra_unidad(compra_id: int, db: Session = Depends(get_db)) -> Co
 @router.get("/hoja-costo/{vin}", response_model=HojaCosto)
 def hoja_de_costo(vin: str, db: Session = Depends(get_db)) -> HojaCosto:
     return HojaCosto(**service.hoja_de_costo(db, vin))
+
+
+# ── HU-4.13: programación y aprobación de pagos ───────────────────────────────
+
+
+@router.get("/cuentas-por-pagar", response_model=list[CuentaPorPagarPendiente])
+def cuentas_por_pagar_pendientes(
+    moneda: Moneda | None = None,
+    vence_hasta: date | None = None,
+    proveedor_id: int | None = None,
+    db: Session = Depends(get_db),
+) -> list[CuentaPorPagarPendiente]:
+    cuentas = service.cuentas_por_pagar_pendientes(db, moneda, vence_hasta, proveedor_id)
+    return [CuentaPorPagarPendiente.model_validate(c) for c in cuentas]
+
+
+def _programacion(db: Session, programacion) -> ProgramacionPagoSalida:
+    return ProgramacionPagoSalida.model_validate(service.detalle_programacion(db, programacion))
+
+
+@router.get("/programaciones-pago", response_model=list[ProgramacionPagoSalida])
+def listar_programaciones(db: Session = Depends(get_db)) -> list[ProgramacionPagoSalida]:
+    return [_programacion(db, p) for p in service.listar_programaciones(db)]
+
+
+@router.post("/programaciones-pago", response_model=ProgramacionPagoSalida, status_code=201)
+def proponer_pagos(
+    datos: ProgramacionPagoEntrada, usuario: Usuario = Depends(PROPONE), db: Session = Depends(get_db)
+) -> ProgramacionPagoSalida:
+    return _programacion(db, service.proponer_pagos(db, datos, usuario.id))
+
+
+@router.get("/programaciones-pago/{programacion_id}", response_model=ProgramacionPagoSalida)
+def consultar_programacion(programacion_id: int, db: Session = Depends(get_db)) -> ProgramacionPagoSalida:
+    return _programacion(db, service.obtener_programacion(db, programacion_id))
+
+
+@router.post(
+    "/programaciones-pago/{programacion_id}/pagos/{pago_id}/decision", response_model=ProgramacionPagoSalida
+)
+def decidir_pago(
+    programacion_id: int,
+    pago_id: int,
+    datos: DecisionPagoEntrada,
+    usuario: Usuario = Depends(APRUEBA),
+    db: Session = Depends(get_db),
+) -> ProgramacionPagoSalida:
+    return _programacion(db, service.decidir_pago(db, programacion_id, pago_id, datos, usuario.id))

@@ -1,8 +1,16 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    computed_field,
+    field_serializer,
+    field_validator,
+)
 
 from app.comun.nit import formatear_nit
 
@@ -501,3 +509,131 @@ class HojaCosto(BaseModel):
     @field_serializer("costo_alta_gtq")
     def costo_alta_a_texto(self, valor: Decimal | None) -> str | None:
         return None if valor is None else _monto_texto(valor)
+
+
+# ── HU-4.13: programación y aprobación de pagos ───────────────────────────────
+
+MontoTexto = Annotated[Decimal, PlainSerializer(_monto_texto, return_type=str)]
+TipoCambioTexto = Annotated[Decimal, PlainSerializer(lambda valor: f"{valor:.8f}", return_type=str)]
+OrigenCuentaPorPagar = Literal["factura", "gasto_importacion", "compra_unidad"]
+EstadoPagoProgramado = Literal["propuesto", "aprobado", "rechazado", "ejecutado"]
+
+
+def _texto_monto(valor: object) -> object:
+    if not isinstance(valor, str):
+        raise ValueError('Los montos se envían como texto, por ejemplo "350.00"')
+    return valor.strip()
+
+
+class CuentaPorPagarPendiente(BaseModel):
+    """Cuenta por pagar con saldo, con su documento de origen, para proponer pagos."""
+
+    id: int
+    proveedor_id: int
+    proveedor: str
+    origen: OrigenCuentaPorPagar
+    documento: str
+    vin: str | None
+    fecha: date
+    fecha_vencimiento: date
+    dias_vencida: int  # negativo: faltan días para el vencimiento
+    moneda: Moneda
+    monto: MontoTexto
+    saldo: MontoTexto
+    programado: MontoTexto  # en un pago propuesto o aprobado que aún no se ejecuta
+
+
+class PagoProgramadoEntrada(BaseModel):
+    cuenta_por_pagar_id: int
+    cuenta_bancaria_id: int
+    monto: str  # en la moneda del documento; menor que el saldo es un pago parcial
+
+    @field_validator("monto", mode="before")
+    @classmethod
+    def monto_como_texto(cls, valor: object) -> object:
+        return _texto_monto(valor)
+
+
+class ProgramacionPagoEntrada(BaseModel):
+    fecha: date
+    descripcion: str | None = Field(default=None, max_length=300)
+    pagos: list[PagoProgramadoEntrada]
+
+    @field_validator("descripcion", mode="before")
+    @classmethod
+    def recortar_opcional(cls, valor: object) -> object:
+        if isinstance(valor, str):
+            return valor.strip() or None
+        return valor
+
+
+class DecisionPagoEntrada(BaseModel):
+    """Aprobar (con monto o cuenta bancaria cambiados, si se modifica) o rechazar con su motivo."""
+
+    accion: Literal["aprobar", "rechazar"]
+    monto: str | None = None
+    cuenta_bancaria_id: int | None = None
+    comentario: str | None = Field(default=None, max_length=300)
+
+    @field_validator("monto", mode="before")
+    @classmethod
+    def monto_como_texto(cls, valor: object) -> object:
+        if valor is None or (isinstance(valor, str) and not valor.strip()):
+            return None
+        return _texto_monto(valor)
+
+    @field_validator("comentario", mode="before")
+    @classmethod
+    def recortar_opcional(cls, valor: object) -> object:
+        if isinstance(valor, str):
+            return valor.strip() or None
+        return valor
+
+
+class PagoProgramadoSalida(BaseModel):
+    id: int
+    cuenta_por_pagar_id: int
+    proveedor_id: int
+    proveedor: str
+    documento: str
+    vin: str | None
+    fecha_vencimiento: date
+    moneda: Moneda
+    saldo: MontoTexto
+    cuenta_bancaria_id: int
+    banco: str
+    moneda_banco: Moneda
+    monto_propuesto: MontoTexto
+    monto: MontoTexto
+    # Lo que sale de la cuenta bancaria; si la moneda difiere, estimado con el último tipo de cambio.
+    monto_banco: MontoTexto | None
+    estado: EstadoPagoProgramado
+    decidido_por: int | None
+    decidido_en: datetime | None
+    comentario: str | None
+
+
+class SaldoBancoProgramacion(BaseModel):
+    """Saldo disponible de una cuenta bancaria frente a lo que esta programación sacaría de ella."""
+
+    cuenta_bancaria_id: int
+    banco: str
+    moneda: Moneda
+    saldo_libros: MontoTexto
+    comprometido: MontoTexto  # pagos aprobados de otras programaciones, aún sin ejecutar
+    disponible: MontoTexto
+    programado: MontoTexto  # pagos propuestos o aprobados de esta programación, sin ejecutar
+    alcanza: bool
+
+
+class ProgramacionPagoSalida(BaseModel):
+    id: int
+    fecha: date
+    descripcion: str | None
+    propuesta_por: int
+    creado_en: datetime
+    estado: Literal["pendiente", "revisada"]
+    pagos: list[PagoProgramadoSalida]
+    totales: dict[str, MontoTexto]  # por moneda de salida (GTQ y USD), sin los rechazados
+    tipo_cambio_estimado: TipoCambioTexto | None
+    bancos: list[SaldoBancoProgramacion]

@@ -54,6 +54,20 @@ unidades en proceso del VIN en el mayor (criterio 3). `costos_de_unidades` y
 HU-4.08 (diferido): exportar a PDF y Excel (criterio 4, Sprint 5 con HU-7.09); el expediente y los
 gastos compartidos prorrateados (HU-4.03/HU-4.05, Sprint 5).
 
+HU-4.13 (incluido): programación de pagos. Quien propone (auxiliar contable, contador o gerente
+financiero) elige cuentas por pagar con saldo, vencidas o por vencer, de facturas, gastos de
+importación y compras en EE. UU. (`cuentas_por_pagar_pendientes`, por moneda, vencimiento o
+proveedor) y para cada una la cuenta bancaria (HU-1.08) y el monto en la moneda del documento;
+menos que el saldo es un pago parcial. Una cuenta por pagar está en un solo pago propuesto o
+aprobado a la vez. `detalle_programacion` da los totales que salen en Q y en USD y, por cuenta
+bancaria, el saldo en libros, lo comprometido en pagos aprobados de otras programaciones, el
+disponible y si alcanza; lo que sale de un banco en otra moneda se estima con el último tipo de
+cambio cargado. El gerente financiero aprueba, modifica (aprueba con otro monto o cuenta bancaria)
+o rechaza con motivo cada pago; quien propuso no decide sus pagos (403, como HU-1.10). Solo un
+pago aprobado se ejecuta (HU-4.14).
+HU-4.13 (diferido): límites de aprobación por monto; programaciones recurrentes; avisar al
+proveedor.
+
 Pendiente al mezclar HU-1.01 (perfil fiscal, equipo C):
 - El perfil fiscal valida su NIT con el mismo `comun/nit.py`; no se duplica la regla.
 - Las retenciones diferidas dependen de que la empresa sea agente de retención de IVA o ISR:
@@ -73,7 +87,7 @@ Pendiente para HU-4.04:
 """
 
 import re
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import func, or_, select
@@ -90,13 +104,17 @@ from app.modulos.compras.models import (
     FacturaCompra,
     GastoImportacion,
     LineaFacturaCompra,
+    PagoProgramado,
+    ProgramacionPago,
     Proveedor,
 )
 from app.modulos.compras.schemas import (
     CompraUnidadEntrada,
+    DecisionPagoEntrada,
     FacturaCompraEntrada,
     GastoImportacionEntrada,
     LineaFacturaEntrada,
+    ProgramacionPagoEntrada,
     ProveedorEntrada,
 )
 from app.modulos.configuracion import service as configuracion
@@ -840,3 +858,321 @@ def obtener_compra_unidad(db: Session, compra_id: int) -> CompraUnidad:
     if compra is None:
         raise ErrorNegocio(f"No existe la compra {compra_id}", status=404)
     return compra
+
+
+# ── HU-4.13: programación y aprobación de pagos ───────────────────────────────
+
+_PAGO_ACTIVO = ("propuesto", "aprobado")  # una cuenta por pagar está en uno solo a la vez
+
+
+def _origen(cuenta: CuentaPorPagar) -> tuple[str, str, str | None]:
+    """Tipo de documento que abrió la cuenta por pagar, su descripción corta y su VIN."""
+    if cuenta.factura is not None:
+        return "factura", f"Factura {cuenta.factura.serie}-{cuenta.factura.numero}", None
+    if cuenta.gasto_importacion is not None:
+        gasto = cuenta.gasto_importacion
+        return "gasto_importacion", f"{gasto.concepto_nombre} {gasto.documento}", gasto.vin
+    compra = cuenta.compra_unidad
+    return "compra_unidad", f"Compra en EE. UU. {compra.documento}", compra.vin
+
+
+def _programado_por_cuenta(db: Session, ids: list[int]) -> dict[int, Decimal]:
+    """Monto en pagos propuestos o aprobados, aún sin ejecutar, de cada cuenta por pagar."""
+    if not ids:
+        return {}
+    filas = db.execute(
+        select(PagoProgramado.cuenta_por_pagar_id, func.sum(PagoProgramado.monto))
+        .where(PagoProgramado.cuenta_por_pagar_id.in_(ids), PagoProgramado.estado.in_(_PAGO_ACTIVO))
+        .group_by(PagoProgramado.cuenta_por_pagar_id)
+    ).all()
+    return dict(filas)
+
+
+def cuentas_por_pagar_pendientes(
+    db: Session,
+    moneda: str | None = None,
+    vence_hasta: date | None = None,
+    proveedor_id: int | None = None,
+) -> list[dict]:
+    """Cuentas por pagar con saldo (criterio 1), de la que vence primero a la última: las vencidas
+    y las que vencen hasta `vence_hasta`, de una moneda o de un proveedor."""
+    consulta = (
+        select(CuentaPorPagar)
+        .where(CuentaPorPagar.saldo > 0)
+        .order_by(CuentaPorPagar.fecha_vencimiento, CuentaPorPagar.id)
+    )
+    if moneda:
+        consulta = consulta.where(CuentaPorPagar.moneda == moneda)
+    if vence_hasta is not None:
+        consulta = consulta.where(CuentaPorPagar.fecha_vencimiento <= vence_hasta)
+    if proveedor_id is not None:
+        consulta = consulta.where(CuentaPorPagar.proveedor_id == proveedor_id)
+    cuentas = list(db.scalars(consulta).unique())
+    programado = _programado_por_cuenta(db, [c.id for c in cuentas])
+    hoy = date.today()
+    resultado = []
+    for cuenta in cuentas:
+        origen, documento, vin = _origen(cuenta)
+        resultado.append(
+            {
+                "id": cuenta.id,
+                "proveedor_id": cuenta.proveedor_id,
+                "proveedor": cuenta.proveedor.nombre,
+                "origen": origen,
+                "documento": documento,
+                "vin": vin,
+                "fecha": cuenta.fecha,
+                "fecha_vencimiento": cuenta.fecha_vencimiento,
+                "dias_vencida": (hoy - cuenta.fecha_vencimiento).days,
+                "moneda": cuenta.moneda,
+                "monto": cuenta.monto,
+                "saldo": cuenta.saldo,
+                "programado": programado.get(cuenta.id, Decimal(0)),
+            }
+        )
+    return resultado
+
+
+def _banco_activo(db: Session, cuenta_bancaria_id: int, prefijo: str = ""):
+    banco = configuracion.obtener_cuenta_bancaria(db, cuenta_bancaria_id)
+    if not banco.activa:
+        raise ErrorNegocio(f"{prefijo}La cuenta bancaria {banco.banco} {banco.numero} está inactiva")
+    return banco
+
+
+def _a_moneda(monto: Decimal, de: str, a: str, tipo_cambio: Decimal | None) -> Decimal:
+    """`monto` de la moneda `de` en la moneda `a`, redondeado como los montos (6 decimales)."""
+    if de == a:
+        return monto
+    if a == "GTQ":
+        return redondear(convertir(monto, tipo_cambio), _DECIMALES_MONTO)
+    return redondear(monto / tipo_cambio, _DECIMALES_MONTO)
+
+
+def _tipo_cambio_estimado(db: Session) -> Decimal | None:
+    """El último tipo de cambio cargado, para estimar lo que sale de un banco en otra moneda."""
+    cargados = configuracion.listar(db, hasta=date.today())
+    return cargados[0].valor if cargados else None
+
+
+def _saldo_banco(db: Session, banco) -> Decimal:
+    """Saldo en libros de la cuenta bancaria, en su moneda (el mayor, HU-2.16)."""
+    if banco.moneda == "USD":
+        return contabilidad.saldo_cuenta_usd(db, banco.cuenta_id)
+    return contabilidad.saldo_cuenta(db, banco.cuenta_id)
+
+
+def _monto_banco(pago: PagoProgramado, banco, tipo_cambio: Decimal | None) -> Decimal | None:
+    moneda = pago.cuenta_por_pagar.moneda
+    if moneda != banco.moneda and tipo_cambio is None:
+        return None
+    return _a_moneda(pago.monto, moneda, banco.moneda, tipo_cambio)
+
+
+def proponer_pagos(db: Session, datos: ProgramacionPagoEntrada, usuario_id: int) -> ProgramacionPago:
+    """Crea la propuesta con sus pagos en estado propuesto (criterio 1), o nada."""
+    if not datos.pagos:
+        raise ErrorNegocio("Elija al menos una cuenta por pagar para la propuesta")
+    if datos.fecha < date.today():
+        raise ErrorNegocio("La fecha prevista de pago no puede ser pasada")
+    ids = [pago.cuenta_por_pagar_id for pago in datos.pagos]
+    if len(set(ids)) != len(ids):
+        raise ErrorNegocio("Una cuenta por pagar aparece dos veces en la propuesta")
+    # Bloqueadas hasta el commit: dos propuestas simultáneas no programan la misma cuenta.
+    cuentas = {
+        c.id: c
+        for c in db.scalars(
+            select(CuentaPorPagar).where(CuentaPorPagar.id.in_(ids)).with_for_update(of=CuentaPorPagar)
+        ).unique()
+    }
+    programado = _programado_por_cuenta(db, ids)
+    programacion = ProgramacionPago(
+        fecha=datos.fecha, descripcion=datos.descripcion, propuesta_por=usuario_id
+    )
+    for numero, entrada in enumerate(datos.pagos, start=1):
+        prefijo = f"Pago {numero}: "
+        cuenta = cuentas.get(entrada.cuenta_por_pagar_id)
+        if cuenta is None:
+            raise ErrorNegocio(f"{prefijo}no existe la cuenta por pagar {entrada.cuenta_por_pagar_id}", 404)
+        documento = _origen(cuenta)[1]
+        if cuenta.saldo <= 0:
+            raise ErrorNegocio(f"{prefijo}{documento} de {cuenta.proveedor.nombre} ya está pagado", 409)
+        if programado.get(cuenta.id):
+            raise ErrorNegocio(
+                f"{prefijo}{documento} de {cuenta.proveedor.nombre} ya está en otra programación "
+                "pendiente de ejecutar",
+                409,
+            )
+        monto = _monto(entrada.monto, "el monto", permite_cero=False, prefijo=prefijo)
+        if monto > cuenta.saldo:
+            raise ErrorNegocio(f"{prefijo}el monto excede el saldo ({cuenta.saldo:.2f} {cuenta.moneda})")
+        _banco_activo(db, entrada.cuenta_bancaria_id, prefijo)
+        programacion.pagos.append(
+            PagoProgramado(
+                cuenta_por_pagar_id=cuenta.id,
+                cuenta_bancaria_id=entrada.cuenta_bancaria_id,
+                monto_propuesto=monto,
+                monto=monto,
+                estado="propuesto",
+            )
+        )
+    db.add(programacion)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()  # el índice parcial decide entre dos propuestas simultáneas
+        raise ErrorNegocio(
+            "Una de las cuentas por pagar ya está en otra programación pendiente de ejecutar", 409
+        ) from None
+    db.refresh(programacion)
+    return programacion
+
+
+def listar_programaciones(db: Session) -> list[ProgramacionPago]:
+    return list(
+        db.scalars(
+            select(ProgramacionPago).order_by(ProgramacionPago.fecha.desc(), ProgramacionPago.id.desc())
+        )
+    )
+
+
+def obtener_programacion(db: Session, programacion_id: int) -> ProgramacionPago:
+    programacion = db.get(ProgramacionPago, programacion_id)
+    if programacion is None:
+        raise ErrorNegocio(f"No existe la programación de pagos {programacion_id}", 404)
+    return programacion
+
+
+def _comprometido(db: Session, banco, excluir: int, tipo_cambio: Decimal | None) -> Decimal:
+    """Pagos aprobados de otras programaciones que aún no salen de la cuenta bancaria."""
+    pagos = db.scalars(
+        select(PagoProgramado).where(
+            PagoProgramado.cuenta_bancaria_id == banco.id,
+            PagoProgramado.estado == "aprobado",
+            PagoProgramado.programacion_id != excluir,
+        )
+    ).unique()
+    montos = (_monto_banco(pago, banco, tipo_cambio) for pago in pagos)
+    return sum((monto for monto in montos if monto is not None), Decimal(0))
+
+
+def detalle_programacion(db: Session, programacion: ProgramacionPago) -> dict:
+    """La propuesta con sus pagos, los totales que salen en Q y en USD y, por cuenta bancaria, el
+    saldo disponible frente a lo programado (criterio 2). Lo que sale de un banco en otra moneda
+    que la del documento se estima con el último tipo de cambio cargado; el pago (HU-4.14) usa el
+    de su fecha."""
+    tipo_cambio = _tipo_cambio_estimado(db)
+    bancos: dict = {}
+    programado_banco: dict[int, Decimal] = {}
+    totales = {"GTQ": Decimal(0), "USD": Decimal(0)}
+    pagos = []
+    for pago in programacion.pagos:
+        if pago.cuenta_bancaria_id not in bancos:
+            bancos[pago.cuenta_bancaria_id] = configuracion.obtener_cuenta_bancaria(
+                db, pago.cuenta_bancaria_id
+            )
+            programado_banco[pago.cuenta_bancaria_id] = Decimal(0)
+        banco = bancos[pago.cuenta_bancaria_id]
+        cuenta = pago.cuenta_por_pagar
+        monto_banco = _monto_banco(pago, banco, tipo_cambio)
+        if monto_banco is not None and pago.estado != "rechazado":
+            totales[banco.moneda] += monto_banco
+        if monto_banco is not None and pago.estado in _PAGO_ACTIVO:
+            programado_banco[banco.id] += monto_banco
+        _, documento, vin = _origen(cuenta)
+        pagos.append(
+            {
+                "id": pago.id,
+                "cuenta_por_pagar_id": cuenta.id,
+                "proveedor_id": cuenta.proveedor_id,
+                "proveedor": cuenta.proveedor.nombre,
+                "documento": documento,
+                "vin": vin,
+                "fecha_vencimiento": cuenta.fecha_vencimiento,
+                "moneda": cuenta.moneda,
+                "saldo": cuenta.saldo,
+                "cuenta_bancaria_id": banco.id,
+                "banco": f"{banco.banco} {banco.numero}",
+                "moneda_banco": banco.moneda,
+                "monto_propuesto": pago.monto_propuesto,
+                "monto": pago.monto,
+                "monto_banco": monto_banco,
+                "estado": pago.estado,
+                "decidido_por": pago.decidido_por,
+                "decidido_en": pago.decidido_en,
+                "comentario": pago.comentario,
+            }
+        )
+    saldos = []
+    for banco in bancos.values():
+        saldo = _saldo_banco(db, banco)
+        comprometido = _comprometido(db, banco, programacion.id, tipo_cambio)
+        programado = programado_banco[banco.id]
+        saldos.append(
+            {
+                "cuenta_bancaria_id": banco.id,
+                "banco": f"{banco.banco} {banco.numero}",
+                "moneda": banco.moneda,
+                "saldo_libros": saldo,
+                "comprometido": comprometido,
+                "disponible": saldo - comprometido,
+                "programado": programado,
+                "alcanza": programado <= saldo - comprometido,
+            }
+        )
+    return {
+        "id": programacion.id,
+        "fecha": programacion.fecha,
+        "descripcion": programacion.descripcion,
+        "propuesta_por": programacion.propuesta_por,
+        "creado_en": programacion.creado_en,
+        "estado": "pendiente" if any(p.estado == "propuesto" for p in programacion.pagos) else "revisada",
+        "pagos": pagos,
+        "totales": totales,
+        "tipo_cambio_estimado": tipo_cambio,
+        "bancos": saldos,
+    }
+
+
+def decidir_pago(
+    db: Session, programacion_id: int, pago_id: int, datos: DecisionPagoEntrada, usuario_id: int
+) -> ProgramacionPago:
+    """El gerente financiero aprueba, modifica (aprueba con otro monto o cuenta bancaria) o rechaza
+    un pago propuesto (criterio 3). Quien propuso la programación no decide sus pagos (criterio 4,
+    como HU-1.10 en las partidas)."""
+    pago = db.scalar(
+        select(PagoProgramado)
+        .where(PagoProgramado.id == pago_id)
+        .with_for_update(of=PagoProgramado)
+        .execution_options(populate_existing=True)  # tras el candado: otra decisión pudo cambiarlo
+    )
+    if pago is None or pago.programacion_id != programacion_id:
+        raise ErrorNegocio(f"La programación {programacion_id} no tiene el pago {pago_id}", 404)
+    programacion = pago.programacion
+    if programacion.propuesta_por == usuario_id:
+        raise ErrorNegocio("No puedes aprobar ni rechazar un pago que propusiste tú", 403)
+    if pago.estado != "propuesto":
+        raise ErrorNegocio(f"El pago ya está {pago.estado}", 409)
+
+    if datos.accion == "rechazar":
+        if datos.monto is not None or datos.cuenta_bancaria_id is not None:
+            raise ErrorNegocio("Un pago rechazado no cambia de monto ni de cuenta bancaria")
+        if not datos.comentario:
+            raise ErrorNegocio("Indique el motivo del rechazo")
+        pago.estado = "rechazado"
+    else:
+        cuenta = pago.cuenta_por_pagar
+        if datos.monto is not None:
+            pago.monto = _monto(datos.monto, "El monto", permite_cero=False)
+        if pago.monto > cuenta.saldo:
+            raise ErrorNegocio(f"El monto excede el saldo ({cuenta.saldo:.2f} {cuenta.moneda})")
+        if datos.cuenta_bancaria_id is not None:
+            _banco_activo(db, datos.cuenta_bancaria_id)
+            pago.cuenta_bancaria_id = datos.cuenta_bancaria_id
+        pago.estado = "aprobado"
+    pago.decidido_por = usuario_id
+    pago.decidido_en = datetime.now(UTC)
+    pago.comentario = datos.comentario
+    db.commit()
+    db.refresh(programacion)
+    return programacion

@@ -1,0 +1,317 @@
+<section class="encabezado">
+  <h1>Programación de pagos</h1>
+  <p>
+    El área contable propone qué cuentas por pagar se pagan, desde qué cuenta bancaria y por cuánto;
+    el gerente financiero aprueba, modifica o rechaza cada pago. Solo los aprobados se pueden
+    ejecutar, y quien propone una programación no decide sus pagos.
+  </p>
+</section>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+@if (puedeProponer()) {
+  <section class="tarjeta bloque">
+    <h2>Proponer pagos</h2>
+    <div class="filtros">
+      <label>
+        Moneda
+        <select
+          name="filtro_moneda"
+          [value]="filtroMoneda()"
+          (change)="filtroMoneda.set($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          <option value="GTQ">GTQ</option>
+          <option value="USD">USD</option>
+        </select>
+      </label>
+      <label>
+        Vencen hasta
+        <input
+          type="date"
+          name="filtro_vence"
+          [value]="filtroVence()"
+          (change)="filtroVence.set($any($event.target).value)"
+        />
+      </label>
+      <button type="button" class="secundario" (click)="cargarPendientes()">Consultar</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Documento</th>
+          <th>Proveedor</th>
+          <th>Vence</th>
+          <th class="numero">Saldo</th>
+          <th class="numero">Monto a pagar</th>
+          <th>Cuenta bancaria</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of filas(); track f.cuenta.id) {
+          <tr [class.programada]="f.cuenta.programado !== '0.000000'">
+            <td>
+              <input
+                type="checkbox"
+                [attr.aria-label]="'Elegir ' + f.cuenta.documento"
+                [checked]="f.elegida"
+                [disabled]="f.cuenta.programado !== '0.000000'"
+                (change)="cambiarFila(f.cuenta.id, { elegida: $any($event.target).checked })"
+              />
+            </td>
+            <td>
+              {{ f.cuenta.documento }}
+              @if (f.cuenta.vin) {
+                <small class="bloque-linea">{{ f.cuenta.vin }}</small>
+              }
+            </td>
+            <td>{{ f.cuenta.proveedor }}</td>
+            <td>
+              {{ f.cuenta.fecha_vencimiento | date: 'dd/MM/yyyy' }}
+              @if (f.cuenta.dias_vencida > 0) {
+                <small class="falla bloque-linea"
+                  >Vencida hace {{ f.cuenta.dias_vencida }} días</small
+                >
+              } @else if (f.cuenta.programado !== '0.000000') {
+                <small class="bloque-linea">Ya programada</small>
+              }
+            </td>
+            <td class="numero">{{ f.cuenta.saldo | monto: f.cuenta.moneda }}</td>
+            <td class="numero">
+              <input
+                class="monto"
+                type="text"
+                inputmode="decimal"
+                [attr.aria-label]="'Monto de ' + f.cuenta.documento"
+                [value]="f.monto"
+                [disabled]="!f.elegida"
+                (input)="cambiarFila(f.cuenta.id, { monto: $any($event.target).value })"
+              />
+              <small class="bloque-linea">{{ f.cuenta.moneda }}</small>
+            </td>
+            <td>
+              <select
+                [attr.aria-label]="'Cuenta bancaria de ' + f.cuenta.documento"
+                [disabled]="!f.elegida"
+                (change)="cambiarFila(f.cuenta.id, { banco: +$any($event.target).value })"
+              >
+                @for (b of bancos(); track b.id) {
+                  <option [value]="b.id" [selected]="b.id === f.banco">
+                    {{ etiquetaBanco(b) }}
+                  </option>
+                }
+              </select>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="vacio">No hay cuentas por pagar con saldo</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="formulario">
+      <label>
+        Fecha prevista de pago
+        <input
+          type="date"
+          name="fecha"
+          [value]="fecha()"
+          (change)="fecha.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ancho-medio">
+        Descripción (opcional)
+        <input
+          type="text"
+          name="descripcion"
+          maxlength="300"
+          [value]="descripcion()"
+          (input)="descripcion.set($any($event.target).value)"
+        />
+      </label>
+      <button type="button" [disabled]="guardando()" (click)="proponer()">
+        Proponer {{ elegidas().length }} pago(s)
+      </button>
+    </div>
+  </section>
+}
+
+<section class="tarjeta bloque">
+  <h2>Programaciones</h2>
+  @if (programaciones().length) {
+    <label class="elegir">
+      Programación
+      <select name="programacion" (change)="elegir(+$any($event.target).value)">
+        @for (p of programaciones(); track p.id) {
+          <option [value]="p.id" [selected]="p.id === elegidaId()">
+            No. {{ p.id }} · {{ p.fecha | date: 'dd/MM/yyyy' }} ·
+            {{ p.estado === 'pendiente' ? 'Pendiente de revisión' : 'Revisada' }}
+          </option>
+        }
+      </select>
+    </label>
+  } @else {
+    <p class="vacio">Aún no hay programaciones de pago</p>
+  }
+
+  @if (programacion(); as p) {
+    <p class="detalle">
+      Pago previsto el {{ p.fecha | date: 'dd/MM/yyyy' }}
+      @if (p.descripcion) {
+        · {{ p.descripcion }}
+      }
+      @if (propusoYo(p)) {
+        · <strong>La propusiste tú</strong>: otro usuario con rol de gerente financiero la revisa.
+      }
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Proveedor</th>
+          <th>Cuenta bancaria</th>
+          <th class="numero">Monto</th>
+          <th class="numero">Sale del banco</th>
+          <th>Estado</th>
+          @if (puedeDecidir(p)) {
+            <th>Decisión</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (pago of p.pagos; track pago.id) {
+          <tr>
+            <td>
+              {{ pago.documento }}
+              <small class="bloque-linea">Saldo {{ pago.saldo | monto: pago.moneda }}</small>
+            </td>
+            <td>{{ pago.proveedor }}</td>
+            <td>{{ pago.banco }}</td>
+            <td class="numero">
+              {{ pago.monto | monto: pago.moneda }}
+              @if (pago.monto !== pago.monto_propuesto) {
+                <small class="bloque-linea"
+                  >Propuesto {{ pago.monto_propuesto | monto: pago.moneda }}</small
+                >
+              }
+            </td>
+            <td class="numero">
+              @if (pago.monto_banco !== null) {
+                {{ pago.monto_banco | monto: pago.moneda_banco }}
+                @if (pago.moneda !== pago.moneda_banco) {
+                  <small class="bloque-linea">estimado</small>
+                }
+              } @else {
+                <small>sin tipo de cambio</small>
+              }
+            </td>
+            <td>
+              <span [class]="'estado ' + pago.estado">{{ estados[pago.estado] }}</span>
+              @if (pago.comentario) {
+                <small class="bloque-linea">{{ pago.comentario }}</small>
+              }
+            </td>
+            @if (puedeDecidir(p)) {
+              <td class="decision">
+                @if (pago.estado === 'propuesto' && decisiones()[pago.id]; as d) {
+                  <input
+                    class="monto"
+                    type="text"
+                    inputmode="decimal"
+                    [attr.aria-label]="'Monto a aprobar de ' + pago.documento"
+                    [value]="d.monto"
+                    (input)="cambiarDecision(pago.id, { monto: $any($event.target).value })"
+                  />
+                  <select
+                    [attr.aria-label]="'Cuenta bancaria a aprobar de ' + pago.documento"
+                    (change)="cambiarDecision(pago.id, { banco: +$any($event.target).value })"
+                  >
+                    @for (b of bancos(); track b.id) {
+                      <option [value]="b.id" [selected]="b.id === d.banco">
+                        {{ etiquetaBanco(b) }}
+                      </option>
+                    }
+                  </select>
+                  <input
+                    type="text"
+                    maxlength="300"
+                    placeholder="Comentario (obligatorio al rechazar)"
+                    [attr.aria-label]="'Comentario de ' + pago.documento"
+                    [value]="d.comentario"
+                    (input)="cambiarDecision(pago.id, { comentario: $any($event.target).value })"
+                  />
+                  <span class="acciones">
+                    <button type="button" (click)="decidir(p, pago, 'aprobar')">Aprobar</button>
+                    <button type="button" class="secundario" (click)="decidir(p, pago, 'rechazar')">
+                      Rechazar
+                    </button>
+                  </span>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="4">Total que sale en quetzales</th>
+          <th class="numero">{{ p.totales['GTQ'] | monto: 'GTQ' }}</th>
+          <th [attr.colspan]="puedeDecidir(p) ? 2 : 1"></th>
+        </tr>
+        <tr>
+          <th colspan="4">Total que sale en dólares</th>
+          <th class="numero">{{ p.totales['USD'] | monto: 'USD' }}</th>
+          <th [attr.colspan]="puedeDecidir(p) ? 2 : 1"></th>
+        </tr>
+      </tfoot>
+    </table>
+    @if (p.tipo_cambio_estimado) {
+      <small class="nota">
+        Lo que sale de un banco en otra moneda que la del documento se estima con el tipo de cambio
+        {{ p.tipo_cambio_estimado }}; el pago usa el de su fecha.
+      </small>
+    }
+
+    <h3>Saldo disponible por cuenta bancaria</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Cuenta bancaria</th>
+          <th class="numero">Saldo en libros</th>
+          <th class="numero">Comprometido en otras programaciones</th>
+          <th class="numero">Disponible</th>
+          <th class="numero">Esta programación</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (b of p.bancos; track b.cuenta_bancaria_id) {
+          <tr>
+            <td>{{ b.banco }} ({{ b.moneda }})</td>
+            <td class="numero">{{ b.saldo_libros | monto: b.moneda }}</td>
+            <td class="numero">{{ b.comprometido | monto: b.moneda }}</td>
+            <td class="numero">{{ b.disponible | monto: b.moneda }}</td>
+            <td class="numero">{{ b.programado | monto: b.moneda }}</td>
+            <td>
+              @if (b.alcanza) {
+                <span class="ok">Alcanza</span>
+              } @else {
+                <span class="falla">No alcanza</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

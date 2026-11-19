@@ -261,6 +261,7 @@ export class ComprasService {
   private readonly urlFacturas = `${API_URL}/compras/facturas`;
   private readonly urlGastos = `${API_URL}/compras/gastos-importacion`;
   private readonly urlCompras = `${API_URL}/compras/compras-unidades`;
+  private readonly urlProgramaciones = `${API_URL}/compras/programaciones-pago`;
 
   proveedores(filtro: FiltroProveedores = {}): Observable<Proveedor[]> {
     const params: Record<string, string> = {};
@@ -317,8 +318,56 @@ export class ComprasService {
   hojaCosto(vin: string): Observable<HojaCosto> {
     return this.http.get<HojaCosto>(`${API_URL}/compras/hoja-costo/${vin}`);
   }
+
+  // ── HU-4.13: programación y aprobación de pagos ──
+
+  cuentasPorPagar(filtro: FiltroCuentasPorPagar = {}): Observable<CuentaPorPagarPendiente[]> {
+    const params: Record<string, string> = {};
+    if (filtro.moneda) params['moneda'] = filtro.moneda;
+    if (filtro.vence_hasta) params['vence_hasta'] = filtro.vence_hasta;
+    return this.http.get<CuentaPorPagarPendiente[]>(`${API_URL}/compras/cuentas-por-pagar`, {
+      params,
+    });
+  }
+
+  cuentasBancarias(): Observable<CuentaBancaria[]> {
+    return this.http.get<CuentaBancaria[]>(`${API_URL}/configuracion/cuentas-bancarias`);
+  }
+
+  programaciones(): Observable<ProgramacionPago[]> {
+    return this.http.get<ProgramacionPago[]>(this.urlProgramaciones);
+  }
+
+  proponerPagos(datos: ProgramacionPagoEntrada): Observable<ProgramacionPago> {
+    return this.http.post<ProgramacionPago>(this.urlProgramaciones, datos);
+  }
+
+  decidirPago(
+    programacionId: number,
+    pagoId: number,
+    datos: DecisionPagoEntrada,
+  ): Observable<ProgramacionPago> {
+    return this.http.post<ProgramacionPago>(
+      `${this.urlProgramaciones}/${programacionId}/pagos/${pagoId}/decision`,
+      datos,
+    );
+  }
 }
 
 // ── HU-4.08: hoja de costo de una unidad ──────────────────────────────────────
 
 export type HojaCosto = components['schemas']['HojaCosto'];
+
+// ── HU-4.13: programación y aprobación de pagos ───────────────────────────────
+
+export type CuentaPorPagarPendiente = components['schemas']['CuentaPorPagarPendiente'];
+export type ProgramacionPago = components['schemas']['ProgramacionPagoSalida'];
+export type PagoProgramado = components['schemas']['PagoProgramadoSalida'];
+export type ProgramacionPagoEntrada = components['schemas']['ProgramacionPagoEntrada'];
+export type DecisionPagoEntrada = components['schemas']['DecisionPagoEntrada'];
+export type CuentaBancaria = components['schemas']['CuentaBancariaSalida'];
+
+export interface FiltroCuentasPorPagar {
+  moneda?: Moneda;
+  vence_hasta?: string;
+}

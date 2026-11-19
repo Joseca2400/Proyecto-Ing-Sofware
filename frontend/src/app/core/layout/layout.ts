@@ -49,6 +49,7 @@ export class Layout {
     { etiqueta: 'Gastos de importación', ruta: '/compras/gastos-importacion' },
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Hoja de costo', ruta: '/compras/hoja-costo' },
+    { etiqueta: 'Programación de pagos', ruta: '/compras/programacion-pagos' },
     { etiqueta: 'Unidades y flota' },
     { etiqueta: 'Unidades', ruta: '/unidades' },
     { etiqueta: 'Etapas de importación', ruta: '/unidades/etapas-importacion' },

@@ -3,6 +3,7 @@
 Sprint 1: proveedores (HU-4.01), facturas de compras y gastos locales con su cuenta por pagar
 (HU-4.09), gastos de importación por VIN con su cuenta por pagar (HU-4.04) y la compra de la
 unidad en EE. UU. con su cuenta por pagar en USD y su partida (HU-4.02).
+Sprint 3: programación y aprobación de pagos a proveedores (HU-4.13).
 """
 
 from datetime import date, datetime
@@ -13,10 +14,12 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -320,6 +323,69 @@ class CuentaPorPagar(Base):
     saldo: Mapped[Decimal] = mapped_column(MONTO)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    proveedor: Mapped[Proveedor] = relationship(lazy="joined")
     factura: Mapped[FacturaCompra | None] = relationship(back_populates="cuenta_por_pagar")
     gasto_importacion: Mapped[GastoImportacion | None] = relationship(back_populates="cuenta_por_pagar")
     compra_unidad: Mapped[CompraUnidad | None] = relationship(back_populates="cuenta_por_pagar")
+
+
+ESTADOS_PAGO_PROGRAMADO = ("propuesto", "aprobado", "rechazado", "ejecutado")
+
+
+class ProgramacionPago(Base):
+    """Propuesta de pagos a proveedores (HU-4.13): la arma el auxiliar contable con las cuentas por
+    pagar vencidas o por vencer y la revisa el gerente financiero, pago por pago. Su estado se
+    deduce de sus pagos: pendiente mientras alguno siga propuesto."""
+
+    __tablename__ = "programacion_pago"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fecha: Mapped[date] = mapped_column(Date, index=True)  # fecha prevista de pago
+    descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    propuesta_por: Mapped[int] = mapped_column(Integer)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    pagos: Mapped[list["PagoProgramado"]] = relationship(
+        back_populates="programacion", order_by="PagoProgramado.id", lazy="selectin"
+    )
+
+
+class PagoProgramado(Base):
+    """Un pago propuesto: qué cuenta por pagar, desde qué cuenta bancaria y cuánto, en la moneda del
+    documento. El gerente financiero lo aprueba (puede cambiar monto o cuenta bancaria) o lo
+    rechaza; solo uno aprobado se ejecuta (HU-4.14). Una cuenta por pagar no está en dos pagos
+    propuestos o aprobados a la vez (índice parcial `uq_pago_programado_activo`)."""
+
+    __tablename__ = "pago_programado"
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('propuesto', 'aprobado', 'rechazado', 'ejecutado')", name="ck_pago_programado_estado"
+        ),
+        CheckConstraint("monto > 0 AND monto_propuesto > 0", name="ck_pago_programado_monto"),
+        CheckConstraint(
+            "(estado = 'propuesto' AND decidido_por IS NULL AND decidido_en IS NULL)"
+            " OR (estado <> 'propuesto' AND decidido_por IS NOT NULL AND decidido_en IS NOT NULL)",
+            name="ck_pago_programado_decision",
+        ),
+        Index(
+            "uq_pago_programado_activo",
+            "cuenta_por_pagar_id",
+            unique=True,
+            postgresql_where=text("estado IN ('propuesto', 'aprobado')"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    programacion_id: Mapped[int] = mapped_column(ForeignKey("programacion_pago.id"), index=True)
+    cuenta_por_pagar_id: Mapped[int] = mapped_column(ForeignKey("cuenta_por_pagar.id"), index=True)
+    cuenta_bancaria_id: Mapped[int] = mapped_column(ForeignKey("cuenta_bancaria.id"))
+    monto_propuesto: Mapped[Decimal] = mapped_column(MONTO)
+    monto: Mapped[Decimal] = mapped_column(MONTO)
+    estado: Mapped[str] = mapped_column(String(10), default="propuesto")
+    decidido_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    decidido_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    comentario: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    programacion: Mapped[ProgramacionPago] = relationship(back_populates="pagos")
+    cuenta_por_pagar: Mapped[CuentaPorPagar] = relationship(lazy="joined")
