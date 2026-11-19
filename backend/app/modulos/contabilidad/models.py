@@ -177,3 +177,50 @@ class DepreciacionMesLinea(Base):
     vin: Mapped[str] = mapped_column(String(17), index=True)
     financiera: Mapped[Decimal] = mapped_column(MONTO)
     fiscal: Mapped[Decimal] = mapped_column(MONTO)
+
+
+class Revaluacion(Base):
+    """Revaluación de los saldos en USD al cierre de un mes (HU-2.08), con su partida y, si la
+    política es revertir, la reversión del primer día del mes siguiente."""
+
+    __tablename__ = "revaluacion"
+    __table_args__ = (
+        UniqueConstraint("anio", "mes", name="uq_revaluacion_mes"),
+        CheckConstraint("mes BETWEEN 1 AND 12", name="ck_revaluacion_mes"),
+        CheckConstraint("politica IN ('revertir', 'mantener')", name="ck_revaluacion_politica"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    anio: Mapped[int] = mapped_column(Integer)
+    mes: Mapped[int] = mapped_column(Integer)
+    fecha: Mapped[date] = mapped_column(Date)  # último día del mes
+    tipo_cambio: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
+    politica: Mapped[str] = mapped_column(String(10))
+    partida_id: Mapped[int] = mapped_column(ForeignKey("partida.id", name="fk_revaluacion_partida"))
+    reversion_id: Mapped[int | None] = mapped_column(
+        ForeignKey("partida.id", name="fk_revaluacion_reversion")
+    )
+    usuario_id: Mapped[int | None] = mapped_column(Integer)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    lineas: Mapped[list["RevaluacionLinea"]] = relationship(
+        order_by="RevaluacionLinea.id", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class RevaluacionLinea(Base):
+    """Saldo revaluado: una cuenta monetaria en USD con su línea de negocio y VIN. El diferencial
+    es positivo si es ganancia y negativo si es pérdida."""
+
+    __tablename__ = "revaluacion_linea"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    revaluacion_id: Mapped[int] = mapped_column(
+        ForeignKey("revaluacion.id", name="fk_revaluacion_linea", ondelete="CASCADE"), index=True
+    )
+    cuenta_id: Mapped[int] = mapped_column(ForeignKey("cuentas.id", name="fk_revaluacion_linea_cuenta"))
+    linea_negocio: Mapped[str | None] = mapped_column(String(20))
+    vin: Mapped[str | None] = mapped_column(String(17))
+    saldo_usd: Mapped[Decimal] = mapped_column(MONTO)
+    tipo_cambio_anterior: Mapped[Decimal] = mapped_column(TIPO_CAMBIO)
+    diferencial: Mapped[Decimal] = mapped_column(MONTO)

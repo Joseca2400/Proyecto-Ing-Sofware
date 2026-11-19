@@ -725,6 +725,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/revaluaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Revaluaciones */
+        get: operations["listar_revaluaciones_api_v1_contabilidad_revaluaciones_get"];
+        put?: never;
+        /** Revaluar */
+        post: operations["revaluar_api_v1_contabilidad_revaluaciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/unidades/catalogos": {
         parameters: {
             query?: never;
@@ -3336,6 +3354,69 @@ export interface components {
             /** Costo Total Gtq */
             costo_total_gtq: string;
         };
+        /** RevaluacionEntrada */
+        RevaluacionEntrada: {
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Politica
+             * @enum {string}
+             */
+            politica: "revertir" | "mantener";
+        };
+        /** RevaluacionLineaSalida */
+        RevaluacionLineaSalida: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Linea Negocio */
+            linea_negocio: string | null;
+            /** Vin */
+            vin: string | null;
+            /** Saldo Usd */
+            saldo_usd: string;
+            /** Tipo Cambio Anterior */
+            tipo_cambio_anterior: string;
+            /** Diferencial */
+            diferencial: string;
+        };
+        /** RevaluacionSalida */
+        RevaluacionSalida: {
+            /** Id */
+            id: number;
+            /** Anio */
+            anio: number;
+            /** Mes */
+            mes: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Tipo Cambio */
+            tipo_cambio: string;
+            /** Politica */
+            politica: string;
+            /** Partida Id */
+            partida_id: number;
+            /** Reversion Id */
+            reversion_id: number | null;
+            /** Usuario Id */
+            usuario_id: number | null;
+            /**
+             * Creado En
+             * Format: date-time
+             */
+            creado_en: string;
+            /** Lineas */
+            lineas: components["schemas"]["RevaluacionLineaSalida"][];
+            /**
+             * Total Diferencial
+             * @description Ganancia neta (positiva) o pérdida neta (negativa) no realizada del mes.
+             */
+            readonly total_diferencial: string;
+        };
         /** ReversionEntrada */
         ReversionEntrada: {
             /**
@@ -5471,6 +5552,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DepreciacionSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_revaluaciones_api_v1_contabilidad_revaluaciones_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevaluacionSalida"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revaluar_api_v1_contabilidad_revaluaciones_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevaluacionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevaluacionSalida"];
                 };
             };
             /** @description Validation Error */

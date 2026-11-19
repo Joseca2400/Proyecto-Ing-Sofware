@@ -20,6 +20,29 @@ const DEPRECIACION = {
   total_fiscal: '1286.610000',
 };
 
+const CUENTAS = [{ id: 13, codigo: '1.1.01.03', nombre: 'Bancos en dólares' }];
+const REVALUACION = {
+  id: 1,
+  anio: 2024,
+  mes: 2,
+  fecha: '2024-02-29',
+  tipo_cambio: '7.80000000',
+  politica: 'mantener',
+  partida_id: 20,
+  reversion_id: null,
+  lineas: [
+    {
+      cuenta_id: 13,
+      linea_negocio: 'administracion',
+      vin: null,
+      saldo_usd: '100.000000',
+      tipo_cambio_anterior: '7.75000000',
+      diferencial: '5.000000',
+    },
+  ],
+  total_diferencial: '5.000000',
+};
+
 describe('CierreMesPantalla', () => {
   let http: HttpTestingController;
 
@@ -33,9 +56,11 @@ describe('CierreMesPantalla', () => {
 
   afterEach(() => http.verify());
 
-  async function crear(depreciaciones: unknown[] = []) {
+  async function crear(depreciaciones: unknown[] = [], revaluaciones: unknown[] = []) {
     const fixture = TestBed.createComponent(CierreMesPantalla);
     http.expectOne(`${API}/depreciaciones`).flush(depreciaciones);
+    http.expectOne(`${API}/revaluaciones`).flush(revaluaciones);
+    http.expectOne((r) => r.url.endsWith('/configuracion/cuentas')).flush(CUENTAS);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     const mes = el.querySelector<HTMLInputElement>('[name=mes]')!;
@@ -89,5 +114,22 @@ describe('CierreMesPantalla', () => {
       );
     await fixture.whenStable();
     expect(el.querySelector('[role=alert]')!.textContent).toContain('No hay unidades');
+  });
+
+  it('revalúa con la política elegida y muestra el reporte por cuenta', async () => {
+    const { fixture, el } = await crear();
+    el.querySelector<HTMLSelectElement>('[name=politica]')!.value = 'mantener';
+    el.querySelector<HTMLButtonElement>('[name=revaluar]')!.click();
+    const peticion = http.expectOne(`${API}/revaluaciones`);
+    expect(peticion.request.body).toEqual({ anio: 2024, mes: 2, politica: 'mantener' });
+    peticion.flush(REVALUACION);
+    await fixture.whenStable();
+
+    const fila = el.querySelector('#revaluacion tbody tr')!.textContent!;
+    expect(fila).toContain('1.1.01.03 · Bancos en dólares');
+    expect(fila).toContain('7.75000000');
+    expect(fila).toContain('5.00');
+    expect(el.textContent).toContain('El saldo revaluado se mantiene');
+    expect(el.querySelector('[name=revaluar]')).toBeNull();
   });
 });

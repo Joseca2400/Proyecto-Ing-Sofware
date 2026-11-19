@@ -11,6 +11,8 @@ export type Regla = components['schemas']['ReglaSalida'];
 export type Balance = components['schemas']['BalanceSalida'];
 export type Mayor = components['schemas']['MayorSalida'];
 export type Depreciacion = components['schemas']['DepreciacionSalida'];
+export type Revaluacion = components['schemas']['RevaluacionSalida'];
+export type PoliticaRevaluacion = components['schemas']['RevaluacionEntrada']['politica'];
 
 /** Filtros del balance y del mayor; los vacíos no se envían. */
 export interface FiltrosLibro {
@@ -97,5 +99,17 @@ export class ContabilidadService {
 
   calcularDepreciacion(anio: number, mes: number): Observable<Depreciacion> {
     return this.http.post<Depreciacion>(`${API_URL}/contabilidad/depreciaciones`, { anio, mes });
+  }
+
+  revaluaciones(): Observable<Revaluacion[]> {
+    return this.http.get<Revaluacion[]>(`${API_URL}/contabilidad/revaluaciones`);
+  }
+
+  revaluar(anio: number, mes: number, politica: PoliticaRevaluacion): Observable<Revaluacion> {
+    return this.http.post<Revaluacion>(`${API_URL}/contabilidad/revaluaciones`, {
+      anio,
+      mes,
+      politica,
+    });
   }
 }

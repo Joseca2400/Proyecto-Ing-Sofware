@@ -37,6 +37,16 @@ Recalcular el mes reemplaza el borrador; contabilizado, no se recalcula. La part
 revisión normal: quien la calcula no la contabiliza (HU-1.10).
 HU-2.07 (diferido): activos que no son flota (mobiliario, equipo de taller, cómputo), cuando exista
 su registro de activos fijos; otros métodos además de la línea recta.
+HU-2.08 (incluido): revaluación al cierre de los saldos de las cuentas monetarias en USD (bancos,
+por cobrar, por pagar, depósitos) con el tipo de cambio del último día del mes. `revaluar_mes`
+lleva cada saldo (por cuenta, línea de negocio y VIN) a ese tipo de cambio en una partida
+automática con el diferencial no realizado, y según la política elegida la revierte el primer día
+del mes siguiente o mantiene el saldo revaluado. Guarda el reporte: saldo en USD, tipo de cambio
+anterior, de cierre y diferencial. `tipo_cambio_en_libros` da a pagos y cobros (HU-2.09) el tipo
+de cambio vigente de un saldo tras las revaluaciones que se mantuvieron.
+HU-2.08 (diferido): detalle por cliente o proveedor (las líneas del mayor aún no llevan tercero);
+política fija en la configuración (hoy el contador la elige en cada revaluación); préstamos en
+USD, cuando exista su módulo (entran solos si su cuenta es monetaria en USD).
 Pendiente: límites monetarios de aprobación; lotes; adjuntos; impedir fechas en período cerrado
 (HU-2.05 criterio 2, llega con los períodos de HU-2.12 en el Sprint 3).
 """
@@ -59,6 +69,8 @@ from app.modulos.contabilidad.models import (
     LineaPartida,
     Partida,
     ReglaContabilizacion,
+    Revaluacion,
+    RevaluacionLinea,
 )
 from app.modulos.contabilidad.schemas import LineaEntrada, PartidaEntrada
 
@@ -794,3 +806,146 @@ def calcular_depreciacion_mes(
         raise ErrorNegocio("La depreciación de ese mes se está calculando en otra sesión", 409) from error
     db.refresh(calculo)
     return calculo
+
+
+# ── HU-2.08: revaluación de saldos en dólares al cierre ───────────────────────
+
+POLITICAS_REVALUACION = ("revertir", "mantener")
+
+
+def listar_revaluaciones(db: Session) -> list[Revaluacion]:
+    return list(db.scalars(select(Revaluacion).order_by(Revaluacion.fecha.desc())))
+
+
+def tipo_cambio_en_libros(
+    db: Session, fecha_documento: date, tipo_cambio_documento: Decimal, hasta: date
+) -> Decimal:
+    """Tipo de cambio al que está en libros, a la fecha `hasta`, un saldo en USD que nació en
+    `fecha_documento`: el de la última revaluación que se mantuvo desde entonces o, si no hubo, el
+    del documento. Es el `tipo_cambio_libros` de `diferencial_cambiario` al pagar o cobrar."""
+    revaluado = db.scalar(
+        select(Revaluacion.tipo_cambio)
+        .where(
+            Revaluacion.politica == "mantener",
+            Revaluacion.fecha >= fecha_documento,
+            Revaluacion.fecha <= hasta,
+        )
+        .order_by(Revaluacion.fecha.desc())
+        .limit(1)
+    )
+    return revaluado if revaluado is not None else tipo_cambio_documento
+
+
+def revaluar_mes(
+    db: Session, anio: int, mes: int, politica: str, usuario_id: int | None = None
+) -> Revaluacion:
+    """Revalúa los saldos en USD al cierre del mes y contabiliza el diferencial no realizado."""
+    if politica not in POLITICAS_REVALUACION:
+        raise ErrorNegocio(f"La política debe ser una de: {', '.join(POLITICAS_REVALUACION)}")
+    fin = fin_de_mes(anio, mes)
+    nombre = f"{_MESES[mes - 1]} de {anio}"
+    if fin >= date.today():
+        # Con el mes terminado la reversión del día 1 ya no es una fecha futura.
+        raise ErrorNegocio(f"El mes debe haber terminado para revaluarlo: {nombre} sigue abierto")
+    ultima = db.scalar(select(func.max(Revaluacion.fecha)))
+    if ultima is not None and ultima >= fin:
+        raise ErrorNegocio(
+            f"Ya se revaluó {nombre}" if ultima == fin else "Ya se revaluó un mes posterior", 409
+        )
+    tipo_cambio = configuracion.tipo_cambio_de(db, fin)
+
+    cuentas = {
+        cuenta.id: _signo(cuenta.naturaleza)
+        for cuenta in configuracion.listar_cuentas(db, solo_detalle=True)
+        if cuenta.monetaria_usd
+    }
+    usd = case(
+        (LineaPartida.moneda != "USD", Decimal(0)),
+        (LineaPartida.debe > 0, LineaPartida.monto_usd),
+        else_=-LineaPartida.monto_usd,
+    )
+    saldos = db.execute(
+        _contabilizadas(
+            select(
+                LineaPartida.cuenta_id,
+                LineaPartida.linea_negocio,
+                LineaPartida.vin,
+                func.sum(usd),
+                func.sum(LineaPartida.debe - LineaPartida.haber),
+            ).where(LineaPartida.cuenta_id.in_(cuentas)),
+            fin,
+            None,
+            None,
+        )
+        .group_by(LineaPartida.cuenta_id, LineaPartida.linea_negocio, LineaPartida.vin)
+        .order_by(LineaPartida.cuenta_id, LineaPartida.linea_negocio, LineaPartida.vin)
+    ).all()
+
+    detalle, lineas = [], []
+    for cuenta_id, linea_negocio, vin, saldo_usd, saldo_gtq in saldos:
+        if saldo_usd == 0:
+            continue
+        # Saldos con el débito en positivo: subir un activo o bajar un pasivo es ganancia.
+        objetivo = redondear(convertir(abs(saldo_usd), tipo_cambio), DECIMALES).copy_sign(saldo_usd)
+        diferencial = objetivo - saldo_gtq
+        detalle.append(
+            RevaluacionLinea(
+                cuenta_id=cuenta_id,
+                linea_negocio=linea_negocio,
+                vin=vin,
+                saldo_usd=saldo_usd * cuentas[cuenta_id],  # con el signo normal de la cuenta
+                tipo_cambio_anterior=redondear(abs(saldo_gtq / saldo_usd), 8),
+                diferencial=diferencial,
+            )
+        )
+        if diferencial == 0:
+            continue
+        gana = diferencial > 0
+        monto = f"{abs(diferencial):f}"
+        lineas.append(
+            LineaEntrada(
+                cuenta_id=cuenta_id,
+                lado="debe" if gana else "haber",
+                monto=monto,
+                linea_negocio=linea_negocio,
+                vin=vin,
+            )
+        )
+        lineas.append(
+            LineaEntrada(
+                cuenta_id=cuenta_regla(db, "revaluacion", "ganancia" if gana else "perdida"),
+                lado="haber" if gana else "debe",
+                monto=monto,
+            )
+        )
+    if not lineas:
+        raise ErrorNegocio(f"No hay saldos en dólares con diferencial que revaluar en {nombre}")
+
+    documento = f"{anio}-{mes:02d}"
+    partida = registrar_automatica(
+        db, fin, f"Revaluación de saldos en USD de {nombre}", lineas, "revaluacion", documento, usuario_id
+    )
+    reversion = None
+    if politica == "revertir":
+        reversion = _revertir(
+            db,
+            partida,
+            fin + timedelta(days=1),
+            f"Reversión automática de la revaluación de {nombre}",
+            usuario_id,
+        )
+    revaluacion = Revaluacion(
+        anio=anio,
+        mes=mes,
+        fecha=fin,
+        tipo_cambio=tipo_cambio,
+        politica=politica,
+        partida_id=partida.id,
+        reversion_id=reversion.id if reversion else None,
+        usuario_id=usuario_id,
+        lineas=detalle,
+    )
+    db.add(revaluacion)
+    db.commit()
+    db.refresh(revaluacion)
+    return revaluacion

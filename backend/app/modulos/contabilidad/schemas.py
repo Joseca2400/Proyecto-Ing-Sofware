@@ -222,3 +222,43 @@ class DepreciacionSalida(BaseModel):
     @property
     def total_fiscal(self) -> str:
         return f"{sum((linea.fiscal for linea in self.lineas), Decimal(0)):.6f}"
+
+
+# ── HU-2.08: revaluación de saldos en dólares ─────────────────────────────────
+
+
+class RevaluacionEntrada(MesEntrada):
+    politica: Literal["revertir", "mantener"]
+
+
+class RevaluacionLineaSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    cuenta_id: int
+    linea_negocio: str | None
+    vin: str | None
+    saldo_usd: Monto
+    tipo_cambio_anterior: TipoCambio
+    diferencial: Monto
+
+
+class RevaluacionSalida(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    anio: int
+    mes: int
+    fecha: date
+    tipo_cambio: TipoCambio
+    politica: str
+    partida_id: int
+    reversion_id: int | None
+    usuario_id: int | None
+    creado_en: datetime
+    lineas: list[RevaluacionLineaSalida]
+
+    @computed_field
+    @property
+    def total_diferencial(self) -> str:
+        """Ganancia neta (positiva) o pérdida neta (negativa) no realizada del mes."""
+        return f"{sum((linea.diferencial for linea in self.lineas), Decimal(0)):.6f}"

@@ -68,3 +68,60 @@
     {{ depreciacion() ? 'Volver a calcular' : 'Calcular depreciación' }}
   </button>
 }
+
+<h2>2. Revaluación de saldos en dólares</h2>
+@if (revaluacion(); as r) {
+  <p>
+    Revaluado al {{ r.fecha }} con tipo de cambio {{ r.tipo_cambio }}.
+    {{
+      r.politica === 'revertir'
+        ? 'Se revirtió el primer día del mes siguiente.'
+        : 'El saldo revaluado se mantiene.'
+    }}
+    <a routerLink="/contabilidad/partidas">Ver en Partidas</a>
+  </p>
+  <table class="tarjeta" id="revaluacion">
+    <thead>
+      <tr>
+        <th>Cuenta</th>
+        <th>Línea</th>
+        <th>VIN</th>
+        <th class="numero">Saldo USD</th>
+        <th class="numero">Tipo de cambio anterior</th>
+        <th class="numero">Tipo de cambio de cierre</th>
+        <th class="numero">Diferencial</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of r.lineas; track $index) {
+        <tr>
+          <td>{{ nombreCuenta(l.cuenta_id) }}</td>
+          <td>{{ l.linea_negocio }}</td>
+          <td class="codigo">{{ l.vin }}</td>
+          <td class="numero">{{ l.saldo_usd | monto: 'USD' }}</td>
+          <td class="numero">{{ l.tipo_cambio_anterior }}</td>
+          <td class="numero">{{ r.tipo_cambio }}</td>
+          <td class="numero">{{ l.diferencial | monto }}</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="6">Ganancia (o pérdida, en negativo) no realizada</th>
+        <th class="numero">{{ r.total_diferencial | monto }}</th>
+      </tr>
+    </tfoot>
+  </table>
+} @else {
+  <p class="vacio">Los saldos en dólares de este mes no se han revaluado</p>
+  <form class="tarjeta formulario">
+    <label>
+      Política
+      <select #politica name="politica">
+        <option value="revertir">Revertir el primer día del mes siguiente</option>
+        <option value="mantener">Mantener el saldo revaluado</option>
+      </select>
+    </label>
+    <button type="button" name="revaluar" (click)="revaluar(politica.value)">Revaluar</button>
+  </form>
+}

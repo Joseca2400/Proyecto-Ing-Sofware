@@ -15,6 +15,8 @@ from app.modulos.contabilidad.schemas import (
     PartidaSalida,
     ReglaEntrada,
     ReglaSalida,
+    RevaluacionEntrada,
+    RevaluacionSalida,
     ReversionEntrada,
 )
 from app.modulos.seguridad.service import (
@@ -156,3 +158,20 @@ def calcular_depreciacion(
 ):
     """Calcula (o recalcula) el mes y deja la partida en borrador; la contabiliza otra persona."""
     return service.calcular_depreciacion_mes(db, datos.anio, datos.mes, usuario.id)
+
+
+# ── HU-2.08: revaluación de saldos en dólares ─────────────────────────────────
+
+
+@router.get("/revaluaciones", response_model=list[RevaluacionSalida])
+def listar_revaluaciones(_: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
+    return service.listar_revaluaciones(db)
+
+
+@router.post("/revaluaciones", response_model=RevaluacionSalida, status_code=201)
+def revaluar(
+    datos: RevaluacionEntrada,
+    usuario: Usuario = Depends(requiere_rol(CONTADOR)),
+    db: Session = Depends(get_db),
+):
+    return service.revaluar_mes(db, datos.anio, datos.mes, datos.politica, usuario.id)
