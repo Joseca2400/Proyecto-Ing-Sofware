@@ -1,0 +1,81 @@
+.bloque {
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.bloque h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.bloque h3 {
+  font-size: 16px;
+  margin: 20px 0 8px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.formulario {
+  padding: 16px 0 0;
+  margin-bottom: 0;
+}
+
+.ancho-medio {
+  flex: 1 1 320px;
+}
+
+.bloque-linea {
+  display: block;
+}
+
+input.monto {
+  width: 9em;
+  text-align: right;
+}
+
+tr.programada {
+  opacity: 0.6;
+}
+
+.elegir {
+  max-width: 420px;
+  margin-bottom: 12px;
+}
+
+.detalle,
+.nota {
+  display: block;
+  margin: 8px 0 12px;
+}
+
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 240px;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.estado {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.estado.aprobado,
+.estado.ejecutado {
+  color: var(--ok);
+}
+
+.estado.rechazado {
+  color: var(--error);
+}

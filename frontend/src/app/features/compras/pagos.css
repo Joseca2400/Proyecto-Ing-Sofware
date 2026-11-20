@@ -1,0 +1,51 @@
+.bloque {
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.bloque h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.formulario {
+  padding: 16px 0 0;
+  margin-bottom: 0;
+}
+
+.ancho-medio {
+  flex: 1 1 320px;
+}
+
+.bloque-linea {
+  display: block;
+}
+
+tr.elegido {
+  background: var(--gray-light);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin-bottom: 16px;
+}
+
+dt {
+  color: var(--gray);
+}
+
+.acciones {
+  margin-top: 16px;
+}
+
+button.peligro {
+  background: var(--error);
+}
+
+@media print {
+  .comprobante {
+    border: none;
+  }
+}
