@@ -1,22 +1,3 @@
-.encabezado {
-  margin-bottom: 24px;
-}
-
-.encabezado h1 {
-  font-size: 28px;
-}
-
-.encabezado p {
-  color: var(--gray);
-  margin-top: 4px;
-}
-
-.tarjeta {
-  background: var(--white);
-  border: 1px solid var(--gray-light);
-  border-radius: var(--radius);
-}
-
 .etapas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -57,39 +38,6 @@
   box-shadow: inset 0 0 0 1px var(--teal);
 }
 
-.mensaje {
-  margin-bottom: 16px;
-}
-
-.tabla {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  text-align: left;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--gray-light);
-  vertical-align: middle;
-}
-
-th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
-}
-
-.numero {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 .dias {
   font-weight: 600;
 }
@@ -98,30 +46,8 @@ td small {
   display: block;
 }
 
-.vacio,
-small {
-  color: var(--gray);
-}
-
 td.codigo {
   font-family: monospace;
-}
-
-.chip {
-  display: inline-block;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #e8f5e9;
-  color: #2e7d32;
-  white-space: nowrap;
-}
-
-.chip[data-estado='en_transito'],
-.chip[data-estado='en_aduana'],
-.chip[data-estado='en_taller'] {
-  background: #fff8e1;
-  color: #8d6e00;
 }
 
 .accion {
@@ -137,10 +63,6 @@ td.codigo {
 }
 
 .avance input {
-  font: inherit;
-  padding: 6px 10px;
-  border: 1px solid var(--gray-light);
-  border-radius: 8px;
   min-width: 14em;
 }
 
@@ -150,31 +72,6 @@ td.codigo {
 }
 
 .accion button {
-  background: var(--teal);
-  color: var(--white);
-  border: none;
-  border-radius: 8px;
   padding: 6px 14px;
-  font: inherit;
-  cursor: pointer;
   white-space: nowrap;
-}
-
-.accion button.secundario {
-  background: transparent;
-  color: var(--teal);
-  border: 1px solid var(--teal);
-}
-
-.accion button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.ok {
-  color: var(--ok);
-}
-
-.falla {
-  color: var(--error);
 }

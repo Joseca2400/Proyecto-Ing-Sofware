@@ -1,112 +1,420 @@
 /* Estilos comunes de las pantallas que viven dentro del layout (encabezado, tarjeta, formulario,
-   tabla y mensajes). Una pantalla nueva usa estas clases y solo agrega en su CSS lo que le es propio. */
+   botones, tabla, mensajes y etiquetas de estado). Una pantalla nueva usa estas clases y solo
+   agrega en su CSS lo que le es propio; si repite una de estas reglas, la suya gana y la pantalla
+   deja de seguir el diseño común. */
 
 /* Al imprimir (por ejemplo, un contrato) solo queda el documento: sin barra, menú ni lo marcado. */
 @media print {
   .topbar,
   .menu,
+  .velo,
   .no-imprimir {
     display: none !important;
+  }
+
+  body {
+    background: var(--white);
+  }
+
+  .contenido .tarjeta {
+    box-shadow: none !important;
   }
 }
 
 .contenido {
+  /* ── Encabezado de la pantalla ─────────────────────────────────────────── */
   .encabezado {
     margin-bottom: 24px;
   }
 
   .encabezado h1 {
-    font-size: 28px;
+    font-size: 26px;
+    font-weight: 700;
   }
 
   .encabezado p {
     color: var(--gray);
-    margin-top: 4px;
+    margin-top: 6px;
+    max-width: 80ch;
   }
 
+  h2 {
+    font-size: 18px;
+    font-weight: 650;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  /* ── Tarjeta ───────────────────────────────────────────────────────────── */
   .tarjeta {
     background: var(--white);
-    border: 1px solid var(--gray-light);
+    border: 1px solid var(--borde);
     border-radius: var(--radius);
+    box-shadow: var(--sombra-sm);
   }
 
+  /* ── Formulario ────────────────────────────────────────────────────────── */
   .formulario {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    gap: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
+    gap: 16px 20px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
   }
 
   label {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--teal-dark);
   }
 
   input,
   select,
   textarea {
     font: inherit;
-    padding: 8px 10px;
-    border: 1px solid var(--gray-light);
-    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--texto);
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--borde-input);
+    border-radius: var(--radius-sm);
     background: var(--white);
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
   }
 
+  textarea {
+    min-height: 76px;
+  }
+
+  select {
+    appearance: none;
+    padding-right: 34px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #97a4aa;
+  }
+
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: #a7b5bb;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: var(--anillo);
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  input:read-only:not([type='checkbox'], [type='radio']) {
+    background-color: var(--gray-50);
+    color: var(--gray);
+  }
+
+  /* Campo tocado y no válido (clases de los formularios reactivos de Angular). */
+  input.ng-invalid.ng-touched,
+  select.ng-invalid.ng-touched,
+  textarea.ng-invalid.ng-touched {
+    border-color: var(--error);
+  }
+
+  input.ng-invalid.ng-touched:focus,
+  select.ng-invalid.ng-touched:focus,
+  textarea.ng-invalid.ng-touched:focus {
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.18);
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-height: 0;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    accent-color: var(--teal);
+    box-shadow: none;
+  }
+
+  fieldset {
+    border-color: var(--borde);
+  }
+
+  legend {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal-dark);
+  }
+
+  /* ── Botones: primario (por defecto), .secundario y .peligro ───────────── */
   button {
     align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
     background: var(--teal);
     color: var(--white);
-    border: none;
-    border-radius: 8px;
-    padding: 10px 18px;
+    border: 1px solid var(--teal);
+    border-radius: var(--radius-sm);
+    padding: 8px 18px;
     font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
     cursor: pointer;
+    box-shadow: var(--sombra-sm);
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s,
+      box-shadow 0.15s,
+      transform 0.05s;
+  }
+
+  button:where(:not(.secundario, .peligro, .tarjeta, .enlace, .quitar, :disabled)):hover {
+    background: var(--teal-dark);
+    border-color: var(--teal-dark);
+  }
+
+  button:where(:not(.tarjeta, :disabled)):active {
+    transform: translateY(1px);
+  }
+
+  button:focus-visible {
+    outline: none;
+    box-shadow: var(--anillo);
   }
 
   button.secundario {
     background: var(--white);
     color: var(--teal);
-    border: 1px solid var(--teal);
+    border-color: var(--borde-input);
+  }
+
+  button.secundario:where(:not(:disabled)):hover {
+    background: var(--teal-50);
+    border-color: var(--teal);
+  }
+
+  button.peligro {
+    background: var(--error);
+    border-color: var(--error);
+    color: var(--white);
+  }
+
+  button.peligro:where(:not(:disabled)):hover {
+    background: #8f1c13;
+    border-color: #8f1c13;
+  }
+
+  button.peligro:focus-visible {
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.25);
   }
 
   button:disabled {
-    opacity: 0.6;
-    cursor: default;
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 
+  /* Botón con aspecto de enlace, botón de quitar una línea y tarjeta que se puede elegir. */
+  button.enlace {
+    display: inline;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    color: var(--teal);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  button.quitar {
+    min-height: 0;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  button.quitar:where(:not(:disabled)):hover {
+    background: var(--error-bg);
+    color: var(--error);
+  }
+
+  button.tarjeta {
+    align-self: stretch;
+    line-height: 1.4;
+    background: var(--white);
+    color: inherit;
+    font-weight: inherit;
+    border-color: var(--borde);
+    box-shadow: var(--sombra-sm);
+  }
+
+  button.tarjeta:where(:not(:disabled)):hover {
+    border-color: var(--teal-600);
+    box-shadow: var(--sombra-md);
+  }
+
+  /* ── Mensajes de error, éxito e información ────────────────────────────── */
   .mensaje {
+    position: relative;
     margin-bottom: 16px;
+    padding: 12px 16px 12px 44px;
+    border: 1px solid #c4dbe9;
+    border-left-width: 4px;
+    border-radius: 10px;
+    background: var(--info-bg);
+    color: var(--info);
+    font-weight: 500;
   }
 
+  .mensaje::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 13px;
+    width: 18px;
+    height: 18px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  .mensaje.falla {
+    background: var(--error-bg);
+    border-color: #f4c3bd;
+    border-left-color: var(--error);
+    color: var(--error);
+  }
+
+  .mensaje.falla::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E");
+  }
+
+  .mensaje.ok {
+    background: var(--ok-bg);
+    border-color: #b5dfc6;
+    border-left-color: var(--ok);
+    color: var(--ok);
+  }
+
+  .mensaje.ok::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+  }
+
+  .mensaje:not(.ok, .falla) {
+    border-left-color: var(--info);
+  }
+
+  /* ── Tablas ────────────────────────────────────────────────────────────── */
   table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  table.tarjeta {
+    margin-bottom: 20px;
   }
 
   th,
   td {
     text-align: left;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--gray-light);
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
   }
 
-  th {
-    font-size: 12px;
+  thead th {
+    background: var(--gray-50);
+    font-size: 11.5px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     color: var(--gray);
+    white-space: nowrap;
   }
 
+  table.tarjeta thead tr:first-child th:first-child {
+    border-top-left-radius: calc(var(--radius) - 1px);
+  }
+
+  table.tarjeta thead tr:first-child th:last-child {
+    border-top-right-radius: calc(var(--radius) - 1px);
+  }
+
+  tbody tr {
+    transition: background-color 0.12s;
+  }
+
+  tbody tr:hover {
+    background: var(--teal-50);
+  }
+
+  tbody tr:last-child > td,
+  tbody tr:last-child > th {
+    border-bottom: none;
+  }
+
+  tfoot th,
+  tfoot td {
+    background: var(--gray-50);
+    border-top: 1px solid var(--borde);
+    border-bottom: none;
+    font-weight: 600;
+    color: var(--teal-dark);
+  }
+
+  .tabla,
+  .tabla-scroll {
+    overflow-x: auto;
+  }
+
+  /* ── Montos y cifras: a la derecha y con dígitos del mismo ancho ───────── */
   .numero {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
-  .vacio,
+  .monto,
+  .total,
+  td,
+  dd {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vacio {
+    color: var(--gray);
+  }
+
+  td.vacio {
+    text-align: center;
+    padding: 32px 16px;
+  }
+
   small {
     color: var(--gray);
   }
@@ -117,5 +425,119 @@
 
   .falla {
     color: var(--error);
+  }
+
+  /* ── Etiquetas ─────────────────────────────────────────────────────────── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    white-space: nowrap;
+    background: var(--neutro-bg);
+    color: var(--neutro);
+  }
+
+  /* Estado de un documento o una unidad: <span class="chip" [attr.data-estado]="x.estado">. */
+  .chip[data-estado]::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .chip:is(
+    [data-estado='aprobado'],
+    [data-estado='ejecutado'],
+    [data-estado='pagado'],
+    [data-estado='registrado'],
+    [data-estado='contabilizada'],
+    [data-estado='certificada'],
+    [data-estado='revisada'],
+    [data-estado='activo'],
+    [data-estado='lista'],
+    [data-estado='en_flota']
+  ) {
+    background: var(--ok-bg);
+    color: var(--ok);
+  }
+
+  .chip:is(
+    [data-estado='propuesto'],
+    [data-estado='pendiente'],
+    [data-estado='borrador'],
+    [data-estado='en_revision'],
+    [data-estado='en_transito'],
+    [data-estado='en_aduana'],
+    [data-estado='en_taller'],
+    [data-estado='suspendido'],
+    [data-estado='bloqueado']
+  ) {
+    background: var(--aviso-bg);
+    color: var(--aviso);
+  }
+
+  .chip:is(
+    [data-estado='anulado'],
+    [data-estado='rechazado'],
+    [data-estado='rechazada'],
+    [data-estado='devuelta'],
+    [data-estado='baja']
+  ) {
+    background: var(--error-bg);
+    color: var(--error);
+  }
+
+  .chip:is(
+    [data-estado='abierto'],
+    [data-estado='abierta'],
+    [data-estado='alquilada'],
+    [data-estado='en_venta']
+  ) {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+
+  /* cerrado, cerrada, vendida, recuperada y cualquier otro: neutro. */
+}
+
+/* ── Pantallas angostas ──────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .contenido {
+    .encabezado h1 {
+      font-size: 22px;
+    }
+
+    .formulario {
+      padding: 16px;
+    }
+
+    .formulario > label {
+      flex: 1 1 100%;
+    }
+
+    .formulario > label :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
+      width: 100%;
+    }
+
+    .formulario > button {
+      flex: 1 1 100%;
+    }
+
+    /* Una tabla ancha se desplaza de lado dentro de su tarjeta, no estira la página. */
+    table.tarjeta {
+      display: block;
+      overflow-x: auto;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+    }
   }
 }

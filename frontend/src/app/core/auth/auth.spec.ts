@@ -77,7 +77,9 @@ describe('Sesión (HU-1.09)', () => {
       arnes.routeNativeElement?.closest('body')?.textContent ?? document.body.textContent;
     expect(menu).toContain('Unidades');
     expect(menu).not.toContain('Etapas de importación');
-    expect(menu).toContain('Usuaria · Auxiliar contable');
+    const sesion = document.querySelector('.sesion .quien')?.textContent ?? '';
+    expect(sesion).toContain('Usuaria');
+    expect(sesion).toContain('Auxiliar contable');
   });
 
   it('cerrar sesión avisa al servidor con el token y olvida la sesión', () => {

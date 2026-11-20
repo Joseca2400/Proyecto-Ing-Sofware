@@ -38,7 +38,9 @@
   <tbody>
     @for (e of reporte()?.estados ?? []; track e.estado) {
       <tr [class.activa]="filtro() === e.estado">
-        <td>{{ etiqueta(e.estado) }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="e.estado">{{ etiqueta(e.estado) }}</span>
+        </td>
         <td class="numero">{{ e.unidades }}</td>
         <td class="numero">{{ e.valor | monto }}</td>
         <td class="numero">{{ e.dias_promedio }}</td>
@@ -80,7 +82,9 @@
       <tr>
         <td class="codigo">{{ u.vin }}</td>
         <td>{{ u.marca }} {{ u.linea }} {{ u.modelo }}</td>
-        <td>{{ etiqueta(u.estado) }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="u.estado">{{ etiqueta(u.estado) }}</span>
+        </td>
         <td>{{ u.desde | date: 'dd/MM/yyyy' }}</td>
         <td class="numero" [class.falla]="u.excede">
           {{ u.dias_en_estado }}

@@ -8,7 +8,6 @@ import { ConfiguracionService, TipoCambio } from './configuracion.service';
   selector: 'app-tipo-cambio',
   imports: [ReactiveFormsModule],
   templateUrl: './tipo-cambio.html',
-  styleUrl: './tipo-cambio.css',
 })
 export class TipoCambioPantalla {
   private readonly servicio = inject(ConfiguracionService);

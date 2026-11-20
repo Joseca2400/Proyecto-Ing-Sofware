@@ -40,10 +40,6 @@ dt {
   margin-top: 16px;
 }
 
-button.peligro {
-  background: var(--error);
-}
-
 @media print {
   .comprobante {
     border: none;

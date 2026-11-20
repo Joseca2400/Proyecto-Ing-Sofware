@@ -93,30 +93,6 @@ button.enlace {
   margin-bottom: 16px;
 }
 
-.numero {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.chip {
-  display: inline-block;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #fff8e1;
-  color: #8d6e00;
-}
-
-.chip[data-estado='contabilizada'] {
-  background: var(--ok-bg);
-  color: var(--ok);
-}
-
-.chip[data-estado='devuelta'] {
-  background: var(--error-bg);
-  color: var(--error);
-}
-
 tr.activa {
   background: #f1f8f7;
 }

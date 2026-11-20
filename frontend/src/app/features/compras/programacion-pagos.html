@@ -216,7 +216,7 @@
               }
             </td>
             <td>
-              <span [class]="'estado ' + pago.estado">{{ estados[pago.estado] }}</span>
+              <span class="chip" [attr.data-estado]="pago.estado">{{ estados[pago.estado] }}</span>
               @if (pago.comentario) {
                 <small class="bloque-linea">{{ pago.comentario }}</small>
               }

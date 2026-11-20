@@ -51,7 +51,9 @@
       <tr>
         <td class="codigo">{{ u.vin }}</td>
         <td>{{ u.marca }} {{ u.linea }} {{ u.modelo }}</td>
-        <td>{{ etiqueta(u.estado) }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="u.estado">{{ etiqueta(u.estado) }}</span>
+        </td>
         <td>{{ u.fecha_alta }}</td>
         <td class="numero">{{ u.kilometraje ?? '—' }}</td>
         <td class="numero">{{ u.meses_en_flota }}</td>

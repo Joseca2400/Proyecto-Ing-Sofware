@@ -62,7 +62,11 @@
       <tr>
         <td>{{ orden.numero }}</td>
         <td>{{ orden.vin }}</td>
-        <td>{{ orden.estado === 'abierta' ? 'Abierta' : 'Cerrada' }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="orden.estado">{{
+            orden.estado === 'abierta' ? 'Abierta' : 'Cerrada'
+          }}</span>
+        </td>
         <td class="numero">{{ orden.dias }}</td>
         <td class="numero">{{ orden.costo_acumulado | monto }}</td>
         <td><button type="button" class="secundario" (click)="abrirDetalle(orden)">Ver</button></td>

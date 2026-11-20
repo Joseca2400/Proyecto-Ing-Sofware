@@ -106,7 +106,9 @@
       <dt>Monto estimado</dt>
       <dd>{{ c.monto_estimado | monto: c.moneda }}</dd>
       <dt>Estado</dt>
-      <dd>{{ c.estado }}</dd>
+      <dd>
+        <span class="chip" [attr.data-estado]="c.estado">{{ c.estado }}</span>
+      </dd>
       @if (c.estado === 'cerrado') {
         <dt>Devolución</dt>
         <dd>
@@ -304,7 +306,9 @@
         <td>{{ c.salida | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ c.devolucion_prevista | date: 'dd/MM/yyyy' }}</td>
         <td class="numero">{{ c.monto_estimado | monto: c.moneda }}</td>
-        <td>{{ c.estado }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="c.estado">{{ c.estado }}</span>
+        </td>
         <td><button type="button" class="secundario" (click)="ver(c)">Ver</button></td>
       </tr>
     } @empty {

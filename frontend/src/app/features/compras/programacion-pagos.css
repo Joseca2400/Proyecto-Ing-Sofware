@@ -65,17 +65,3 @@ tr.programada {
   display: flex;
   gap: 8px;
 }
-
-.estado {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.estado.aprobado,
-.estado.ejecutado {
-  color: var(--ok);
-}
-
-.estado.rechazado {
-  color: var(--error);
-}
