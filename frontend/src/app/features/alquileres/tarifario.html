@@ -1,0 +1,358 @@
+<section class="encabezado">
+  <h1>Tarifario de alquiler</h1>
+  <p>
+    Precios de alquiler con IVA incluido, por tipo de vehículo o, como excepción, por unidad. Una
+    tarifa no se edita: un cambio se registra con su fecha de vigencia y los contratos ya firmados
+    conservan su precio. Las temporadas reemplazan a la lista base en sus fechas.
+  </p>
+</section>
+
+<!-- ── Tarifas ─────────────────────────────────────────────────────────── -->
+
+<h2>Tarifas</h2>
+<form class="tarjeta formulario" [formGroup]="formTarifa" (ngSubmit)="guardarTarifa()">
+  <fieldset class="tipo">
+    <legend>Aplica a</legend>
+    <label class="opcion">
+      <input type="radio" formControlName="alcance" value="tipo" /> Tipo de vehículo
+    </label>
+    <label class="opcion">
+      <input type="radio" formControlName="alcance" value="unidad" /> Una unidad (excepción)
+    </label>
+  </fieldset>
+
+  @if (alcance() === 'tipo') {
+    <label>
+      Tipo de vehículo
+      <select formControlName="tipo_vehiculo" name="tipo_vehiculo">
+        @for (tipo of tipos; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
+      </select>
+    </label>
+  } @else {
+    <label>
+      VIN
+      <input type="text" formControlName="vin" name="vin" maxlength="17" />
+      @if (formTarifa.controls.vin.touched && formTarifa.controls.vin.invalid) {
+        <small class="falla">17 caracteres sin I, O ni Q</small>
+      }
+    </label>
+  }
+
+  <label>
+    Lista de precios
+    <select formControlName="temporada_id" name="temporada_id">
+      <option value="">Lista base</option>
+      @for (t of temporadasActivas(); track t.id) {
+        <option [value]="t.id">{{ t.nombre }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Modalidad
+    <select formControlName="modalidad" name="modalidad">
+      @for (m of modalidades; track m.valor) {
+        <option [value]="m.valor">{{ m.etiqueta }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="corto">
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">GTQ</option>
+      <option value="USD">USD</option>
+    </select>
+  </label>
+
+  <label>
+    Monto por {{ periodo(modalidad()) }} (IVA incluido)
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="monto"
+      name="monto"
+      placeholder="300.00"
+    />
+    @if (formTarifa.controls.monto.touched && formTarifa.controls.monto.invalid) {
+      <small class="falla">Monto con hasta 2 decimales</small>
+    }
+  </label>
+
+  <label>
+    Km incluidos{{ modalidad() === 'kilometraje' ? '' : ' por ' + periodo(modalidad()) }}
+    <input
+      type="text"
+      inputmode="numeric"
+      formControlName="km_incluido"
+      name="km_incluido"
+      [placeholder]="modalidad() === 'kilometraje' ? '300' : 'Vacío = libre'"
+    />
+  </label>
+
+  <label>
+    Costo por km adicional
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="costo_km_adicional"
+      name="costo_km_adicional"
+      placeholder="2.50"
+    />
+  </label>
+
+  <label>
+    Vigente desde
+    <input type="date" formControlName="vigente_desde" name="vigente_desde" />
+  </label>
+
+  <button type="submit">Registrar tarifa</button>
+</form>
+
+@if (mensajes.tarifa.error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (mensajes.tarifa.aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Aplica a</th>
+        <th>Lista</th>
+        <th>Modalidad</th>
+        <th class="numero">Monto</th>
+        <th>Kilometraje</th>
+        <th>Vigente desde</th>
+      </tr>
+    </thead>
+    <tbody class="tarifas">
+      @for (t of tarifas(); track t.id) {
+        <tr>
+          <td>
+            @if (t.vin) {
+              <span class="chip unidad">Unidad</span> {{ t.vin }}
+            } @else {
+              {{ etiquetaTipo(t.tipo_vehiculo) }}
+            }
+          </td>
+          <td>{{ t.temporada?.nombre ?? 'Base' }}</td>
+          <td>{{ etiquetaModalidad(t.modalidad) }}</td>
+          <td class="numero">
+            {{ t.monto | monto: t.moneda }} <small>/ {{ periodo(t.modalidad) }}</small>
+          </td>
+          <td>
+            @if (t.km_incluido === null) {
+              <small>Libre</small>
+            } @else {
+              {{ t.km_incluido }} km
+              @if (t.costo_km_adicional) {
+                <small>· {{ t.costo_km_adicional | monto: t.moneda }} por km adicional</small>
+              }
+            }
+          </td>
+          <td>{{ t.vigente_desde }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="vacio">Todavía no hay tarifas registradas</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Temporadas ──────────────────────────────────────────────────────── -->
+
+<h2>Temporadas</h2>
+<p class="nota">
+  Listas de precios con fechas (temporada alta, promociones). La tarifa se elige por la fecha de
+  salida del vehículo; si no hay tarifa de la temporada para ese tipo, se usa la lista base.
+</p>
+<form class="tarjeta formulario" [formGroup]="formTemporada" (ngSubmit)="guardarTemporada()">
+  <label class="ancho-medio">
+    Nombre
+    <input
+      type="text"
+      formControlName="nombre"
+      name="temporada_nombre"
+      placeholder="Semana Santa"
+    />
+  </label>
+  <label>
+    Desde
+    <input type="date" formControlName="fecha_inicio" name="temporada_inicio" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="fecha_fin" name="temporada_fin" />
+  </label>
+  <button type="submit" class="secundario">Agregar temporada</button>
+</form>
+
+@if (mensajes.temporada.error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (mensajes.temporada.aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Temporada</th>
+        <th>Desde</th>
+        <th>Hasta</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody class="temporadas">
+      @for (t of temporadas(); track t.id) {
+        <tr>
+          <td>{{ t.nombre }}</td>
+          <td>{{ t.fecha_inicio }}</td>
+          <td>{{ t.fecha_fin }}</td>
+          <td>
+            @if (t.activa) {
+              <span class="chip">Activa</span>
+            } @else {
+              <small>Desactivada</small>
+            }
+          </td>
+          <td class="acciones">
+            @if (t.activa) {
+              <button type="button" class="enlace" (click)="desactivar(t)">Desactivar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="vacio">No hay temporadas; se usa la lista base todo el año</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Conceptos ───────────────────────────────────────────────────────── -->
+
+<h2>Cargos adicionales</h2>
+<p class="nota">
+  Cada concepto indica cómo tributa: un ingreso puede llevar IVA; un depósito es un pasivo y un
+  reintegro es dinero de terceros (multas), así que ninguno de los dos es ingreso ni lleva IVA.
+</p>
+<form class="tarjeta formulario" [formGroup]="formConcepto" (ngSubmit)="guardarConcepto()">
+  <label class="ancho-medio">
+    Concepto
+    <input
+      type="text"
+      formControlName="nombre"
+      name="concepto_nombre"
+      [readOnly]="editando() !== null"
+    />
+    @if (formConcepto.controls.nombre.touched && formConcepto.controls.nombre.invalid) {
+      <small class="falla">El nombre es obligatorio</small>
+    }
+  </label>
+  @if (editando() === null) {
+    <label>
+      Naturaleza
+      <select formControlName="naturaleza" name="concepto_naturaleza">
+        @for (n of naturalezas; track n.valor) {
+          <option [value]="n.valor">{{ n.etiqueta }}</option>
+        }
+      </select>
+    </label>
+    @if (naturaleza() === 'ingreso') {
+      <label class="opcion casilla">
+        <input type="checkbox" formControlName="aplica_iva" name="concepto_iva" /> Lleva IVA
+      </label>
+    }
+  }
+  <label>
+    Precio sugerido (opcional)
+    <input
+      type="text"
+      inputmode="decimal"
+      formControlName="precio_sugerido"
+      name="concepto_precio"
+      placeholder="Vacío = se captura cada vez"
+    />
+  </label>
+  <label class="corto">
+    Moneda
+    <select formControlName="moneda" name="concepto_moneda">
+      <option value="GTQ">GTQ</option>
+      <option value="USD">USD</option>
+    </select>
+  </label>
+  <button type="submit" class="secundario">
+    {{ editando() ? 'Guardar precio' : 'Agregar concepto' }}
+  </button>
+  @if (editando()) {
+    <button type="button" class="enlace" (click)="cancelarEdicion()">Cancelar</button>
+  }
+</form>
+
+@if (mensajes.concepto.error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+@if (mensajes.concepto.aviso(); as mensaje) {
+  <p class="mensaje ok" role="status">{{ mensaje }}</p>
+}
+
+<div class="tabla">
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th>Tratamiento fiscal</th>
+        <th class="numero">Precio sugerido</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody class="conceptos">
+      @for (c of conceptos(); track c.id) {
+        <tr [class.inactivo]="!c.activo">
+          <td>{{ c.nombre }}</td>
+          <td>
+            <span
+              class="chip"
+              [class.deposito]="c.naturaleza === 'deposito'"
+              [class.reintegro]="c.naturaleza === 'reintegro'"
+              [class.sin-iva]="c.naturaleza === 'ingreso' && !c.aplica_iva"
+              >{{ tratamiento(c) }}</span
+            >
+          </td>
+          <td class="numero">
+            @if (c.precio_sugerido && c.moneda) {
+              {{ c.precio_sugerido | monto: c.moneda }}
+            } @else {
+              <small>Se captura</small>
+            }
+          </td>
+          <td>
+            @if (c.activo) {
+              <small>Activo</small>
+            } @else {
+              <small>De baja</small>
+            }
+          </td>
+          <td class="acciones">
+            <button type="button" class="enlace" (click)="editar(c)">Precio</button>
+            <button type="button" class="enlace" (click)="cambiarEstado(c)">
+              {{ c.activo ? 'Dar de baja' : 'Reactivar' }}
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

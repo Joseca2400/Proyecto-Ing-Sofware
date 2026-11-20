@@ -19,6 +19,8 @@ export class Layout {
     { etiqueta: 'Proveedores', ruta: '/compras/proveedores' },
     { etiqueta: 'Facturas de compras', ruta: '/compras/facturas' },
     { etiqueta: 'Registrar cliente', ruta: '/facturacion/clientes' },
+    { etiqueta: 'Tarifario', ruta: '/alquileres/tarifario' },
+    { etiqueta: 'Cotizar alquiler', ruta: '/alquileres/cotizar' },
     { etiqueta: 'Taller' },
     { etiqueta: 'Unidades' },
     { etiqueta: 'Contabilidad' },

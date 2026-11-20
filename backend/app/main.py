@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.comun import config
 from app.comun.errores import registrar_manejadores
+from app.modulos.alquileres.router import router as alquileres_router
 from app.modulos.compras.router import router as compras_router
 from app.modulos.configuracion.router import router as configuracion_router
 from app.modulos.facturacion.router import router as facturacion_router
@@ -27,3 +28,4 @@ app.include_router(seguridad_router, prefix="/api/v1")
 app.include_router(configuracion_router, prefix="/api/v1")
 app.include_router(compras_router, prefix="/api/v1")
 app.include_router(facturacion_router, prefix="/api/v1")
+app.include_router(alquileres_router, prefix="/api/v1")

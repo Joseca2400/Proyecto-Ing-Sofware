@@ -1,0 +1,201 @@
+<section class="encabezado">
+  <h1>Cotizar alquiler</h1>
+  <p>
+    Calcula el monto estimado con la tarifa vigente a la fecha de salida. Los precios incluyen IVA;
+    el depósito y los reintegros se muestran aparte porque no son ingreso. Si la tarifa está en otra
+    moneda, se convierte con el tipo de cambio del día de salida.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="formulario" (ngSubmit)="cotizar()">
+  <label>
+    Tipo de vehículo
+    <select formControlName="tipo_vehiculo" name="tipo_vehiculo">
+      @for (tipo of tipos; track tipo.valor) {
+        <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    VIN (opcional)
+    <input type="text" formControlName="vin" name="vin" maxlength="17" />
+    @if (formulario.controls.vin.touched && formulario.controls.vin.invalid) {
+      <small class="falla">17 caracteres sin I, O ni Q</small>
+    }
+  </label>
+  <label>
+    Modalidad
+    <select formControlName="modalidad" name="modalidad">
+      @for (m of modalidades; track m.valor) {
+        <option [value]="m.valor">{{ m.etiqueta }}</option>
+      }
+    </select>
+  </label>
+  <label class="corto">
+    Moneda
+    <select formControlName="moneda" name="moneda">
+      <option value="GTQ">GTQ</option>
+      <option value="USD">USD</option>
+    </select>
+  </label>
+  <label>
+    Salida
+    <input type="date" formControlName="fecha_salida" name="fecha_salida" />
+  </label>
+  <label>
+    Devolución
+    <input type="date" formControlName="fecha_devolucion" name="fecha_devolucion" />
+  </label>
+  <label>
+    Km estimados{{ modalidad() === 'kilometraje' ? '' : ' (opcional)' }}
+    <input type="text" inputmode="numeric" formControlName="km_estimados" name="km_estimados" />
+  </label>
+
+  @if (conceptos().length) {
+    <fieldset class="cargos" formArrayName="cargos">
+      <legend>Cargos adicionales</legend>
+      @for (grupo of cargos.controls; track grupo.value.concepto_id; let i = $index) {
+        @let concepto = conceptos()[i];
+        <div class="cargo" [formGroupName]="i">
+          <label class="opcion">
+            <input type="checkbox" formControlName="incluir" [name]="'incluir_' + concepto.id" />
+            {{ concepto.nombre }}
+            <small>
+              · {{ etiqueta(concepto.naturaleza) }}
+              @if (concepto.precio_sugerido && concepto.moneda) {
+                · {{ concepto.precio_sugerido | monto: concepto.moneda }}
+              }
+            </small>
+          </label>
+          @if (grupo.value.incluir) {
+            <input
+              type="number"
+              min="1"
+              formControlName="cantidad"
+              [name]="'cantidad_' + concepto.id"
+              aria-label="Cantidad"
+              class="cantidad"
+            />
+            @if (!concepto.precio_sugerido) {
+              <input
+                type="text"
+                inputmode="decimal"
+                formControlName="precio"
+                [name]="'precio_' + concepto.id"
+                placeholder="Monto"
+                aria-label="Monto"
+                class="cantidad"
+              />
+            }
+          }
+        </div>
+      }
+    </fieldset>
+  }
+
+  <button type="submit" [disabled]="calculando()">Cotizar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (cotizacion(); as c) {
+  <section class="tarjeta resumen">
+    <div>
+      <small
+        >Tarifa vigente desde el {{ c.tarifa.vigente_desde }} · {{ c.dias }}
+        {{ c.dias === 1 ? 'día' : 'días' }}</small
+      >
+      <strong>{{ c.total_a_pagar | monto: c.moneda }}</strong>
+      <span>Total a cobrar al cliente</span>
+    </div>
+    <div class="chips">
+      @if (c.tarifa.temporada) {
+        <span class="chip">{{ c.tarifa.temporada.nombre }}</span>
+      }
+      @if (c.tarifa.vin) {
+        <span class="chip unidad">Tarifa de la unidad</span>
+      }
+      @if (c.tipo_cambio) {
+        <span class="chip sin-iva"
+          >Convertido de {{ c.tarifa.moneda }} a Q {{ c.tipo_cambio }} por US$ 1</span
+        >
+      }
+    </div>
+  </section>
+
+  <div class="tabla">
+    <table class="tarjeta">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th class="numero">Cantidad</th>
+          <th class="numero">Precio</th>
+          <th class="numero">Base</th>
+          <th class="numero">IVA</th>
+          <th class="numero">Total</th>
+        </tr>
+      </thead>
+      <tbody class="lineas">
+        @for (l of c.lineas; track $index) {
+          <tr>
+            <td>
+              {{ l.descripcion }}
+              @if (l.naturaleza !== 'ingreso') {
+                <span
+                  class="chip"
+                  [class.deposito]="l.naturaleza === 'deposito'"
+                  [class.reintegro]="l.naturaleza === 'reintegro'"
+                  >{{ etiqueta(l.naturaleza) }}</span
+                >
+              }
+            </td>
+            <td class="numero">{{ l.cantidad }}</td>
+            <td class="numero">{{ l.precio_unitario | monto: c.moneda }}</td>
+            <td class="numero">
+              @if (l.naturaleza === 'ingreso') {
+                {{ l.base | monto: c.moneda }}
+              }
+            </td>
+            <td class="numero">
+              @if (l.naturaleza === 'ingreso') {
+                {{ l.iva | monto: c.moneda }}
+              }
+            </td>
+            <td class="numero">{{ l.total | monto: c.moneda }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>Ingresos (base + IVA)</th>
+          <td></td>
+          <td></td>
+          <td class="numero">{{ c.total_base | monto: c.moneda }}</td>
+          <td class="numero">{{ c.total_iva | monto: c.moneda }}</td>
+          <td class="numero">{{ c.total_ingresos | monto: c.moneda }}</td>
+        </tr>
+        @if (c.total_depositos !== '0.00') {
+          <tr>
+            <th>Depósitos (se devuelven)</th>
+            <td colspan="4"></td>
+            <td class="numero">{{ c.total_depositos | monto: c.moneda }}</td>
+          </tr>
+        }
+        @if (c.total_reintegros !== '0.00') {
+          <tr>
+            <th>Reintegros de terceros</th>
+            <td colspan="4"></td>
+            <td class="numero">{{ c.total_reintegros | monto: c.moneda }}</td>
+          </tr>
+        }
+        <tr class="total">
+          <th>Total a cobrar</th>
+          <td colspan="4"></td>
+          <td class="numero">{{ c.total_a_pagar | monto: c.moneda }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+}

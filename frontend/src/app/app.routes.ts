@@ -32,6 +32,18 @@ export const routes: Routes = [
           import('./features/facturacion/registro-cliente').then((m) => m.RegistroClientePantalla),
       },
       {
+        path: 'alquileres/tarifario',
+        title: 'Tarifario · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/tarifario').then((m) => m.TarifarioPantalla),
+      },
+      {
+        path: 'alquileres/cotizar',
+        title: 'Cotizar alquiler · Kilómetro Cero',
+        loadComponent: () =>
+          import('./features/alquileres/cotizador').then((m) => m.CotizadorPantalla),
+      },
+      {
         path: 'configuracion/perfil-fiscal',
         title: 'Perfil fiscal · Kilómetro Cero',
         loadComponent: () =>
