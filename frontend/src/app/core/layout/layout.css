@@ -188,6 +188,7 @@
 }
 
 .menu a {
+  --transicion-menu: 200ms ease;
   position: relative;
   display: flex;
   align-items: center;
@@ -198,23 +199,53 @@
   font-weight: 500;
   color: #3d525a;
   transition:
-    background-color 0.12s,
-    color 0.12s;
+    background-color var(--transicion-menu),
+    color var(--transicion-menu);
 }
 
 .menu a svg {
   flex-shrink: 0;
   color: #7d8c92;
-  transition: color 0.12s;
+  transition: color var(--transicion-menu);
 }
 
-.menu a:hover {
-  background: var(--gray-50);
+.menu a span {
+  transition: transform var(--transicion-menu);
+}
+
+/* Marca ámbar a la izquierda: delgada al pasar el mouse, completa en la activa. */
+.menu a::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--amber);
+  opacity: 0;
+  transform: scaleY(0.4);
+  transition:
+    opacity var(--transicion-menu),
+    transform var(--transicion-menu);
+}
+
+.menu a:not(.activo):hover {
+  background: rgba(15, 76, 92, 0.07);
   color: var(--teal-dark);
 }
 
-.menu a:hover svg {
-  color: var(--teal);
+.menu a:not(.activo):hover svg {
+  color: var(--amber);
+}
+
+.menu a:not(.activo):hover span {
+  transform: translateX(4px);
+}
+
+.menu a:not(.activo):hover::before {
+  opacity: 1;
+  transform: none;
 }
 
 .menu a.activo {
@@ -227,16 +258,12 @@
   color: var(--teal);
 }
 
-/* Marca ámbar a la izquierda de la opción activa. */
 .menu a.activo::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 6px;
-  bottom: 6px;
   width: 4px;
   border-radius: 0 4px 4px 0;
-  background: var(--amber);
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 .contenido {
@@ -324,8 +351,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu {
+  .menu,
+  .menu a,
+  .menu a svg,
+  .menu a span,
+  .menu a::before {
     transition: none;
+  }
+
+  /* Sin desplazamiento: el resto del efecto (colores y barra) se mantiene. */
+  .menu a:not(.activo):hover span {
+    transform: none;
   }
 }
 
