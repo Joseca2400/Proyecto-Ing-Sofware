@@ -3,6 +3,7 @@
 Sprint 1: proveedores (HU-4.01), facturas de compras y gastos locales con su cuenta por pagar
 (HU-4.09), gastos de importación por VIN con su cuenta por pagar (HU-4.04) y la compra de la
 unidad en EE. UU. con su cuenta por pagar en USD y su partida (HU-4.02).
+Sprint 3: programación y aprobación de pagos a proveedores (HU-4.13) y su pago (HU-4.14).
 """
 
 from datetime import date, datetime
@@ -13,10 +14,12 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -320,6 +323,158 @@ class CuentaPorPagar(Base):
     saldo: Mapped[Decimal] = mapped_column(MONTO)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    proveedor: Mapped[Proveedor] = relationship(lazy="joined")
     factura: Mapped[FacturaCompra | None] = relationship(back_populates="cuenta_por_pagar")
     gasto_importacion: Mapped[GastoImportacion | None] = relationship(back_populates="cuenta_por_pagar")
     compra_unidad: Mapped[CompraUnidad | None] = relationship(back_populates="cuenta_por_pagar")
+
+
+ESTADOS_PAGO_PROGRAMADO = ("propuesto", "aprobado", "rechazado", "ejecutado", "anulado")
+
+
+class ProgramacionPago(Base):
+    """Propuesta de pagos a proveedores (HU-4.13): la arma el auxiliar contable con las cuentas por
+    pagar vencidas o por vencer y la revisa el gerente financiero, pago por pago. Su estado se
+    deduce de sus pagos: pendiente mientras alguno siga propuesto."""
+
+    __tablename__ = "programacion_pago"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fecha: Mapped[date] = mapped_column(Date, index=True)  # fecha prevista de pago
+    descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    propuesta_por: Mapped[int] = mapped_column(Integer)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    pagos: Mapped[list["PagoProgramado"]] = relationship(
+        back_populates="programacion", order_by="PagoProgramado.id", lazy="selectin"
+    )
+
+
+class PagoProgramado(Base):
+    """Un pago propuesto: qué cuenta por pagar, desde qué cuenta bancaria y cuánto, en la moneda del
+    documento. El gerente financiero lo aprueba (puede cambiar monto o cuenta bancaria) o lo
+    rechaza; solo uno aprobado se ejecuta (HU-4.14). Si el pago que lo ejecutó se anula, queda
+    anulado: el documento se reabre y volver a pagarlo pide una aprobación nueva. Una cuenta por
+    pagar no está en dos pagos propuestos o aprobados a la vez (índice parcial
+    `uq_pago_programado_activo`)."""
+
+    __tablename__ = "pago_programado"
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('propuesto', 'aprobado', 'rechazado', 'ejecutado', 'anulado')",
+            name="ck_pago_programado_estado",
+        ),
+        CheckConstraint(
+            "(estado IN ('ejecutado', 'anulado')) = (pago_id IS NOT NULL)", name="ck_pago_programado_pago"
+        ),
+        CheckConstraint("monto > 0 AND monto_propuesto > 0", name="ck_pago_programado_monto"),
+        CheckConstraint(
+            "(estado = 'propuesto' AND decidido_por IS NULL AND decidido_en IS NULL)"
+            " OR (estado <> 'propuesto' AND decidido_por IS NOT NULL AND decidido_en IS NOT NULL)",
+            name="ck_pago_programado_decision",
+        ),
+        Index(
+            "uq_pago_programado_activo",
+            "cuenta_por_pagar_id",
+            unique=True,
+            postgresql_where=text("estado IN ('propuesto', 'aprobado')"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    programacion_id: Mapped[int] = mapped_column(ForeignKey("programacion_pago.id"), index=True)
+    cuenta_por_pagar_id: Mapped[int] = mapped_column(ForeignKey("cuenta_por_pagar.id"), index=True)
+    cuenta_bancaria_id: Mapped[int] = mapped_column(ForeignKey("cuenta_bancaria.id"))
+    monto_propuesto: Mapped[Decimal] = mapped_column(MONTO)
+    monto: Mapped[Decimal] = mapped_column(MONTO)
+    estado: Mapped[str] = mapped_column(String(10), default="propuesto")
+    decidido_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    decidido_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    comentario: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # El pago que lo ejecutó (HU-4.14); si ese pago se anula, queda anulado y ligado a él.
+    pago_id: Mapped[int | None] = mapped_column(ForeignKey("pago_proveedor.id"), nullable=True, index=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    programacion: Mapped[ProgramacionPago] = relationship(back_populates="pagos")
+    cuenta_por_pagar: Mapped[CuentaPorPagar] = relationship(lazy="joined")
+
+
+FORMAS_PAGO = ("cheque", "transferencia")
+
+
+class PagoProveedor(Base):
+    """Pago a un proveedor (HU-4.14) desde una cuenta bancaria, por cheque o transferencia, que
+    ejecuta pagos programados y aprobados (HU-4.13). Va en la moneda del banco y puede cancelar
+    documentos en otra moneda; `diferencial` es el realizado en quetzales (positivo, ganancia). Su
+    partida la crea `contabilidad` en la misma transacción. Anularlo revierte la partida y reabre
+    los documentos; no se borra. Un número de cheque no se repite en la misma cuenta bancaria
+    mientras el pago esté vigente."""
+
+    __tablename__ = "pago_proveedor"
+    __table_args__ = (
+        CheckConstraint("forma_pago IN ('cheque', 'transferencia')", name="ck_pago_proveedor_forma"),
+        CheckConstraint("moneda IN ('GTQ', 'USD')", name="ck_pago_proveedor_moneda"),
+        CheckConstraint("monto > 0", name="ck_pago_proveedor_monto"),
+        CheckConstraint("tipo_cambio IS NULL OR tipo_cambio > 0", name="ck_pago_proveedor_tipo_cambio"),
+        CheckConstraint("estado IN ('registrado', 'anulado')", name="ck_pago_proveedor_estado"),
+        CheckConstraint(
+            "(estado = 'registrado' AND anulado_por IS NULL AND fecha_anulacion IS NULL"
+            " AND motivo_anulacion IS NULL)"
+            " OR (estado = 'anulado' AND fecha_anulacion IS NOT NULL AND motivo_anulacion IS NOT NULL)",
+            name="ck_pago_proveedor_anulacion",
+        ),
+        Index(
+            "uq_pago_proveedor_cheque",
+            "cuenta_bancaria_id",
+            "referencia",
+            unique=True,
+            postgresql_where=text("forma_pago = 'cheque' AND estado = 'registrado'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    proveedor_id: Mapped[int] = mapped_column(ForeignKey("proveedor.id"), index=True)
+    cuenta_bancaria_id: Mapped[int] = mapped_column(ForeignKey("cuenta_bancaria.id"))
+    moneda: Mapped[str] = mapped_column(String(3))
+    forma_pago: Mapped[str] = mapped_column(String(15))
+    referencia: Mapped[str] = mapped_column(String(50))  # número de cheque o de transferencia
+    fecha: Mapped[date] = mapped_column(Date, index=True)
+    tipo_cambio: Mapped[Decimal | None] = mapped_column(TIPO_CAMBIO, nullable=True)  # si hay USD
+    monto: Mapped[Decimal] = mapped_column(MONTO)
+    diferencial: Mapped[Decimal] = mapped_column(MONTO)
+    estado: Mapped[str] = mapped_column(String(10), default="registrado")
+    usuario_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    anulado_por: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    fecha_anulacion: Mapped[date | None] = mapped_column(Date, nullable=True)
+    motivo_anulacion: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    proveedor: Mapped[Proveedor] = relationship(lazy="joined")
+    aplicaciones: Mapped[list["AplicacionPago"]] = relationship(
+        back_populates="pago", order_by="AplicacionPago.id", lazy="selectin"
+    )
+
+
+class AplicacionPago(Base):
+    """Lo que un pago cancela de una cuenta por pagar: el monto en la moneda del documento, lo que
+    sale del banco por él y, si el documento es en USD, el tipo de cambio en libros y el diferencial
+    realizado (HU-2.09)."""
+
+    __tablename__ = "aplicacion_pago"
+    __table_args__ = (
+        CheckConstraint("monto_documento > 0 AND monto_pago > 0", name="ck_aplicacion_pago_montos"),
+        CheckConstraint("moneda_documento IN ('GTQ', 'USD')", name="ck_aplicacion_pago_moneda"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pago_id: Mapped[int] = mapped_column(ForeignKey("pago_proveedor.id"), index=True)
+    cuenta_por_pagar_id: Mapped[int] = mapped_column(ForeignKey("cuenta_por_pagar.id"), index=True)
+    pago_programado_id: Mapped[int] = mapped_column(ForeignKey("pago_programado.id"), index=True)
+    moneda_documento: Mapped[str] = mapped_column(String(3))
+    monto_documento: Mapped[Decimal] = mapped_column(MONTO)
+    monto_pago: Mapped[Decimal] = mapped_column(MONTO)
+    tipo_cambio_libros: Mapped[Decimal | None] = mapped_column(TIPO_CAMBIO, nullable=True)
+    diferencial: Mapped[Decimal] = mapped_column(MONTO)
+
+    pago: Mapped[PagoProveedor] = relationship(back_populates="aplicaciones")
+    cuenta_por_pagar: Mapped[CuentaPorPagar] = relationship(lazy="joined")
