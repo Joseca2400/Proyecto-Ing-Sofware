@@ -5,8 +5,8 @@ cada concepto (ingreso de alquiler 4.1, depreciación 6.4 y mantenimiento 6.2). 
 nacen sin cuenta porque el catálogo aún no tiene la suya: el reporte los muestra como pendientes
 hasta que el contador les asigne una desde la pantalla de reglas.
 
-Revision ID: 0032
-Revises: 0031
+Revision ID: 0034
+Revises: 0033
 Create Date: 2026-11-19
 """
 
@@ -15,8 +15,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0032"
-down_revision: str | None = "0031"
+revision: str = "0034"
+down_revision: str | None = "0033"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
