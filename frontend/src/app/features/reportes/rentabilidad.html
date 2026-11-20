@@ -1,0 +1,152 @@
+<section class="encabezado">
+  <h1>Rentabilidad por unidad y por contrato</h1>
+  <p>
+    Ingresos y costos en quetzales tomados del mayor contable por VIN, así que cuadran con la
+    contabilidad. Las cuentas de cada concepto salen de las reglas «rentabilidad».
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="filtros" (ngSubmit)="consultar()">
+  <label>
+    Desde
+    <input type="date" formControlName="desde" name="desde" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="hasta" name="hasta" />
+  </label>
+  <label>
+    VIN
+    <input type="text" maxlength="17" formControlName="vin" name="vin" />
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (unidades(); as r) {
+  <h2>
+    Por unidad
+    <button type="button" class="secundario" (click)="exportar('unidades')">Exportar CSV</button>
+  </h2>
+  @for (p of r.pendientes; track p) {
+    <p class="mensaje">
+      <small>{{ p }}</small>
+    </p>
+  }
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>VIN</th>
+        <th>Unidad</th>
+        <th class="numero">Ingreso de alquiler</th>
+        <th class="numero">Depreciación</th>
+        <th class="numero">Mantenimiento</th>
+        <th class="numero">Seguro</th>
+        <th class="numero">Marchamo</th>
+        <th class="numero">Resultado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of r.unidades; track u.vin) {
+        <tr>
+          <td class="codigo">{{ u.vin }}</td>
+          <td>
+            {{ u.marca }} {{ u.linea }} {{ u.modelo }}
+            <small>{{ etiqueta(u.estado) }} · alta {{ u.fecha_alta | date: 'dd/MM/yyyy' }}</small>
+          </td>
+          <td class="numero">{{ u.ingreso_alquiler | cifra }}</td>
+          <td class="numero">{{ u.depreciacion | cifra }}</td>
+          <td class="numero">{{ u.mantenimiento | cifra }}</td>
+          <td class="numero">{{ u.seguro | cifra }}</td>
+          <td class="numero">{{ u.marchamo | cifra }}</td>
+          <td class="numero" [class.falla]="u.resultado?.startsWith('-')">
+            <strong>{{ u.resultado | monto }}</strong>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="vacio">No hay unidades dadas de alta en la flota</td>
+        </tr>
+      }
+    </tbody>
+    @if (r.unidades.length) {
+      <tfoot>
+        <tr>
+          <th colspan="2">Total</th>
+          <th class="numero">{{ r.totales.ingreso_alquiler | cifra }}</th>
+          <th class="numero">{{ r.totales.depreciacion | cifra }}</th>
+          <th class="numero">{{ r.totales.mantenimiento | cifra }}</th>
+          <th class="numero">{{ r.totales.seguro | cifra }}</th>
+          <th class="numero">{{ r.totales.marchamo | cifra }}</th>
+          <th class="numero">{{ r.totales.resultado | monto }}</th>
+        </tr>
+      </tfoot>
+    }
+  </table>
+}
+
+@if (contratos(); as r) {
+  <h2>
+    Por contrato
+    <button type="button" class="secundario" (click)="exportar('contratos')">Exportar CSV</button>
+  </h2>
+  @for (p of r.pendientes; track p) {
+    <p class="mensaje">
+      <small>{{ p }}</small>
+    </p>
+  }
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Contrato</th>
+        <th>Cliente</th>
+        <th>Salida</th>
+        <th>Facturas</th>
+        <th class="numero">Alquiler</th>
+        <th class="numero">Cargos adicionales</th>
+        <th class="numero">Costos directos</th>
+        <th class="numero">Resultado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of r.contratos; track c.contrato_id) {
+        <tr>
+          <td>
+            {{ c.numero }}
+            <small class="codigo">{{ c.vin }}</small>
+          </td>
+          <td>{{ c.cliente }}</td>
+          <td>
+            {{ c.salida | date: 'dd/MM/yyyy' }}
+            <small>{{ c.estado }}</small>
+          </td>
+          <td>{{ c.facturas.length ? c.facturas.join(', ') : 'sin factura' }}</td>
+          <td class="numero">{{ c.alquiler | monto }}</td>
+          <td class="numero">{{ c.cargos_adicionales | monto }}</td>
+          <td class="numero">{{ c.costos_directos | monto }}</td>
+          <td class="numero">
+            <strong>{{ c.resultado | monto }}</strong>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="vacio">No hay contratos con salida en el período</td>
+        </tr>
+      }
+    </tbody>
+    @if (r.contratos.length) {
+      <tfoot>
+        <tr>
+          <th colspan="4">Total</th>
+          <th class="numero">{{ r.totales.alquiler | monto }}</th>
+          <th class="numero">{{ r.totales.cargos_adicionales | monto }}</th>
+          <th class="numero">{{ r.totales.costos_directos | monto }}</th>
+          <th class="numero">{{ r.totales.resultado | monto }}</th>
+        </tr>
+      </tfoot>
+    }
+  </table>
+}

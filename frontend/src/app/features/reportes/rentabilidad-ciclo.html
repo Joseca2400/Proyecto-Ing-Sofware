@@ -1,0 +1,162 @@
+<section class="encabezado">
+  <h1>Rentabilidad en el ciclo de la unidad</h1>
+  <p>
+    Por VIN: costo de compra, importación y reacondicionamiento; ingreso de alquiler, costos de la
+    flota y depreciación del mayor; resultado acumulado y rentabilidad sobre el costo. El costo
+    entra al resultado por la depreciación. El resultado de la venta y los intereses del
+    financiamiento se agregan en el Release 2.
+  </p>
+</section>
+
+<form class="tarjeta formulario" [formGroup]="filtros" (ngSubmit)="consultar()">
+  <label>
+    Estado
+    <select formControlName="estado" name="estado">
+      <option value="">Todos</option>
+      @for (e of estados; track e) {
+        <option [value]="e">{{ etiqueta(e) }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Marca
+    <select formControlName="marca" name="marca">
+      <option value="">Todas</option>
+      @for (m of reporte()?.filtros?.marcas ?? []; track m) {
+        <option [value]="m">{{ m }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Modelo
+    <select formControlName="linea" name="linea">
+      <option value="">Todos</option>
+      @for (l of reporte()?.filtros?.lineas ?? []; track l) {
+        <option [value]="l">{{ l }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Año de compra
+    <select formControlName="anio_compra" name="anio_compra">
+      <option value="">Todos</option>
+      @for (a of reporte()?.filtros?.anios_compra ?? []; track a) {
+        <option [value]="a">{{ a }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Proveedor de origen
+    <select formControlName="proveedor_id" name="proveedor_id">
+      <option value="">Todos</option>
+      @for (p of reporte()?.filtros?.proveedores ?? []; track p.id) {
+        <option [value]="p.id">{{ p.nombre }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Ordenar por
+    <select formControlName="orden" name="orden">
+      <option value="resultado">Resultado</option>
+      <option value="rentabilidad">Rentabilidad sobre el costo</option>
+    </select>
+  </label>
+  <button type="submit">Consultar</button>
+</form>
+
+@if (error(); as mensaje) {
+  <p class="mensaje falla" role="alert">{{ mensaje }}</p>
+}
+
+@if (reporte(); as r) {
+  @for (p of r.pendientes; track p) {
+    <p class="mensaje">
+      <small>{{ p }}</small>
+    </p>
+  }
+  <table class="tarjeta">
+    <thead>
+      <tr>
+        <th>Unidad</th>
+        <th class="numero">Compra</th>
+        <th class="numero">Importación</th>
+        <th class="numero">Reacondicionamiento</th>
+        <th class="numero">Costo total</th>
+        <th class="numero">Ingreso de alquiler</th>
+        <th class="numero">Mantenimiento</th>
+        <th class="numero">Seguro</th>
+        <th class="numero">Marchamo</th>
+        <th class="numero">Depreciación</th>
+        <th class="numero">Resultado</th>
+        <th class="numero">Rentabilidad</th>
+        <th class="numero">Días en flota</th>
+        <th class="numero">Ocupación</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of r.unidades; track u.vin) {
+        <tr>
+          <td>
+            <span class="codigo">{{ u.vin }}</span
+            ><br />
+            {{ u.marca }} {{ u.linea }} {{ u.modelo }}
+            <small>
+              {{ etiqueta(u.estado) }}
+              @if (u.proveedor) {
+                · {{ u.proveedor }}, {{ u.fecha_compra | date: 'dd/MM/yyyy' }}
+              }
+            </small>
+          </td>
+          <td class="numero">{{ u.compra | cifra }}</td>
+          <td class="numero">{{ u.importacion | cifra }}</td>
+          <td class="numero">{{ u.reacondicionamiento | cifra }}</td>
+          <td class="numero">{{ u.costo_total | cifra }}</td>
+          <td class="numero">{{ u.ingreso_alquiler | cifra }}</td>
+          <td class="numero">{{ u.mantenimiento | cifra }}</td>
+          <td class="numero">{{ u.seguro | cifra }}</td>
+          <td class="numero">{{ u.marchamo | cifra }}</td>
+          <td class="numero">{{ u.depreciacion | cifra }}</td>
+          <td class="numero" [class.falla]="u.resultado?.startsWith('-')">
+            <strong>{{ u.resultado | cifra }}</strong>
+          </td>
+          <td class="numero">{{ u.rentabilidad === null ? '—' : u.rentabilidad + ' %' }}</td>
+          <td class="numero">
+            {{ u.dias_en_flota ?? '—' }}
+            @if (u.fecha_alta) {
+              <small>desde {{ u.fecha_alta | date: 'dd/MM/yyyy' }}</small>
+            }
+          </td>
+          <td class="numero">
+            {{ u.ocupacion === null ? '—' : u.ocupacion + ' %' }}
+            <small>{{ u.dias_alquilados }} días alquilada</small>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="14" class="vacio">No hay unidades con esos filtros</td>
+        </tr>
+      }
+    </tbody>
+    @if (r.unidades.length) {
+      <tfoot>
+        <tr>
+          <th>Total</th>
+          <th class="numero">{{ r.totales.compra | cifra }}</th>
+          <th class="numero">{{ r.totales.importacion | cifra }}</th>
+          <th class="numero">{{ r.totales.reacondicionamiento | cifra }}</th>
+          <th class="numero">{{ r.totales.costo_total | cifra }}</th>
+          <th class="numero">{{ r.totales.ingreso_alquiler | cifra }}</th>
+          <th class="numero">{{ r.totales.mantenimiento | cifra }}</th>
+          <th class="numero">{{ r.totales.seguro | cifra }}</th>
+          <th class="numero">{{ r.totales.marchamo | cifra }}</th>
+          <th class="numero">{{ r.totales.depreciacion | cifra }}</th>
+          <th class="numero">{{ r.totales.resultado | cifra }}</th>
+          <th class="numero">
+            {{ r.totales.rentabilidad === null ? '—' : r.totales.rentabilidad + ' %' }}
+          </th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    }
+  </table>
+}

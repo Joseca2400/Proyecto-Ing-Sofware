@@ -74,6 +74,8 @@ export class Layout {
     { etiqueta: 'Catálogo de cuentas', ruta: '/configuracion/catalogo' },
     { etiqueta: 'Reportes' },
     { etiqueta: 'Unidades por etapa', ruta: '/reportes/unidades-etapa' },
+    { etiqueta: 'Rentabilidad', ruta: '/reportes/rentabilidad' },
+    { etiqueta: 'Rentabilidad en el ciclo', ruta: '/reportes/rentabilidad-ciclo' },
     { etiqueta: 'Configuración' },
     { etiqueta: 'Tipo de cambio', ruta: '/configuracion/tipo-cambio' },
     { etiqueta: 'Transacciones USD', ruta: '/configuracion/transacciones-usd' },
