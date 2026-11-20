@@ -94,5 +94,5 @@ button.enlace {
 }
 
 tr.activa {
-  background: #f1f8f7;
+  background: var(--teal-50);
 }

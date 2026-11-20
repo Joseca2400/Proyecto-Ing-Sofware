@@ -21,6 +21,17 @@
     </span>
   </a>
 
+  <!-- El ícono muestra el modo al que se cambia: luna en claro, sol en oscuro. -->
+  <button
+    type="button"
+    class="tema"
+    [attr.aria-label]="oscuro() ? 'Activar modo claro' : 'Activar modo oscuro'"
+    [title]="oscuro() ? 'Modo claro' : 'Modo oscuro'"
+    (click)="tema.alternar()"
+  >
+    <svg [lucideIcon]="oscuro() ? iconos.sol : iconos.luna" [size]="20"></svg>
+  </button>
+
   @if (usuario(); as actual) {
     <div class="sesion">
       <span class="avatar" aria-hidden="true">{{ iniciales() }}</span>

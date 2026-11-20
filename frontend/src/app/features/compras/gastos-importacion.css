@@ -18,8 +18,8 @@
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--ok-bg);
+  color: var(--ok);
 }
 
 .vin input,
@@ -43,7 +43,7 @@ td.codigo {
 }
 
 .aviso {
-  color: #e65100;
+  color: var(--aviso);
 }
 
 .filtros input {
@@ -89,6 +89,6 @@ td small {
 }
 
 .chip.credito {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--aviso-bg);
+  color: var(--aviso);
 }

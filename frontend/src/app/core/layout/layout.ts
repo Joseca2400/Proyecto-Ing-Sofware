@@ -37,6 +37,7 @@ import {
   LucideListTree,
   LucideLogOut,
   LucideMenu,
+  LucideMoon,
   LucidePalette,
   LucideReceipt,
   LucideRoute,
@@ -44,6 +45,7 @@ import {
   LucideShieldCheck,
   LucideShip,
   LucideShoppingCart,
+  LucideSun,
   LucideTag,
   LucideTrendingDown,
   LucideTrendingUp,
@@ -53,6 +55,7 @@ import {
   LucideX,
 } from '@lucide/angular';
 import { AuthService, NOMBRE_ROL } from '../auth/auth.service';
+import { TemaService } from '../tema/tema.service';
 
 interface EntradaMenu {
   etiqueta: string;
@@ -82,7 +85,15 @@ export class Layout {
     ]),
   );
 
-  protected readonly iconos = { salir: LucideLogOut, abrir: LucideMenu, cerrar: LucideX };
+  protected readonly iconos = {
+    salir: LucideLogOut,
+    abrir: LucideMenu,
+    cerrar: LucideX,
+    sol: LucideSun,
+    luna: LucideMoon,
+  };
+  protected readonly tema = inject(TemaService);
+  protected readonly oscuro = computed(() => this.tema.tema() === 'oscuro');
   protected readonly usuario = this.auth.usuario;
   protected readonly rol = computed(() => NOMBRE_ROL[this.usuario()?.rol ?? ''] ?? '');
   protected readonly iniciales = computed(() =>

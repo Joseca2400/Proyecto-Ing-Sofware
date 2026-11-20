@@ -53,12 +53,12 @@ textarea {
 }
 
 .banguat {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--ok-bg);
+  color: var(--ok);
 }
 
 .personalizado {
-  background: #fff8e1;
-  color: #f57f17;
+  background: var(--aviso-bg);
+  color: var(--aviso);
   cursor: help;
 }

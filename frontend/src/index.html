@@ -6,6 +6,19 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Pinta el tema antes de que arranque Angular para que no parpadee en claro. La lógica
+         completa está en core/tema/tema.service.ts. -->
+    <script>
+      try {
+        var t = localStorage.getItem('km0.tema');
+        document.documentElement.dataset.tema =
+          t === 'claro' || t === 'oscuro'
+            ? t
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'oscuro'
+              : 'claro';
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <app-root></app-root>

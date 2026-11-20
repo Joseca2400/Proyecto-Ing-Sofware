@@ -10,7 +10,7 @@
   top: 0;
   z-index: 30;
   height: var(--alto-barra);
-  background: linear-gradient(90deg, var(--teal-900), var(--teal) 70%);
+  background: linear-gradient(90deg, var(--marca-900), var(--marca) 70%);
   color: var(--white);
   padding: 0 20px;
   display: flex;
@@ -54,7 +54,7 @@
   overflow: hidden;
   text-align: center;
   background: var(--white);
-  color: var(--teal);
+  color: var(--marca);
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
@@ -83,7 +83,7 @@
   height: 34px;
   border-radius: 50%;
   background: var(--amber);
-  color: var(--teal-900);
+  color: var(--marca-900);
   font-size: 13px;
   font-weight: 700;
 }
@@ -140,6 +140,17 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Cambio entre modo claro y oscuro. */
+.tema {
+  background: transparent;
+  border: none;
+  padding: 7px;
+}
+
+.tema:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .topbar :focus-visible {
   outline: 2px solid var(--amber);
   outline-offset: 2px;
@@ -162,7 +173,7 @@
   overscroll-behavior: contain;
   /* Teal oscuro, en línea con la barra superior. Los blancos con transparencia
      cumplen WCAG AA sobre este fondo: texto ≈ 9:1, títulos ≈ 5.7:1. */
-  background: var(--teal-dark);
+  background: var(--marca-oscura);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   padding: 12px 12px 24px;
   scrollbar-width: thin;

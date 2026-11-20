@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at 15% 10%, rgba(242, 169, 0, 0.14), transparent 40%),
     radial-gradient(circle at 85% 90%, rgba(23, 100, 119, 0.25), transparent 45%),
-    linear-gradient(160deg, var(--teal-900), var(--teal));
+    linear-gradient(160deg, var(--marca-900), var(--marca));
 }
 
 .caja {
@@ -15,7 +15,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 36px 32px 32px;
-  background: var(--white);
+  background: var(--superficie);
   border-radius: var(--radius-lg);
   box-shadow: var(--sombra-lg);
   border-top: 4px solid var(--amber);
@@ -48,13 +48,15 @@ input {
   padding: 10px 12px;
   border: 1px solid var(--borde-input);
   border-radius: var(--radius-sm);
+  background: var(--superficie);
+  color: var(--texto);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
 }
 
 input:hover {
-  border-color: #a7b5bb;
+  border-color: var(--borde-hover);
 }
 
 input:focus {
@@ -67,7 +69,7 @@ button {
   margin-top: 4px;
   min-height: 44px;
   background: var(--teal);
-  color: var(--white);
+  color: var(--sobre-teal);
   border: none;
   border-radius: var(--radius-sm);
   padding: 12px;
