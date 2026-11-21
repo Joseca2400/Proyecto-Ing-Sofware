@@ -260,8 +260,16 @@
           @for (c of historial(); track c.id) {
             <tr>
               <td>{{ c.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ c.estado_anterior ? etiqueta(c.estado_anterior) : 'Alta' }}</td>
-              <td>{{ etiqueta(c.estado_nuevo) }}</td>
+              <td>
+                <span class="chip" [attr.data-estado]="c.estado_anterior">{{
+                  c.estado_anterior ? etiqueta(c.estado_anterior) : 'Alta'
+                }}</span>
+              </td>
+              <td>
+                <span class="chip" [attr.data-estado]="c.estado_nuevo">{{
+                  etiqueta(c.estado_nuevo)
+                }}</span>
+              </td>
               <td>{{ c.documento }}</td>
               <td>{{ c.usuario_id ?? '—' }}</td>
             </tr>

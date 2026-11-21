@@ -55,7 +55,9 @@
         <td>{{ u.correo }}</td>
         <td>{{ u.nombre }}</td>
         <td>{{ nombres[u.rol] ?? u.rol }}</td>
-        <td>{{ u.estado }}</td>
+        <td>
+          <span class="chip" [attr.data-estado]="u.estado">{{ u.estado }}</span>
+        </td>
         <td>{{ u.creado_en | date: 'dd/MM/yyyy' }}</td>
         <td>
           @if (u.estado !== 'baja') {

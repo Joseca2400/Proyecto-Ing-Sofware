@@ -1,20 +1,124 @@
+@import '@fontsource-variable/inter';
 @import './styles/mockup.css';
 @import './styles/pantalla.css';
 
-/* Paleta tomada de la maqueta del prototipo Express (etiqueta de git legacy-prototipos). */
+/* Paleta tomada de la maqueta del prototipo Express (etiqueta de git legacy-prototipos): teal y
+   ámbar. Las pantallas usan estas variables y no escriben colores a mano, para que el modo
+   oscuro (más abajo) las cubra todas. */
 :root {
+  color-scheme: light;
+
+  /* Barra superior, menú y pantalla de entrada: oscuros en los dos temas. */
+  --marca: #0f4c5c;
+  --marca-oscura: #0a3642;
+  --marca-900: #072a33;
+
+  /* Marca */
   --teal: #0f4c5c;
   --teal-dark: #0a3642;
+  --teal-900: #072a33;
+  --teal-600: #176477;
+  --teal-100: #d6e9ed;
+  --teal-50: #eef6f8;
   --amber: #f2a900;
+  --amber-dark: #8a6100;
+  --amber-50: #fff6dc;
+
+  /* Neutros */
   --gray: #5f6b73;
   --gray-light: #e3e8ea;
+  --gray-50: #f7f9fa;
+  --borde: #e3e8ea;
+  --borde-input: #c9d3d7;
+  --borde-hover: #a7b5bb;
+  --texto: #10313b;
+  --texto-tenue: #97a4aa;
   --bg: #f3f6f7;
+  /* Fondo de tarjetas, tablas e inputs. --white es blanco en los dos temas (texto sobre la marca). */
+  --superficie: #ffffff;
   --white: #ffffff;
-  --ok: #1e8e5a;
-  --ok-bg: #e2f5ec;
+  /* Texto sobre un fondo teal o de error (botones). */
+  --sobre-teal: #ffffff;
+  --sobre-error: #ffffff;
+
+  /* Estados */
+  --ok: #1e7f52;
+  --ok-bg: #e3f4ea;
+  --ok-borde: #b5dfc6;
+  --aviso: #8a5a00;
+  --aviso-bg: #fff3d1;
   --error: #b42318;
   --error-bg: #fdecea;
-  --radius: 10px;
+  --error-borde: #f4c3bd;
+  --error-hover: #8f1c13;
+  --info: #1d5f8a;
+  --info-bg: #e5f0f8;
+  --info-borde: #c4dbe9;
+  --neutro: #4b5860;
+  --neutro-bg: #edf1f3;
+
+  /* Forma */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --sombra-sm: 0 1px 2px rgba(10, 54, 66, 0.06), 0 1px 3px rgba(10, 54, 66, 0.06);
+  --sombra-md: 0 4px 14px rgba(10, 54, 66, 0.08), 0 2px 4px rgba(10, 54, 66, 0.04);
+  --sombra-lg: 0 16px 40px rgba(10, 54, 66, 0.18);
+  --anillo: 0 0 0 3px rgba(15, 76, 92, 0.2);
+  --anillo-error: 0 0 0 3px rgba(180, 35, 24, 0.2);
+  --fuente: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Modo oscuro: lo activa core/tema/tema.service.ts poniendo data-tema="oscuro" en <html>. Solo en
+   pantalla: al imprimir se usa siempre la paleta clara. Todo par texto/fondo cumple WCAG AA. */
+@media screen {
+  :root[data-tema='oscuro'] {
+    color-scheme: dark;
+
+    --teal: #5cc2d3;
+    --teal-dark: #cfeaef;
+    --teal-900: #e6f4f7;
+    --teal-600: #4fb3c4;
+    --teal-100: #1f4a55;
+    --teal-50: #15333c;
+    --amber: #f2a900;
+    --amber-dark: #f5c249;
+    --amber-50: #3a2e10;
+
+    --gray: #9fb0b7;
+    --gray-light: #2a3d46;
+    --gray-50: #1a2b33;
+    --borde: #2a3d46;
+    --borde-input: #3d5560;
+    --borde-hover: #577480;
+    --texto: #e3ecef;
+    --texto-tenue: #80949b;
+    --bg: #0e1a20;
+    --superficie: #15242b;
+    --sobre-teal: #06222a;
+    --sobre-error: #2a0b08;
+
+    --ok: #5fd39a;
+    --ok-bg: #11352a;
+    --ok-borde: #1f5a43;
+    --aviso: #f2c14e;
+    --aviso-bg: #3a2e0e;
+    --error: #ff8f84;
+    --error-bg: #3f1c1a;
+    --error-borde: #6b2d28;
+    --error-hover: #ffb3ab;
+    --info: #7cbcf0;
+    --info-bg: #142f45;
+    --info-borde: #24507a;
+    --neutro: #b4c1c7;
+    --neutro-bg: #24343b;
+
+    --sombra-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --sombra-md: 0 4px 14px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
+    --sombra-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+    --anillo: 0 0 0 3px rgba(92, 194, 211, 0.35);
+    --anillo-error: 0 0 0 3px rgba(255, 143, 132, 0.3);
+  }
 }
 
 * {
@@ -23,19 +127,40 @@
   padding: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--fuente);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
   background: var(--bg);
-  color: var(--teal-dark);
+  color: var(--texto);
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--teal-dark);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Foco visible para quien navega con teclado, en toda la aplicación. */
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--teal-100);
 }

@@ -1,42 +1,296 @@
-<section class="encabezado">
-  <h1>Hola, mundo</h1>
-  <p>Sistema administrativo y financiero · Sprint 0</p>
+<section class="encabezado bienvenida">
+  <div>
+    <p class="fecha">{{ hoy }}</p>
+    <h1>Hola, {{ nombre() }}</h1>
+    <p>Resumen de la operación para tu rol · {{ rol() }}</p>
+  </div>
 </section>
 
-<section class="tarjetas" aria-live="polite">
-  <article class="tarjeta">
-    <span class="etiqueta">Front</span>
-    <strong class="ok">Angular en línea</strong>
-  </article>
-
-  <article class="tarjeta">
-    <span class="etiqueta">API</span>
-    @if (cargando()) {
-      <strong>Consultando…</strong>
-    } @else if (estado(); as e) {
-      <strong class="ok">{{ e.mensaje }}</strong>
-      <small>{{ e.aplicacion }} · v{{ e.version }}</small>
-    } @else {
-      <strong class="falla">Sin respuesta</strong>
-      <small>Revise que el backend esté levantado</small>
-    }
-  </article>
-
-  <article class="tarjeta">
-    <span class="etiqueta">Base de datos</span>
-    @if (estado(); as e) {
-      @if (e.base_datos.conectada) {
-        <strong class="ok">Conectada ({{ e.base_datos.motor }})</strong>
-        <small>Revisión del esquema: {{ e.base_datos.revision_esquema ?? 'sin migrar' }}</small>
-      } @else {
-        <strong class="falla">Sin conexión</strong>
+<section class="kpis" aria-label="Números clave" aria-live="polite">
+  @if (unidades; as dato) {
+    <a class="tarjeta kpi" routerLink="/unidades">
+      <span class="icono teal"><svg [lucideIcon]="iconos.unidades" [size]="20"></svg></span>
+      <span class="etiqueta">Unidades registradas</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ unidadesTotal() }}</strong>
+          <small>en todas las etapas</small>
+        }
       }
-    } @else {
-      <strong>—</strong>
-    }
-  </article>
+    </a>
+  }
+
+  @if (contratos; as dato) {
+    <a class="tarjeta kpi" routerLink="/alquileres/contratos">
+      <span class="icono azul"><svg [lucideIcon]="iconos.contratos" [size]="20"></svg></span>
+      <span class="etiqueta">Contratos abiertos</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ cantidad(dato()) }}</strong>
+          <small>unidades alquiladas ahora</small>
+        }
+      }
+    </a>
+  }
+
+  @if (ordenes; as dato) {
+    <a class="tarjeta kpi" routerLink="/taller/ordenes">
+      <span class="icono ambar"><svg [lucideIcon]="iconos.taller" [size]="20"></svg></span>
+      <span class="etiqueta">Órdenes de taller abiertas</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ cantidad(dato()) }}</strong>
+          <small>en reparación o preparación</small>
+        }
+      }
+    </a>
+  }
+
+  @if (cuentas; as dato) {
+    <a class="tarjeta kpi" routerLink="/compras/programacion-pagos">
+      <span class="icono" [class.rojo]="vencidas() > 0" [class.teal]="vencidas() === 0">
+        <svg [lucideIcon]="iconos.cuentas" [size]="20"></svg>
+      </span>
+      <span class="etiqueta">Cuentas por pagar</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ cantidad(dato()) }}</strong>
+          @if (vencidas() > 0) {
+            <small class="alerta">{{ vencidas() }} vencida{{ vencidas() === 1 ? '' : 's' }}</small>
+          } @else {
+            <small>pendientes, ninguna vencida</small>
+          }
+        }
+      }
+    </a>
+  }
+
+  @if (pagos; as dato) {
+    <a class="tarjeta kpi" routerLink="/compras/pagos">
+      <span class="icono verde"><svg [lucideIcon]="iconos.pagos" [size]="20"></svg></span>
+      <span class="etiqueta">Pagos por ejecutar</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ cantidad(dato()) }}</strong>
+          <small>aprobados, esperando el pago</small>
+        }
+      }
+    </a>
+  }
+
+  @if (enRevision; as dato) {
+    <a class="tarjeta kpi" routerLink="/contabilidad/partidas">
+      <span class="icono ambar"><svg [lucideIcon]="iconos.partidas" [size]="20"></svg></span>
+      <span class="etiqueta">Partidas en revisión</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          <strong class="valor">{{ cantidad(dato()) }}</strong>
+          @if (devueltas?.(); as d) {
+            @if (cantidad(d) > 0) {
+              <small class="alerta"
+                >{{ cantidad(d) }} devuelta{{ cantidad(d) === 1 ? '' : 's' }}</small
+              >
+            } @else {
+              <small>ninguna devuelta</small>
+            }
+          }
+        }
+      }
+    </a>
+  }
+
+  @if (tiposCambio; as dato) {
+    <a class="tarjeta kpi" routerLink="/configuracion/tipo-cambio">
+      <span class="icono teal"><svg [lucideIcon]="iconos.cambio" [size]="20"></svg></span>
+      <span class="etiqueta">Tipo de cambio</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          @if (ultimoTipoCambio(); as tc) {
+            <strong class="valor">Q {{ tc.valor }}</strong>
+            <small>por US$ 1 · {{ fechaCorta(tc.fecha) }}</small>
+          } @else {
+            <strong class="valor">—</strong>
+            <small class="alerta">Sin registro en los últimos 30 días</small>
+          }
+        }
+      }
+    </a>
+  }
+
+  @if (depositos; as dato) {
+    <a class="tarjeta kpi" routerLink="/alquileres/depositos">
+      <span class="icono azul"><svg [lucideIcon]="iconos.depositos" [size]="20"></svg></span>
+      <span class="etiqueta">Depósitos en garantía</span>
+      @switch (dato().estado) {
+        @case ('cargando') {
+          <span class="cargando" aria-label="Cargando"></span>
+        }
+        @case ('error') {
+          <span class="no-disponible">No disponible</span>
+        }
+        @default {
+          @if (dato(); as d) {
+            @if (d.estado === 'listo') {
+              <strong class="valor monto">{{
+                d.valor.totales['GTQ'] ?? '0' | monto: 'GTQ'
+              }}</strong>
+              <small>
+                {{ d.valor.totales['USD'] ?? '0' | monto: 'USD' }} ·
+                @if (d.valor.cuadra) {
+                  <span class="ok">cuadra con el mayor</span>
+                } @else {
+                  <span class="alerta">no cuadra con el mayor</span>
+                }
+              </small>
+            }
+          }
+        }
+      }
+    </a>
+  }
 </section>
 
-@if (error()) {
-  <button type="button" (click)="consultar()">Reintentar</button>
+@if (unidades || etapas) {
+  <section class="paneles">
+    @if (unidades; as dato) {
+      <article class="tarjeta panel">
+        <header>
+          <h2>Unidades por estado</h2>
+          <a routerLink="/unidades" class="ver">
+            Ver unidades <svg [lucideIcon]="iconos.ir" [size]="16"></svg>
+          </a>
+        </header>
+        @if (dato().estado === 'listo') {
+          @if (porEstado().length) {
+            <ul class="estados">
+              @for (fila of porEstado(); track fila.estado) {
+                <li>
+                  <span class="chip" [attr.data-estado]="fila.estado">{{
+                    etiqueta(fila.estado)
+                  }}</span>
+                  <span class="barra" aria-hidden="true">
+                    <span [style.width.%]="(fila.cantidad / unidadesTotal()) * 100"></span>
+                  </span>
+                  <strong>{{ fila.cantidad }}</strong>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="vacio">Todavía no hay unidades registradas.</p>
+          }
+        } @else if (dato().estado === 'error') {
+          <p class="vacio">No se pudo consultar las unidades.</p>
+        } @else {
+          <span class="cargando ancho" aria-label="Cargando"></span>
+        }
+      </article>
+    }
+
+    @if (etapas; as dato) {
+      <article class="tarjeta panel">
+        <header>
+          <h2>Inventario por etapa</h2>
+          <a routerLink="/reportes/unidades-etapa" class="ver">
+            Ver reporte <svg [lucideIcon]="iconos.ir" [size]="16"></svg>
+          </a>
+        </header>
+        @if (dato(); as d) {
+          @if (d.estado === 'listo') {
+            <dl class="resumen">
+              <div>
+                <dt>Valor del inventario</dt>
+                <dd class="monto">{{ d.valor.valor_total | monto }}</dd>
+              </div>
+              <div>
+                <dt>Superan {{ d.valor.limite_dias }} días en su etapa</dt>
+                <dd [class.alerta]="excedidas() > 0">
+                  {{ excedidas() }} unidad{{ excedidas() === 1 ? '' : 'es' }}
+                </dd>
+              </div>
+            </dl>
+          } @else if (d.estado === 'error') {
+            <p class="vacio">No se pudo consultar el reporte.</p>
+          } @else {
+            <span class="cargando ancho" aria-label="Cargando"></span>
+          }
+        }
+      </article>
+    }
+  </section>
 }
+
+<footer class="sistema" aria-live="polite">
+  <svg [lucideIcon]="iconos.sistema" [size]="16"></svg>
+  @switch (sistema().estado) {
+    @case ('cargando') {
+      <span>Consultando el estado del sistema…</span>
+    }
+    @case ('error') {
+      <span class="punto falla"></span>
+      <span class="falla">Sin respuesta de la API.</span>
+      <small>Revise que el backend esté levantado.</small>
+      <button type="button" class="secundario" (click)="consultarSistema()">
+        <svg [lucideIcon]="iconos.reintentar" [size]="16"></svg> Reintentar
+      </button>
+    }
+    @default {
+      @if (sistema(); as s) {
+        @if (s.estado === 'listo') {
+          <span class="punto ok"></span>
+          <span>{{ s.valor.mensaje }}</span>
+          <small>{{ s.valor.aplicacion }} · v{{ s.valor.version }}</small>
+          @if (s.valor.base_datos.conectada) {
+            <small>
+              · Base de datos conectada ({{ s.valor.base_datos.motor }}), revisión
+              {{ s.valor.base_datos.revision_esquema ?? 'sin migrar' }}
+            </small>
+          } @else {
+            <small class="falla">· Base de datos sin conexión</small>
+          }
+        }
+      }
+    }
+  }
+</footer>

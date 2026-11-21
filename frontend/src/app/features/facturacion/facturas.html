@@ -170,8 +170,8 @@
             {{ f.serie }}-{{ f.numero }}
           }
         </td>
-        <td [class.ok]="f.estado === 'certificada'" [class.falla]="f.estado === 'rechazada'">
-          {{ f.estado }}
+        <td>
+          <span class="chip" [attr.data-estado]="f.estado">{{ f.estado }}</span>
         </td>
         <td class="numero">{{ f.total | monto: moneda(f) }}</td>
         <td>

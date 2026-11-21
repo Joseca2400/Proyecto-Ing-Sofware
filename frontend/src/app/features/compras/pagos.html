@@ -134,8 +134,10 @@
           <td>{{ p.proveedor }}</td>
           <td>{{ p.forma_pago === 'cheque' ? 'Cheque' : 'Transferencia' }} {{ p.referencia }}</td>
           <td class="numero">{{ p.monto | monto: p.moneda }}</td>
-          <td [class.falla]="p.estado === 'anulado'">
-            {{ p.estado === 'anulado' ? 'Anulado' : 'Registrado' }}
+          <td>
+            <span class="chip" [attr.data-estado]="p.estado">{{
+              p.estado === 'anulado' ? 'Anulado' : 'Registrado'
+            }}</span>
           </td>
           <td><button type="button" class="secundario" (click)="ver(p.id)">Ver</button></td>
         </tr>

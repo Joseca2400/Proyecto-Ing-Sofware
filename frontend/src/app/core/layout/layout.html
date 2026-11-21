@@ -1,32 +1,75 @@
 <header class="topbar">
+  <button
+    type="button"
+    class="alternar"
+    [attr.aria-expanded]="menuAbierto()"
+    aria-controls="menu-principal"
+    [attr.aria-label]="menuAbierto() ? 'Cerrar menú' : 'Abrir menú'"
+    (click)="menuAbierto.set(!menuAbierto())"
+  >
+    <svg [lucideIcon]="menuAbierto() ? iconos.cerrar : iconos.abrir" [size]="22"></svg>
+  </button>
+
   <a routerLink="/inicio" class="brand">
     <span class="milestone" aria-hidden="true">
       <span class="milestone-top">KM</span>
       <span class="milestone-body">0</span>
     </span>
-    <strong>Kilómetro Cero</strong>
+    <span class="brand-texto">
+      <strong>Kilómetro Cero</strong>
+      <small>Administración y finanzas</small>
+    </span>
   </a>
+
+  <!-- El ícono muestra el modo al que se cambia: luna en claro, sol en oscuro. -->
+  <button
+    type="button"
+    class="tema"
+    [attr.aria-label]="oscuro() ? 'Activar modo claro' : 'Activar modo oscuro'"
+    [title]="oscuro() ? 'Modo claro' : 'Modo oscuro'"
+    (click)="tema.alternar()"
+  >
+    <svg [lucideIcon]="oscuro() ? iconos.sol : iconos.luna" [size]="20"></svg>
+  </button>
+
   @if (usuario(); as actual) {
     <div class="sesion">
-      <span>{{ actual.nombre }} · {{ rol() }}</span>
-      <button type="button" (click)="salir()">Cerrar sesión</button>
+      <span class="avatar" aria-hidden="true">{{ iniciales() }}</span>
+      <span class="quien">
+        <strong>{{ actual.nombre }}</strong>
+        <small>{{ rol() }}</small>
+      </span>
+      <button type="button" class="salir" (click)="salir()" title="Cerrar sesión">
+        <svg [lucideIcon]="iconos.salir" [size]="18"></svg>
+        <span>Cerrar sesión</span>
+      </button>
     </div>
   }
 </header>
 
 <div class="cuerpo">
-  <nav class="menu" aria-label="Módulos">
-    @for (entrada of menu(); track entrada.etiqueta) {
-      @if (entrada.ruta) {
-        <a
-          [routerLink]="entrada.ruta"
-          routerLinkActive="activo"
-          [routerLinkActiveOptions]="{ exact: true }"
-          >{{ entrada.etiqueta }}</a
-        >
-      } @else {
-        <span class="grupo">{{ entrada.etiqueta }}</span>
-      }
+  @if (menuAbierto()) {
+    <div class="velo" aria-hidden="true" (click)="menuAbierto.set(false)"></div>
+  }
+
+  <nav id="menu-principal" class="menu" [class.abierto]="menuAbierto()" aria-label="Módulos">
+    @for (seccion of menu(); track seccion.titulo ?? '') {
+      <div class="seccion">
+        @if (seccion.titulo) {
+          <span class="grupo">{{ seccion.titulo }}</span>
+        }
+        @for (entrada of seccion.entradas; track entrada.ruta) {
+          <a
+            [routerLink]="entrada.ruta"
+            routerLinkActive="activo"
+            ariaCurrentWhenActive="page"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <svg [lucideIcon]="entrada.icono" [size]="18" [strokeWidth]="1.75"></svg>
+            <span>{{ entrada.etiqueta }}</span>
+          </a>
+        }
+      </div>
     }
   </nav>
 
